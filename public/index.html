@@ -3040,6 +3040,32 @@ let msDropdownIdx = -1;       // keyboard navigation index
 let msGeoProbePending = false;
 let msGeoProbeAt = 0;
 let msScopeViewportOnly = true;
+const LANDMARK_ALIAS_GROUPS = [
+  { key:'sultanahmet', aliases:['sultanahmet camii','sultan ahmet camii','sultan ahmed mosque','blue mosque','the blue mosque','sultanahmet mosque'] },
+  { key:'ayasofya', aliases:['ayasofya','ayasofya camii','hagia sophia','aya sofya'] },
+  { key:'fatih', aliases:['fatih camii','fatih mosque','fatih mosque istanbul'] },
+  { key:'suleymaniye', aliases:['suleymaniye camii','süleymaniye camii','suleymaniye mosque'] },
+  { key:'eyup_sultan', aliases:['eyup sultan camii','eyüp sultan camii','eyup sultan mosque'] },
+  { key:'selimiye_edirne', aliases:['selimiye camii edirne','selimiye mosque edirne','edirne selimiye'] },
+  { key:'ulu_cami_bursa', aliases:['bursa ulu camii','ulu cami bursa','grand mosque of bursa'] },
+  { key:'kocatepe', aliases:['kocatepe camii','kocatepe mosque'] },
+  { key:'camlica', aliases:['camlica camii','çamlıca camii','buyuk camlica camii','büyük çamlıca camii'] },
+  { key:'nabawi', aliases:['mescid-i nebevi','masjid an nabawi','al-masjid an-nabawi','prophets mosque','prophet mosque medina'] },
+  { key:'aqsa', aliases:['mescid-i aksa','masjid al aqsa','al-aqsa mosque','aqsa mosque'] },
+  { key:'hassan_ii', aliases:['hassan ii mosque','hassan 2 mosque','cami hassan ii'] },
+  { key:'sheikh_zayed', aliases:['sheikh zayed grand mosque','sheikh zayed mosque','zayed grand mosque'] },
+  { key:'badshahi', aliases:['badshahi mosque','badshahi masjid'] },
+  { key:'faisal_islamabad', aliases:['faisal mosque','faisal masjid islamabad'] },
+  { key:'istiqlal_jakarta', aliases:['istiqlal mosque','masjid istiqlal'] },
+  { key:'putra', aliases:['putra mosque','masjid putra'] },
+  { key:'national_malaysia', aliases:['national mosque malaysia','masjid negara'] },
+  { key:'baiturrahman', aliases:['baiturrahman grand mosque','masjid raya baiturrahman'] },
+  { key:'blue_mosque_yerevan', aliases:['blue mosque yerevan','gok jami yerevan','gök cami yerevan'] }
+];
+const LANDMARK_ALIAS_COMPILED = LANDMARK_ALIAS_GROUPS.map(g => ({
+  key: g.key,
+  aliasesNorm: [...new Set((g.aliases || []).map(a => normalize(trLower(a))).filter(Boolean))]
+}));
 
 function uniqueNameList(arr) {
   const out = [];
@@ -3053,6 +3079,20 @@ function uniqueNameList(arr) {
     out.push(v);
   }
   return out;
+}
+
+function findAliasGroupsForQuery(qNorm) {
+  if (!qNorm) return [];
+  const out = new Set();
+  for (const g of LANDMARK_ALIAS_COMPILED) {
+    for (const a of g.aliasesNorm) {
+      if (a === qNorm || a.startsWith(qNorm) || qNorm.startsWith(a) || a.includes(` ${qNorm}`) || qNorm.includes(` ${a}`)) {
+        out.add(g.key);
+        break;
+      }
+    }
+  }
+  return [...out];
 }
 
 function gatherMosqueNameVariants(m) {
@@ -3082,11 +3122,19 @@ function buildSearchIndexForMosque(m) {
       tokenSet.add(normalize(t));
     }
   }
+  const aliasGroups = [];
+  for (const g of LANDMARK_ALIAS_COMPILED) {
+    const hit = g.aliasesNorm.some(alias =>
+      namesNorm.some(n => n === alias || n.includes(alias) || (n.length >= 8 && alias.includes(n)))
+    );
+    if (hit) aliasGroups.push(g.key);
+  }
   m.searchIndex = {
     variants,
     namesLow,
     namesNorm,
-    tokens: [...tokenSet]
+    tokens: [...tokenSet],
+    aliasGroups
   };
 }
 
@@ -3163,6 +3211,8 @@ function msMosqueScore(m, qLow, qNorm, words) {
   const names = m.searchIndex?.namesLow || [trLower(m.name || '')];
   const namesNorm = m.searchIndex?.namesNorm || names.map(n => normalize(n));
   const tokenSet = new Set(m.searchIndex?.tokens || []);
+  const mosqueAliasGroups = new Set(m.searchIndex?.aliasGroups || []);
+  const queryAliasGroups = findAliasGroupsForQuery(qNorm);
 
   let best = 0;
   for (const n of names) {
@@ -3190,6 +3240,14 @@ function msMosqueScore(m, qLow, qNorm, words) {
       );
       if (anyMatch) best = 10;
     }
+  }
+
+  if (queryAliasGroups.length && mosqueAliasGroups.size) {
+    const aliasHit = queryAliasGroups.some(g => mosqueAliasGroups.has(g));
+    if (aliasHit) best = Math.max(best, 160);
+  }
+  if (best > 0 && mosqueAliasGroups.size) {
+    best += Math.min(14, mosqueAliasGroups.size * 4);
   }
 
   return best;
