@@ -137,7 +137,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 /* dropdown */
 .ms-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:900;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;}
 .ms-dropdown.show{display:block;}
-.ms-item{padding:8px 13px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid rgba(42,42,58,.4);transition:background .1s;}
+.ms-item{padding:8px 13px;cursor:pointer;display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid rgba(42,42,58,.4);transition:background .1s;}
 .ms-item:last-child{border-bottom:none;}
 .ms-item:hover,.ms-item.focused{background:rgba(201,168,76,.07);}
 .ms-item-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
@@ -145,7 +145,8 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .ms-item-name{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ms-item-name mark{background:transparent;color:var(--gold);font-weight:700;}
 .ms-item-sub{font-size:10px;color:var(--muted);margin-top:1px;}
-.ms-item-diff{font-size:10px;font-weight:600;flex-shrink:0;}
+.ms-item-sub.meta{opacity:.9;}
+.ms-item-diff{font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px;white-space:nowrap;}
 .ms-no-result{padding:12px 13px;font-size:11px;color:var(--muted);text-align:center;}
 /* Active filter banner */
 .ms-filter-banner{display:none;padding:5px 12px;background:rgba(201,168,76,.08);border-bottom:1px solid rgba(201,168,76,.2);font-size:10px;color:var(--gold);align-items:center;justify-content:space-between;}
@@ -989,6 +990,7 @@ let manualAxisDB = {};
 let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
+let userGeoState = { lat:null, lng:null, enabled:false, ts:0 };
 let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
 let m3dState = { renderer:null, scene:null, camera:null, raf:0, obj:null };
 const API_RATE = {
@@ -1000,6 +1002,14 @@ function haptic(ms = 10) {
   try {
     if (navigator.vibrate) navigator.vibrate(Math.max(5, Math.min(50, ms|0)));
   } catch {}
+}
+
+function setUserGeoState(lat, lng, enabled = true) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  userGeoState.lat = lat;
+  userGeoState.lng = lng;
+  userGeoState.enabled = !!enabled;
+  userGeoState.ts = Date.now();
 }
 
 function safeStorageGet(key, fallback = null) {
@@ -2986,6 +2996,8 @@ function drawDonut(ok, bad, unk, pct){
 // ══════════════════════════════════════════════════════════════
 let mosqueFilter = '';        // active filter query
 let msDropdownIdx = -1;       // keyboard navigation index
+let msGeoProbePending = false;
+let msGeoProbeAt = 0;
 
 function initMosqueSearch() {
   const input    = document.getElementById('mosque-search');
@@ -3091,8 +3103,51 @@ function msMosqueScore(m, qLow, qNorm, words) {
   return best;
 }
 
+function getMosqueHierarchyLine(m) {
+  const t = m?.tags || {};
+  const n1 = t['addr:suburb'] || t['addr:neighbourhood'] || t['addr:quarter'] || t['addr:hamlet'] || t['addr:village'] || t['addr:city_district'] || '';
+  const n2 = t['addr:district'] || t['addr:township'] || t['addr:county'] || '';
+  const n3 = t['addr:city'] || t['addr:town'] || t['addr:municipality'] || t['addr:state'] || t['is_in:city'] || t['is_in:state'] || '';
+  const parts = [n1, n2, n3].map(x => String(x || '').trim()).filter(Boolean);
+  if (parts.length) return parts.join(', ');
+  return 'Mahalle / ilçe / şehir bilgisi yok';
+}
+
+function getUserDistanceLabel(m) {
+  if (!userGeoState.enabled || !Number.isFinite(userGeoState.lat) || !Number.isFinite(userGeoState.lng)) return '';
+  const km = greatCircleKm(userGeoState.lat, userGeoState.lng, m.lat, m.lng);
+  if (!Number.isFinite(km)) return '';
+  if (km < 1) return `${Math.max(50, Math.round(km * 1000))} m`;
+  return `${km.toFixed(km < 10 ? 1 : 0)} km`;
+}
+
+async function probeUserGeoForSearch(currentQuery) {
+  if (msGeoProbePending) return;
+  if (!navigator.geolocation) return;
+  if (Date.now() - msGeoProbeAt < 45000) return;
+  msGeoProbePending = true;
+  try {
+    if (navigator.permissions?.query) {
+      const perm = await navigator.permissions.query({ name:'geolocation' });
+      if (perm.state !== 'granted') return;
+    } else if (!userGeoState.enabled) {
+      return;
+    }
+    const pos = await getCurrentPositionAsync({ enableHighAccuracy:false, timeout:4500, maximumAge:300000 });
+    setUserGeoState(pos.coords.latitude, pos.coords.longitude, true);
+    const inputVal = document.getElementById('mosque-search')?.value?.trim();
+    if (inputVal && inputVal === currentQuery) showMosqueDropdown(inputVal);
+  } catch {
+    // Silent fail: dropdown should continue without distance.
+  } finally {
+    msGeoProbeAt = Date.now();
+    msGeoProbePending = false;
+  }
+}
+
 function showMosqueDropdown(q) {
   const dropdown = document.getElementById('ms-dropdown');
+  probeUserGeoForSearch(q);
 
   if (!mosqueDB || !mosqueDB.size) {
     dropdown.innerHTML = '<div class="ms-no-result">Henüz veri yüklenmedi — bir şehir arayın</div>';
@@ -3121,15 +3176,19 @@ function showMosqueDropdown(q) {
   const frag = document.createDocumentFragment();
   top.forEach(({m}) => {
     const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+    const addressLine = getMosqueHierarchyLine(m);
+    const userDistance = getUserDistanceLabel(m);
+    const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
     const div = document.createElement('div');
     div.className = 'ms-item';
     div.innerHTML = `
       <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
       <div class="ms-item-info">
         <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
-        <div class="ms-item-sub">Kıble:${m.qibla.toFixed(1)}°${m.diff!==null?' | '+m.diff.toFixed(1)+'° sapma':''}</div>
+        <div class="ms-item-sub">${escHtml(addressLine)}</div>
+        <div class="ms-item-sub meta">Kıble:${m.qibla.toFixed(1)}°${m.diff!==null?' | '+m.diff.toFixed(1)+'° sapma':''}</div>
       </div>
-      <div class="ms-item-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+      <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
     div.onclick = () => selectMosque(m);
     frag.appendChild(div);
   });
@@ -3450,6 +3509,7 @@ async function useMyLocation(opts = {}){
       }
     }
     if(!map) return false;
+    setUserGeoState(pos.coords.latitude, pos.coords.longitude, true);
     map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
     tileCache.clear(); mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
@@ -3527,6 +3587,7 @@ function startFollowLock() {
     followState.lastFixAt = Date.now();
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
+    setUserGeoState(lat, lng, true);
     const z = Math.max(16, map.getZoom() || 16);
     map.setView([lat, lng], z, { animate:false });
   }, () => {
@@ -6552,6 +6613,7 @@ async function requestCompassPermission() {
 function refreshCompassLocation() {
   if (!navigator.geolocation) return;
   navigator.geolocation.getCurrentPosition(pos => {
+    setUserGeoState(pos.coords.latitude, pos.coords.longitude, true);
     compassState.loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
     compassState.qibla = qiblaAngle(compassState.loc.lat, compassState.loc.lng);
     drawCompass();
