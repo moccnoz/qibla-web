@@ -415,7 +415,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   .mob-bottom-bar{left:8px;right:8px;bottom:8px;}
 }
 </style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="./vendor/leaflet/leaflet.css"/>
 </head>
 <body>
 
@@ -854,6 +854,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   <div class="ov-sub" id="ov-sub"></div>
 </div>
 <div class="toast" id="toast"></div>
+<script src="./vendor/leaflet/leaflet.js"></script>
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -1057,22 +1058,9 @@ async function bootstrap() {
   document.getElementById('mob-btn-outdoor')?.classList.toggle('active', uiState.outdoor);
   setLang(langSaved, true);
   setOv(true,'Harita yükleniyor...','Leaflet.js başlatılıyor');
-  const leafletSources = [
-    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
-  ];
-  let loaded = false;
-  for (const src of leafletSources) {
-    try {
-      await loadScript(src);
-      loaded = true;
-      break;
-    } catch {}
-  }
-  if (!loaded) {
+  if (!window.L || !window.L.map) {
     setOv(false);
-    toast('❌ Harita kütüphanesi yüklenemedi (ağ/CDN engeli)', 9000);
+    toast('❌ Harita kütüphanesi bulunamadı (lokal dosya eksik)', 9000);
     return;
   }
   try {
