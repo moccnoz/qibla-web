@@ -761,6 +761,7 @@ const SNAPSHOT_KEY = 'qibla-snapshots-v1';
 const LANG_KEY = 'qibla-lang-v1';
 const MANUAL_AXIS_KEY = 'qibla-manual-axis-v1';
 const OUTDOOR_KEY = 'qibla-outdoor-v1';
+const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
 const nameEnrichCache = new Map();
 const nameEnrichQueue = [];
 const nameEnrichQueued = new Set();
@@ -974,7 +975,37 @@ function initMap() {
     setTimeout(() => loadViewport(), 400);
     return;
   }
-  doSearch();
+  autoLocateOnStartup().then(located => {
+    if (!located) doSearch();
+  });
+}
+
+async function autoLocateOnStartup() {
+  if (!navigator.geolocation) return false;
+  const pref = safeStorageGet(GEO_PROMPT_KEY, '');
+  if (pref === 'denied') return false;
+  try {
+    if (!navigator.permissions?.query) {
+      const ok = await useMyLocation({ showToast:false, source:'auto' });
+      safeStorageSet(GEO_PROMPT_KEY, ok ? 'granted' : 'denied');
+      return ok;
+    }
+    const perm = await navigator.permissions.query({ name:'geolocation' });
+    if (perm.state === 'granted') {
+      const ok = await useMyLocation({ showToast:false, source:'auto' });
+      safeStorageSet(GEO_PROMPT_KEY, ok ? 'granted' : 'denied');
+      return ok;
+    }
+    if (perm.state === 'prompt') {
+      const ok = await useMyLocation({ showToast:false, source:'auto' });
+      safeStorageSet(GEO_PROMPT_KEY, ok ? 'granted' : 'denied');
+      return ok;
+    }
+    safeStorageSet(GEO_PROMPT_KEY, 'denied');
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function switchLayer(type) {
@@ -3045,16 +3076,30 @@ async function doSearch(){
   }
 }
 
-function useMyLocation(){
-  if(!navigator.geolocation){toast('Konum desteklenmiyor');return;}
-  navigator.geolocation.getCurrentPosition(async pos=>{
-    if(!map) return;
-    map.setView([pos.coords.latitude,pos.coords.longitude],14);
-    tileCache.clear(); mosqueDB.clear();
-    renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
-    updateCacheUI();
-    await loadViewport();
-  },()=>toast('Konum alınamadı'));
+async function useMyLocation(opts = {}){
+  const showToast = opts.showToast !== false;
+  const zoom = Number.isFinite(opts.zoom) ? opts.zoom : 14;
+  const source = opts.source || 'manual';
+  if(!navigator.geolocation){
+    if (showToast) toast('Konum desteklenmiyor');
+    return false;
+  }
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(async pos=>{
+      if(!map){ resolve(false); return; }
+      map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
+      tileCache.clear(); mosqueDB.clear();
+      renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
+      updateCacheUI();
+      await loadViewport();
+      if (showToast && source === 'manual') toast('Konum tespit edildi', 1800);
+      resolve(true);
+    },()=>{
+      if (source === 'auto') safeStorageSet(GEO_PROMPT_KEY, 'denied');
+      if (showToast) toast('Konum alınamadı');
+      resolve(false);
+    }, { enableHighAccuracy:true, timeout:10000, maximumAge:180000 });
+  });
 }
 
 function toggleOutdoorMode() {
