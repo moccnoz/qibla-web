@@ -85,6 +85,8 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .map-switch button.active{background:var(--gold);color:#0a0a0f;font-weight:600;}
 .map-switch button:hover:not(.active){color:var(--text);}
 .lang-switch{display:flex;gap:4px;align-items:center;}
+.header-actions{display:flex;flex-direction:column;gap:7px;margin-left:auto;align-items:flex-end;min-width:0;}
+.header-row{display:flex;gap:7px;align-items:center;justify-content:flex-end;flex-wrap:wrap;}
 
 /* ── STATS BAR */
 .stats-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;align-items:center;}
@@ -309,6 +311,15 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     flex:1 1 100%;
     max-width:none;
   }
+  .header-actions{
+    order:20;
+    margin-left:0;
+    width:100%;
+    align-items:stretch;
+  }
+  .header-row{
+    justify-content:flex-start;
+  }
   .btn-sm{padding:6px 9px;font-size:10px;}
 }
 
@@ -323,6 +334,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 
   /* Header collapses */
   header{padding:10px 14px;gap:10px;flex-wrap:nowrap;}
+  .header-actions{display:none !important;}
   .logo-sub,.divider,.map-switch,.btn-sm:not(#mob-menu-show){display:none !important;}
   .lang-switch{display:none !important;}
   .search-box{display:none !important;}
@@ -566,29 +578,35 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
     <div class="city-smart-dd" id="city-smart-dd"></div>
   </div>
-  <div class="map-switch">
-    <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita">🌑 Koyu</button>
-    <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü">🛰 Uydu</button>
-    <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita">🗺 Harita</button>
+  <div class="header-actions">
+    <div class="header-row">
+      <div class="map-switch">
+        <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita">🌑 Koyu</button>
+        <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü">🛰 Uydu</button>
+        <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita">🗺 Harita</button>
+      </div>
+      <button id="btn-heat"    class="btn btn-sm" onclick="toggleHeatmap()"     data-tip="Isı haritası [H]">🌡 Isı</button>
+      <button id="btn-score"   class="btn btn-sm" onclick="toggleScoreCard()"   data-tip="Skor kartı [S]">📊 Skor</button>
+      <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]">⚖️ Karşılaştır</button>
+      <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]">📅 Tarih</button>
+      <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]">🌍 Sıralama</button>
+      <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]">📍 Konum</button>
+      <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş">📤 Export</button>
+    </div>
+    <div class="header-row">
+      <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]">💼 Gelir</button>
+      <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü">🧪 Lab</button>
+      <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula">🧭 Pusula</button>
+      <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi">📍 Takip</button>
+      <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri">🧭 Yakın</button>
+      <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan">☀️ Outdoor</button>
+      <div class="lang-switch">
+        <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
+        <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
+      </div>
+      <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨️</button>
+    </div>
   </div>
-  <button id="btn-heat"    class="btn btn-sm" onclick="toggleHeatmap()"     data-tip="Isı haritası [H]">🌡 Isı</button>
-  <button id="btn-score"   class="btn btn-sm" onclick="toggleScoreCard()"   data-tip="Skor kartı [S]">📊 Skor</button>
-  <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]">⚖️ Karşılaştır</button>
-  <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]">📅 Tarih</button>
-  <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]">🌍 Sıralama</button>
-  <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]">📍 Konum</button>
-  <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş">📤 Export</button>
-  <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]">💼 Gelir</button>
-  <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü">🧪 Lab</button>
-  <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula">🧭 Pusula</button>
-  <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi">📍 Takip</button>
-  <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri">🧭 Yakın</button>
-  <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan">☀️ Outdoor</button>
-  <div class="lang-switch">
-    <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
-    <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
-  </div>
-  <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨️</button>
   <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()">☰</button>
 </header>
 <div class="mob-bottom-bar" id="mob-bottom-bar">
