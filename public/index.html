@@ -253,6 +253,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .mob-search-row input:focus{border-color:#c9a84c;}
 .mob-search-row button{background:#c9a84c;color:#0a0a0f;border:none;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;}
 .mob-bottom-bar{display:none;}
+.mob-layer-stack{display:none;}
 
 .sb-snap-panels{display:none;}
 
@@ -285,34 +286,34 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     position:fixed;
     left:10px; right:10px; bottom:10px;
     z-index:7600;
-    background:rgba(17,17,24,.95);
-    border:1px solid #2a2a3a;
-    border-radius:12px;
-    padding:8px;
-    gap:6px;
+    background:linear-gradient(180deg,rgba(18,18,28,.98),rgba(12,12,20,.96));
+    border:1px solid rgba(201,168,76,.45);
+    border-radius:14px;
+    padding:10px;
+    gap:8px;
     backdrop-filter:blur(8px);
-    box-shadow:0 10px 30px rgba(0,0,0,.45);
+    box-shadow:0 12px 34px rgba(0,0,0,.55);
   }
   .mob-bottom-bar input{
     flex:1;
     min-width:0;
     background:#16161f;
-    border:1px solid #2a2a3a;
+    border:1px solid #3a3a4a;
     color:#e8e4d8;
     font-family:'DM Mono',monospace;
-    font-size:13px;
+    font-size:15px;
     border-radius:8px;
-    padding:8px 10px;
+    padding:11px 12px;
     outline:none;
   }
   .mob-bottom-bar button{
-    border:1px solid #2a2a3a;
+    border:1px solid #3a3a4a;
     background:#111118;
     color:#e8e4d8;
     font-family:'DM Mono',monospace;
-    font-size:12px;
+    font-size:14px;
     border-radius:8px;
-    padding:8px 10px;
+    padding:10px 12px;
     cursor:pointer;
   }
   .mob-bottom-bar button.primary{
@@ -322,6 +323,34 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     font-weight:700;
   }
   .mob-bottom-bar button:active{transform:translateY(1px);}
+  .mob-bottom-bar button:last-child{min-width:44px;}
+
+  .mob-layer-stack{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    position:absolute;
+    top:10px;
+    right:10px;
+    z-index:1450;
+  }
+  .mob-layer-btn{
+    border:1px solid #3a3a4a;
+    background:rgba(14,14,22,.94);
+    color:#d1d5db;
+    font-family:'DM Mono',monospace;
+    font-size:12px;
+    border-radius:8px;
+    padding:8px 10px;
+    cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+  }
+  .mob-layer-btn.active{
+    background:#c9a84c;
+    color:#0a0a0f;
+    border-color:#c9a84c;
+    font-weight:700;
+  }
 
   /* Stats bar scrollable */
   .stats-bar{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
@@ -384,6 +413,22 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   .dp-panel{width:100% !important;border-left:none;border-top:1px solid #2a2a3a;}
   .dp-int-gallery{grid-template-columns:repeat(2,1fr);}
   .dp-int-form{grid-template-columns:1fr;}
+  .dp-name{font-size:21px;}
+  .dp-name-ar{font-size:17px;}
+  .dp-coords{font-size:11px;}
+  .dp-ribbon-lbl{font-size:10px;}
+  .dp-ribbon-val{font-size:18px;}
+  .dp-status-badge{font-size:15px;}
+  .dp-section-title{font-size:11px;}
+  .dp-int-meta{font-size:13px;}
+  .dp-int-form label{font-size:13px;}
+  .dp-int-form input,.dp-int-form select{font-size:14px;padding:9px 10px;}
+  .dp-int-axis-val{font-size:15px;}
+  .dp-qs-row{font-size:14px;}
+  .dp-wiki-body{font-size:14px;}
+  .dp-tag-row{grid-template-columns:130px 1fr;font-size:13px;}
+  .dp-action-btn{font-size:14px;padding:10px 12px;}
+  .m-item{font-size:13px;}
 
   /* Score card repositioned */
   .score-card{right:8px;top:8px;width:200px;}
@@ -731,6 +776,11 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 
 <div class="main">
   <div id="map">
+    <div class="mob-layer-stack" id="mob-layer-stack">
+      <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita">🌑 Koyu</button>
+      <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita">🛰 Uydu</button>
+      <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standart harita">🗺 Harita</button>
+    </div>
     <!-- Mini non-blocking loader -->
     <div class="mini-loader" id="mini-loader">
       <div class="mini-spin"></div>
@@ -1168,11 +1218,20 @@ async function autoLocateOnStartup() {
 function switchLayer(type) {
   if (!map||type===currentLayer) return;
   currentLayer=type;
-  document.querySelectorAll('.map-switch button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('btn-'+(type==='satellite'?'sat':type)).classList.add('active');
   if(tileLayer) map.removeLayer(tileLayer);
   tileLayer = L.tileLayer(TILES[type].url,TILES[type].opts).addTo(map);
   tileLayer.bringToBack();
+  setLayerButtonActive(type);
+}
+
+function setLayerButtonActive(type) {
+  const normalized = type === 'satellite' ? 'sat' : type;
+  const ids = ['btn-'+normalized, 'mob-btn-'+normalized, 'mob-fab-'+normalized];
+  ['dark','sat','osm'].forEach(key => {
+    const targets = ['btn-'+key, 'mob-btn-'+key, 'mob-fab-'+key];
+    targets.forEach(id => document.getElementById(id)?.classList.remove('active'));
+  });
+  ids.forEach(id => document.getElementById(id)?.classList.add('active'));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1504,6 +1563,7 @@ function renderAll() {
     }
 
     const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#0a0a0f',weight:1.5,fillOpacity:.95}).addTo(map);
+    mk.mosque = m;
     mk.bindPopup(makePopup(m));
     mk.on('click',()=>handleMosqueClick(m));
     renderLayers.push(mk);
@@ -4808,6 +4868,7 @@ function applyPeriodColors() {
     const mk = L.circleMarker([m.lat,m.lng], {
       radius:5, fillColor:col, color:'#0a0a0f', weight:1.5, fillOpacity:opacity
     }).addTo(map);
+    mk.mosque = m;
     mk.bindPopup(makeHistoryPopup(m));
     mk.on('click', () => handleMosqueClick(m));
     renderLayers.push(mk);
@@ -5757,9 +5818,7 @@ document.getElementById('mob-quick-city')?.addEventListener('keydown', e => {
 const _origSwitchLayer = switchLayer;
 window.switchLayer = function(type) {
   _origSwitchLayer(type);
-  document.querySelectorAll('.mob-drawer-btn[id^="mob-btn"]').forEach(b => b.classList.remove('active'));
-  const mb = document.getElementById('mob-btn-'+type);
-  if (mb) mb.classList.add('active');
+  setLayerButtonActive(type);
 };
 
 // ── Touch swipe to close detail panel on mobile
@@ -6281,6 +6340,7 @@ function renderActions(m, tags) {
   }
 
   el.innerHTML = `
+    <button class="dp-action-btn" onclick="focusMosqueOnMap()">🧭 Haritada Göster</button>
     <button class="dp-action-btn anim" onclick="closeDetailPanel();if(window._lastClickedMosque)animateQibla(window._lastClickedMosque)">🌍 Büyük Daire</button>
     <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)">🧠 İsmi Bul</button>
     <button class="dp-action-btn" onclick="open3D()">🏗 3D Analiz</button>
@@ -6290,6 +6350,17 @@ function renderActions(m, tags) {
     <button class="dp-action-btn" onclick="navigator.clipboard?.writeText('${coordStr}').then(()=>toast('Koordinat kopyalandı'))">📋 Koordinat Kopyala</button>
     ${wikiAction}
   `;
+}
+
+function focusMosqueOnMap() {
+  const m = window._lastClickedMosque;
+  if (!m || !map) return;
+  closeDetailPanel();
+  map.flyTo([m.lat, m.lng], Math.max(map.getZoom() || 15, 16), { duration: 0.7 });
+  setTimeout(() => {
+    const marker = renderLayers.find(layer => layer?.mosque?.id == m.id);
+    if (marker?.openPopup) marker.openPopup();
+  }, 450);
 }
 
 async function enrichSelectedMosqueName(force = false) {
