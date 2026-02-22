@@ -486,7 +486,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   </div>
   <div class="divider"></div>
   <div class="search-box">
-    <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir adı..." value="Istanbul"/>
+    <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir adı..." value=""/>
     <datalist id="city-suggest-list"></datalist>
     <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
   </div>
@@ -940,7 +940,7 @@ let isVpLoading = false;
 let heatLayer = null;
 let heatVisible = false;
 let scoreCardVisible = false;
-let currentCity = 'İstanbul';
+let currentCity = '';
 let denseModeNotified = false;
 const wikidataLabelCache = new Map();
 const NAME_ENRICH_KEY = 'qibla-name-enrich-v1';
@@ -1147,7 +1147,7 @@ function initMap() {
     clearTimeout(vpDebounceTimer);
     // Zoom < 11 → too wide, skip auto-load
     if (map.getZoom() < 11) { setVpStatus('idle'); return; }
-    vpDebounceTimer = setTimeout(loadViewport, 600);
+    vpDebounceTimer = setTimeout(loadViewport, 3000);
   });
   map.on('moveend zoomend', updateHashFromMap);
   map.on('dragstart', () => {
@@ -1173,30 +1173,17 @@ function initMap() {
   // Close qibla panel on map click (not on marker)
   map.on('click', hideQiblaPanel);
 
-  const parsed = parseHash();
-  if (parsed && !isNaN(parsed.lat) && !isNaN(parsed.lng) && !isNaN(parsed.zoom)) {
-    _hashUpdating = true;
-    map.setView([parsed.lat, parsed.lng], parsed.zoom);
-    _hashUpdating = false;
-    if (parsed.city) {
-      currentCity = parsed.city;
-      document.getElementById('city-input').value = parsed.city;
-      const mq = document.getElementById('mob-quick-city');
-      if (mq) mq.value = parsed.city;
-    }
-    setOv(true, `"${currentCity}" yükleniyor...`, 'Hash görünümünden açılıyor');
-    setTimeout(async () => {
-      try {
-        await loadViewport();
-      } finally {
-        setOv(false);
-      }
-    }, 400);
-    return;
+  // Always start from clean home state on refresh/load (no hash restore, empty search).
+  _hashUpdating = true;
+  history.replaceState(null, '', location.pathname);
+  _hashUpdating = false;
+  currentCity = '';
+  document.getElementById('city-input').value = '';
+  if (mq) mq.value = '';
+  setOv(false);
+  if (map.getZoom() >= 11) {
+    vpDebounceTimer = setTimeout(loadViewport, 3000);
   }
-  autoLocateOnStartup().then(located => {
-    if (!located) doSearch();
-  });
 }
 
 async function autoLocateOnStartup() {
@@ -3458,10 +3445,10 @@ async function resetToHome() {
     clearMosqueSearch?.();
     hideQiblaPanel?.();
     map.closePopup();
-    document.getElementById('city-input').value = 'Istanbul';
+    document.getElementById('city-input').value = '';
     const mq = document.getElementById('mob-quick-city');
-    if (mq) mq.value = 'Istanbul';
-    currentCity = 'Istanbul';
+    if (mq) mq.value = '';
+    currentCity = '';
     tileCache.clear();
     mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
@@ -3472,8 +3459,9 @@ async function resetToHome() {
     history.replaceState(null, '', location.pathname);
     map.setView([41.015, 28.979], 13, { animate:true });
     _hashUpdating = false;
-    await doSearch();
-    toast('Ana sayfaya dönüldü ve görünüm sıfırlandı', 1800);
+    clearTimeout(vpDebounceTimer);
+    vpDebounceTimer = setTimeout(loadViewport, 3000);
+    toast('Ana sayfa sıfırlandı', 1800);
   } catch {}
 }
 
