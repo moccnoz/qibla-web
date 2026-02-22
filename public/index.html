@@ -1378,7 +1378,7 @@ function getUncachedCells(bounds) {
 // ══════════════════════════════════════════════════════════════
 //  VIEWPORT AUTO-LOAD
 // ══════════════════════════════════════════════════════════════
-async function loadViewport() {
+async function loadViewport(opts = {}) {
   if (isVpLoading) {
     vpNeedsReload = true;
     return;
@@ -1403,29 +1403,35 @@ async function loadViewport() {
 
   isVpLoading = true;
   setVpStatus('loading');
-  const batch = newCells.slice(0, 10);
+  const batchSize = Number.isFinite(opts.batchSize) ? Math.max(1, opts.batchSize | 0) : 10;
+  const concurrency = Number.isFinite(opts.concurrency) ? Math.max(1, opts.concurrency | 0) : 2;
+  const batch = newCells.slice(0, batchSize);
   showMini(`${batch.length}/${newCells.length} alan yükleniyor...`);
   showSkeletonList();
 
   try {
     // Fetch per-grid-cell so moving around always loads local area deterministically.
-    let totalAdded = 0;
-    for (const c of batch) {
-      const half = GRID / 2;
-      const pad = GRID * 0.05;
-      const s = c.lat - half - pad;
-      const n = c.lat + half + pad;
-      const w = c.lng - half - pad;
-      const e = c.lng + half + pad;
-      try {
-        const elements = await fetchBbox(s, w, n, e);
-        totalAdded += processElements(elements);
-        tileCache.add(c.key);
-      } catch (err) {
-        // Keep cell uncached so it can retry on next viewport load.
-        console.warn('cell fetch failed', c.key, err?.message || err);
+    let cursor = 0;
+    const workers = Array.from({ length: Math.min(concurrency, batch.length) }, async () => {
+      while (cursor < batch.length) {
+        const c = batch[cursor++];
+        const half = GRID / 2;
+        const pad = GRID * 0.05;
+        const s = c.lat - half - pad;
+        const n = c.lat + half + pad;
+        const w = c.lng - half - pad;
+        const e = c.lng + half + pad;
+        try {
+          const elements = await fetchBbox(s, w, n, e, opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 });
+          processElements(elements);
+          tileCache.add(c.key);
+        } catch (err) {
+          // Keep cell uncached so it can retry on next viewport load.
+          console.warn('cell fetch failed', c.key, err?.message || err);
+        }
       }
-    }
+    });
+    await Promise.all(workers);
     updateCacheUI();
     renderAll();
     setVpStatus('done');
@@ -1492,7 +1498,7 @@ function buildMosqueQuery(s,w,n,e) {
 out body geom qt 3000;`;
 }
 
-async function fetchOverpassQuery(query) {
+async function fetchOverpassQuery(query, policy = {}) {
   let lastErr = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -1500,7 +1506,13 @@ async function fetchOverpassQuery(query) {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
         body:'data='+encodeURIComponent(query)
-      }, { hostKey:'overpass', minInterval:500, retries:2, timeoutMs:46000, backoffMs:900 });
+      }, {
+        hostKey:'overpass',
+        minInterval: Number.isFinite(policy.minInterval) ? policy.minInterval : 500,
+        retries: Number.isFinite(policy.retries) ? policy.retries : 2,
+        timeoutMs: Number.isFinite(policy.timeoutMs) ? policy.timeoutMs : 46000,
+        backoffMs: Number.isFinite(policy.backoffMs) ? policy.backoffMs : 900
+      });
       if(!r.ok) throw new Error(`HTTP ${r.status} @ ${endpoint}`);
       const d = await r.json();
       return d.elements || [];
@@ -1511,8 +1523,8 @@ async function fetchOverpassQuery(query) {
   throw new Error(lastErr?.message || 'Overpass yanıt vermedi');
 }
 
-async function fetchBbox(s,w,n,e) {
-  return fetchOverpassQuery(buildMosqueQuery(s,w,n,e));
+async function fetchBbox(s,w,n,e,policy={}) {
+  return fetchOverpassQuery(buildMosqueQuery(s,w,n,e), policy);
 }
 
 function pickBestGeocodeResult(items, name) {
@@ -3964,7 +3976,11 @@ async function doSearch(){
     if(heatLayer){ try{map.removeLayer(heatLayer);}catch{} heatLayer=null; }
     // İlk viewport yüklemesi
     setOv(true,`"${v}" yükleniyor...`,'Harita görünümündeki camiler alınıyor');
-    await loadViewport();
+    await loadViewport({
+      batchSize: 12,
+      concurrency: 3,
+      fetchPolicy: { retries:1, timeoutMs:18000, backoffMs:650, minInterval:320 }
+    });
 
     if (mosqueMode && !mosqueDB.size) {
       // Spesifik cami adı aramasında dar çevrede yoğun dene
