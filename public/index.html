@@ -526,6 +526,10 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     bottom:calc(8px + env(safe-area-inset-bottom, 0px));
   }
 }
+
+@media (max-width: 900px) and (pointer: coarse) {
+  .mob-bottom-bar{display:flex;}
+}
 </style>
 <link rel="stylesheet" href="./vendor/leaflet/leaflet.css"/>
 </head>
@@ -5973,6 +5977,12 @@ function closeMobDrawer() {
   document.getElementById('mob-drawer').classList.remove('open');
   document.getElementById('mob-backdrop').classList.remove('show');
 }
+function syncMobileQuickBarVisibility() {
+  const bar = document.getElementById('mob-bottom-bar');
+  if (!bar) return;
+  const mobileLike = (window.innerWidth <= 900) && (window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768);
+  bar.style.display = mobileLike ? 'flex' : 'none';
+}
 function mobSearch() {
   const v = document.getElementById('mob-city-input').value.trim();
   if (!v) return;
@@ -5992,6 +6002,9 @@ document.getElementById('mob-city-input').addEventListener('keydown', e => {
 document.getElementById('mob-quick-city')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') mobQuickSearch();
 });
+window.addEventListener('resize', syncMobileQuickBarVisibility);
+window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
+setTimeout(syncMobileQuickBarVisibility, 0);
 
 // Sync mobile layer buttons with desktop
 const _origSwitchLayer = switchLayer;
