@@ -543,6 +543,40 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   .lab-grid{grid-template-columns:1fr;}
   .m3d-wrap{grid-template-columns:1fr;}
   .m3d-side{border-left:none;border-top:1px solid #2a2a3a;}
+
+  /* Mobile: live loading badge near stats + hide bottom mosque sheet */
+  .stats-bar{
+    position:relative;
+    padding-right:128px;
+  }
+  .vp-status{
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    border:1px solid #2a2a3a;
+    border-radius:999px;
+    padding:5px 9px;
+    background:rgba(10,10,18,.92);
+    gap:6px;
+    color:#9ca3af;
+    z-index:5;
+  }
+  .vp-status.loading{
+    border-color:rgba(251,191,36,.6);
+    color:#fbbf24;
+  }
+  .vp-status.done{
+    border-color:rgba(74,222,128,.6);
+    color:#4ade80;
+    background:rgba(15,40,25,.9);
+  }
+  #vp-label{
+    font-size:10px;
+    white-space:nowrap;
+    letter-spacing:.02em;
+  }
+  .sidebar{display:none !important;}
 }
 
 @media (max-width: 480px) {
@@ -3933,8 +3967,10 @@ function normalize(s) {
 // ── Status indicators
 function setVpStatus(s){
   const dot=document.getElementById('vp-dot'),lbl=document.getElementById('vp-label');
+  const box=document.querySelector('.vp-status');
   dot.className='vp-dot'+(s==='loading'?' loading':s==='done'?' done':'');
-  lbl.textContent=s==='loading'?'Yükleniyor...':s==='done'?'Güncel':'Hazır';
+  if (box) box.className='vp-status'+(s==='loading'?' loading':s==='done'?' done':'');
+  lbl.textContent=s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır';
 }
 function updateCacheUI(){ document.getElementById('cache-count').textContent=tileCache.size; }
 function showMini(t){ document.getElementById('mini-text').textContent=t; document.getElementById('mini-loader').classList.add('show'); }
