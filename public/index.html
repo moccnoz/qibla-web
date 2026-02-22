@@ -3076,6 +3076,20 @@ async function doSearch(){
   }
 }
 
+function geoErrorMessage(err) {
+  if (!err || typeof err.code !== 'number') return 'Konum alınamadı';
+  if (err.code === 1) return 'Konum izni kapalı. Tarayıcıdan konum iznini açın.';
+  if (err.code === 2) return 'Konum kaynağı bulunamadı (GPS/ağ).';
+  if (err.code === 3) return 'Konum isteği zaman aşımına uğradı.';
+  return 'Konum alınamadı';
+}
+
+function getCurrentPositionAsync(options) {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
 async function useMyLocation(opts = {}){
   const showToast = opts.showToast !== false;
   const zoom = Number.isFinite(opts.zoom) ? opts.zoom : 14;
@@ -3084,22 +3098,31 @@ async function useMyLocation(opts = {}){
     if (showToast) toast('Konum desteklenmiyor');
     return false;
   }
-  return new Promise(resolve => {
-    navigator.geolocation.getCurrentPosition(async pos=>{
-      if(!map){ resolve(false); return; }
-      map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
-      tileCache.clear(); mosqueDB.clear();
-      renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
-      updateCacheUI();
-      await loadViewport();
-      if (showToast && source === 'manual') toast('Konum tespit edildi', 1800);
-      resolve(true);
-    },()=>{
-      if (source === 'auto') safeStorageSet(GEO_PROMPT_KEY, 'denied');
-      if (showToast) toast('Konum alınamadı');
-      resolve(false);
-    }, { enableHighAccuracy:true, timeout:10000, maximumAge:180000 });
-  });
+  try {
+    let pos = null;
+    try {
+      pos = await getCurrentPositionAsync({ enableHighAccuracy:true, timeout:12000, maximumAge:120000 });
+    } catch (e1) {
+      // Fallback: lower accuracy but wider timeout works better on some mobile networks.
+      if (e1?.code === 2 || e1?.code === 3) {
+        pos = await getCurrentPositionAsync({ enableHighAccuracy:false, timeout:22000, maximumAge:600000 });
+      } else {
+        throw e1;
+      }
+    }
+    if(!map) return false;
+    map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
+    tileCache.clear(); mosqueDB.clear();
+    renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
+    updateCacheUI();
+    await loadViewport();
+    if (showToast && source === 'manual') toast('Konum tespit edildi', 1800);
+    return true;
+  } catch (err) {
+    if (source === 'auto' && err?.code === 1) safeStorageSet(GEO_PROMPT_KEY, 'denied');
+    if (showToast) toast(geoErrorMessage(err), 3600);
+    return false;
+  }
 }
 
 function toggleOutdoorMode() {
