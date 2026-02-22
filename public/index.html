@@ -252,6 +252,9 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .mob-search-row input{flex:1;background:#16161f;border:1px solid #2a2a3a;color:#e8e4d8;font-family:'DM Mono',monospace;font-size:13px;padding:8px 12px;border-radius:6px;outline:none;}
 .mob-search-row input:focus{border-color:#c9a84c;}
 .mob-search-row button{background:#c9a84c;color:#0a0a0f;border:none;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;}
+.mob-bottom-bar{display:none;}
+
+.sb-snap-panels{display:none;}
 
 @media (max-width: 1460px) and (min-width: 769px) {
   header{
@@ -273,8 +276,52 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   header{padding:10px 14px;gap:10px;flex-wrap:nowrap;}
   .logo-sub,.divider,.map-switch,.btn-sm:not(#mob-menu-show){display:none !important;}
   .lang-switch{display:none !important;}
-  .search-box{max-width:none;flex:1;}
+  .search-box{display:none !important;}
   .mob-menu-btn{display:block;}
+  .brand-home{margin-right:auto;}
+
+  .mob-bottom-bar{
+    display:flex;
+    position:fixed;
+    left:10px; right:10px; bottom:10px;
+    z-index:7600;
+    background:rgba(17,17,24,.95);
+    border:1px solid #2a2a3a;
+    border-radius:12px;
+    padding:8px;
+    gap:6px;
+    backdrop-filter:blur(8px);
+    box-shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  .mob-bottom-bar input{
+    flex:1;
+    min-width:0;
+    background:#16161f;
+    border:1px solid #2a2a3a;
+    color:#e8e4d8;
+    font-family:'DM Mono',monospace;
+    font-size:13px;
+    border-radius:8px;
+    padding:8px 10px;
+    outline:none;
+  }
+  .mob-bottom-bar button{
+    border:1px solid #2a2a3a;
+    background:#111118;
+    color:#e8e4d8;
+    font-family:'DM Mono',monospace;
+    font-size:12px;
+    border-radius:8px;
+    padding:8px 10px;
+    cursor:pointer;
+  }
+  .mob-bottom-bar button.primary{
+    background:#c9a84c;
+    color:#0a0a0f;
+    border-color:#c9a84c;
+    font-weight:700;
+  }
+  .mob-bottom-bar button:active{transform:translateY(1px);}
 
   /* Stats bar scrollable */
   .stats-bar{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;scrollbar-width:none;}
@@ -296,10 +343,42 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     transition:transform .3s cubic-bezier(.4,0,.2,1);
     z-index:700;
     box-shadow:0 -8px 40px rgba(0,0,0,.6);
+    padding-bottom:70px;
   }
   .sidebar.mob-open{--sheet-snap:95;}
-  .sb-head{cursor:pointer;justify-content:center;padding:10px;}
+  .sb-head{cursor:pointer;justify-content:center;padding:10px;position:sticky;top:0;background:#111118;z-index:2;}
   .sb-head::before{content:'';display:block;width:36px;height:4px;background:#3a3a4a;border-radius:2px;position:absolute;top:6px;left:50%;transform:translateX(-50%);}
+
+  .sb-snap-panels{display:block;border-bottom:1px solid #2a2a3a;background:#101019;}
+  .sb-mini-panel,.sb-half-panel{display:none;padding:10px 12px;}
+  .sb-mini-title{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:#6b6b7a;margin-bottom:4px;}
+  .sb-mini-city{font-size:12px;color:#e8e4d8;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sb-mini-score{font-size:24px;font-weight:700;color:#c9a84c;line-height:1;margin-top:4px;}
+  .sb-mini-sub{font-size:10px;color:#6b6b7a;}
+  .sb-half-grid{display:grid;grid-template-columns:1fr 110px;gap:10px;align-items:center;}
+  .sb-half-metrics{display:flex;flex-direction:column;gap:6px;}
+  .sb-half-row{display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;border-bottom:1px solid rgba(42,42,58,.45);padding-bottom:4px;}
+  .sb-half-row b{color:#e8e4d8;}
+  #sb-radar{width:108px;height:108px;border-radius:50%;border:1px solid #2a2a3a;background:#0f0f18;}
+
+  .sidebar[data-snap="min"] .sb-mini-panel{display:block;}
+  .sidebar[data-snap="half"] .sb-half-panel{display:block;}
+  .sidebar[data-snap="full"] .ms-wrap,
+  .sidebar[data-snap="full"] .ms-filter-banner,
+  .sidebar[data-snap="full"] .mosque-list,
+  .sidebar[data-snap="full"] .legend{display:block;}
+  .sidebar[data-snap="min"] .ms-wrap,
+  .sidebar[data-snap="min"] .ms-filter-banner,
+  .sidebar[data-snap="min"] .mosque-list,
+  .sidebar[data-snap="min"] .legend,
+  .sidebar[data-snap="min"] #sb-pull-indicator{display:none !important;}
+  .sidebar[data-snap="half"] .ms-wrap,
+  .sidebar[data-snap="half"] .ms-filter-banner,
+  .sidebar[data-snap="half"] .mosque-list,
+  .sidebar[data-snap="half"] .legend,
+  .sidebar[data-snap="half"] #sb-pull-indicator{display:none !important;}
+  .sidebar[data-snap="full"] .sb-mini-panel,
+  .sidebar[data-snap="full"] .sb-half-panel{display:none;}
 
   /* Detail panel full-screen on mobile */
   .dp-panel{width:100% !important;border-left:none;border-top:1px solid #2a2a3a;}
@@ -333,6 +412,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 @media (max-width: 480px) {
   .logo-title{font-size:14px;}
   .search-box input{font-size:12px;}
+  .mob-bottom-bar{left:8px;right:8px;bottom:8px;}
 }
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -378,6 +458,11 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨️</button>
   <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()">☰</button>
 </header>
+<div class="mob-bottom-bar" id="mob-bottom-bar">
+  <input id="mob-quick-city" type="text" placeholder="Şehir ara..." autocomplete="off"/>
+  <button class="primary" onclick="mobQuickSearch()">Ara</button>
+  <button onclick="useMyLocation()">📍</button>
+</div>
 
 <!-- Mobile drawer -->
 <div class="mob-drawer-backdrop" id="mob-backdrop" onclick="closeMobDrawer()"></div>
@@ -715,6 +800,26 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
       <span>Cami Listesi</span>
       <span class="sb-count" id="sb-count"></span>
     </div>
+    <div class="sb-snap-panels">
+      <div class="sb-mini-panel" id="sb-mini-panel">
+        <div class="sb-mini-title">Genel Skor</div>
+        <div class="sb-mini-city" id="sb-mini-city">—</div>
+        <div class="sb-mini-score" id="sb-mini-score">—</div>
+        <div class="sb-mini-sub" id="sb-mini-sub">Veri bekleniyor</div>
+      </div>
+      <div class="sb-half-panel" id="sb-half-panel">
+        <div class="sb-mini-title">İstatistik & Radar</div>
+        <div class="sb-half-grid">
+          <div class="sb-half-metrics">
+            <div class="sb-half-row"><span>Toplam</span><b id="sb-m-total">—</b></div>
+            <div class="sb-half-row"><span>Doğruluk</span><b id="sb-m-pct">—</b></div>
+            <div class="sb-half-row"><span>Ort. Sapma</span><b id="sb-m-avg">—</b></div>
+            <div class="sb-half-row"><span>Maks Sapma</span><b id="sb-m-max">—</b></div>
+          </div>
+          <canvas id="sb-radar" width="108" height="108"></canvas>
+        </div>
+      </div>
+    </div>
     <div class="ms-wrap" id="ms-wrap">
       <div class="ms-box">
         <span class="ms-icon">🔍</span>
@@ -974,6 +1079,8 @@ function initMap() {
   document.getElementById('loc-btn').onclick    = useMyLocation;
   document.getElementById('city-input').onkeydown = e => { if(e.key==='Enter') doSearch(); };
   document.getElementById('tol').oninput = e => { tol=+e.target.value; document.getElementById('tol-val').textContent=tol+'°'; recompute(); };
+  const mq = document.getElementById('mob-quick-city');
+  if (mq) mq.value = document.getElementById('city-input').value || '';
 
   // Init mosque search
   initMosqueSearch();
@@ -2462,6 +2569,73 @@ function updateStats(){
   } else {
     ['s-total','s-ok','s-bad','s-unk'].forEach(id=>document.getElementById(id).textContent='—');
   }
+  updateSidebarSnapPanels();
+}
+
+function getLoadedStats() {
+  const all = [...mosqueDB.values()];
+  const withData = all.filter(m => m.diff !== null);
+  const ok = withData.filter(m => m.diff <= tol);
+  const pct = withData.length ? Math.round((ok.length / withData.length) * 100) : null;
+  const avg = withData.length ? withData.reduce((s,m)=>s+m.diff,0)/withData.length : null;
+  const max = withData.length ? Math.max(...withData.map(m=>m.diff)) : null;
+  return { total: all.length, withData: withData.length, pct, avg, max };
+}
+
+function drawSidebarRadar(stats) {
+  const cv = document.getElementById('sb-radar');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const W = cv.width, H = cv.height, cx = W/2, cy = H/2, r = 42;
+  ctx.clearRect(0,0,W,H);
+  for (let ring=1; ring<=3; ring++) {
+    ctx.beginPath();
+    for (let i=0; i<3; i++) {
+      const a = (i/3)*Math.PI*2 - Math.PI/2;
+      const x = cx + Math.cos(a)*r*(ring/3);
+      const y = cy + Math.sin(a)*r*(ring/3);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = '#2a2a3a';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+  const acc = (stats.pct ?? 0) / 100;
+  const cov = stats.total ? (stats.withData / stats.total) : 0;
+  const dev = stats.avg != null ? Math.max(0, Math.min(1, (90 - stats.avg) / 90)) : 0;
+  const vals = [acc, cov, dev];
+  ctx.beginPath();
+  for (let i=0; i<3; i++) {
+    const a = (i/3)*Math.PI*2 - Math.PI/2;
+    const x = cx + Math.cos(a)*r*vals[i];
+    const y = cy + Math.sin(a)*r*vals[i];
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(201,168,76,.18)';
+  ctx.fill();
+  ctx.strokeStyle = '#c9a84c';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function updateSidebarSnapPanels() {
+  if (window.innerWidth > 768) return;
+  const stats = getLoadedStats();
+  const city = currentCity || '—';
+  const miniCity = document.getElementById('sb-mini-city');
+  const miniScore = document.getElementById('sb-mini-score');
+  const miniSub = document.getElementById('sb-mini-sub');
+  if (miniCity) miniCity.textContent = city;
+  if (miniScore) miniScore.textContent = stats.pct != null ? `${stats.pct}%` : '—';
+  if (miniSub) miniSub.textContent = stats.total ? `${stats.total} cami · tolerans ${tol}°` : 'Veri bekleniyor';
+  const st = (id,v) => { const el=document.getElementById(id); if (el) el.textContent = v; };
+  st('sb-m-total', stats.total ? stats.total.toLocaleString() : '—');
+  st('sb-m-pct', stats.pct != null ? `${stats.pct}%` : '—');
+  st('sb-m-avg', stats.avg != null ? `${stats.avg.toFixed(1)}°` : '—');
+  st('sb-m-max', stats.max != null ? `${stats.max.toFixed(1)}°` : '—');
+  drawSidebarRadar(stats);
 }
 
 function updateList(visible){
@@ -3005,6 +3179,8 @@ async function doSearch(){
   if(!map) return;
   const v=document.getElementById('city-input').value.trim();
   if(!v) return;
+  const mq = document.getElementById('mob-quick-city');
+  if (mq) mq.value = v;
   const mosqueMode = isLikelyMosqueQuery(v);
   const direct = parseDirectMosqueQuery(v);
   try{
@@ -3181,6 +3357,8 @@ async function resetToHome() {
     hideQiblaPanel?.();
     map.closePopup();
     document.getElementById('city-input').value = 'Istanbul';
+    const mq = document.getElementById('mob-quick-city');
+    if (mq) mq.value = 'Istanbul';
     currentCity = 'Istanbul';
     tileCache.clear();
     mosqueDB.clear();
@@ -3354,6 +3532,9 @@ function setSidebarSnap(vh) {
   if (!sb || window.innerWidth > 768) return;
   uiState.sheetSnap = Math.max(20, Math.min(95, vh));
   sb.style.setProperty('--sheet-snap', uiState.sheetSnap);
+  const snapState = uiState.sheetSnap <= 30 ? 'min' : uiState.sheetSnap <= 72 ? 'half' : 'full';
+  sb.setAttribute('data-snap', snapState);
+  updateSidebarSnapPanels();
 }
 
 function initSidebarSnapSheet() {
@@ -5529,8 +5710,17 @@ function mobSearch() {
   closeMobDrawer();
   doSearch();
 }
+function mobQuickSearch() {
+  const v = document.getElementById('mob-quick-city')?.value.trim();
+  if (!v) return;
+  document.getElementById('city-input').value = v;
+  doSearch();
+}
 document.getElementById('mob-city-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') mobSearch();
+});
+document.getElementById('mob-quick-city')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') mobQuickSearch();
 });
 
 // Sync mobile layer buttons with desktop
