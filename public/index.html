@@ -3050,6 +3050,9 @@ let msDropdownIdx = -1;       // keyboard navigation index
 let msGeoProbePending = false;
 let msGeoProbeAt = 0;
 let msScopeViewportOnly = true;
+let msRemoteLookupPending = false;
+let msRemoteLookupKey = '';
+const msRemoteLookupMissAt = new Map();
 const LANDMARK_ALIAS_GROUPS = [
   { key:'sultanahmet', aliases:['sultanahmet camii','sultan ahmet camii','sultan ahmed mosque','blue mosque','the blue mosque','sultanahmet mosque'] },
   { key:'ayasofya', aliases:['ayasofya','ayasofya camii','hagia sophia','aya sofya'] },
@@ -3343,6 +3346,99 @@ function applySuggestedMosqueQuery(text) {
   showMosqueDropdown(text);
 }
 
+function toOsmType(v) {
+  const t = trLower(String(v || '').trim());
+  if (t === 'n' || t === 'node') return 'node';
+  if (t === 'w' || t === 'way') return 'way';
+  if (t === 'r' || t === 'relation') return 'relation';
+  return null;
+}
+
+function isLikelyMosqueHit(it) {
+  const cls = trLower(it?.class || '');
+  const typ = trLower(it?.type || '');
+  const disp = trLower(it?.display_name || '');
+  if (cls === 'amenity' && (typ === 'place_of_worship' || typ === 'mosque')) return true;
+  return /\b(cami|camii|mosque|masjid|mescid|mescit|džamija|dzamija)\b/.test(disp);
+}
+
+function nominatimViewboxParams(bounds, bounded = true) {
+  if (!bounds) return '';
+  const left = bounds.getWest().toFixed(6);
+  const top = bounds.getNorth().toFixed(6);
+  const right = bounds.getEast().toFixed(6);
+  const bottom = bounds.getSouth().toFixed(6);
+  return `&viewbox=${left},${top},${right},${bottom}${bounded ? '&bounded=1' : ''}`;
+}
+
+async function fetchNominatimMosqueRefs(query, bounds, bounded = true, limit = 12) {
+  const vb = nominatimViewboxParams(bounds, bounded);
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limit}&addressdetails=1&q=${encodeURIComponent(query)}${vb}`;
+  const data = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+  const refs = [];
+  for (const it of (data || [])) {
+    if (!isLikelyMosqueHit(it)) continue;
+    const osmType = toOsmType(it.osm_type);
+    const id = String(it.osm_id || '').replace(/\D/g, '');
+    if (!osmType || !id) continue;
+    refs.push({ osmType, id });
+  }
+  return refs;
+}
+
+async function fetchByOsmRefs(refs) {
+  const groups = { node:[], way:[], relation:[] };
+  for (const r of refs || []) {
+    if (!r?.osmType || !r?.id) continue;
+    groups[r.osmType]?.push(String(r.id));
+  }
+  const uniq = t => [...new Set(groups[t])].slice(0, 40);
+  const nodes = uniq('node');
+  const ways = uniq('way');
+  const rels = uniq('relation');
+  if (!nodes.length && !ways.length && !rels.length) return [];
+  const parts = [];
+  if (nodes.length) parts.push(`node(id:${nodes.join(',')});`);
+  if (ways.length) parts.push(`way(id:${ways.join(',')});`);
+  if (rels.length) parts.push(`relation(id:${rels.join(',')});`);
+  const q = `[out:json][timeout:45];(${parts.join('')});out body geom tags center;`;
+  return fetchOverpassQuery(q);
+}
+
+async function triggerRemoteMosqueLookup(query, qNorm, bounds) {
+  if (!query || !qNorm || qNorm.length < 3) return 0;
+  if (msRemoteLookupPending && msRemoteLookupKey === qNorm) return 0;
+  const missAt = msRemoteLookupMissAt.get(qNorm);
+  if (missAt && Date.now() - missAt < 120000) return 0;
+  msRemoteLookupPending = true;
+  msRemoteLookupKey = qNorm;
+  try {
+    const refsMap = new Map();
+    const boundedRefs = await fetchNominatimMosqueRefs(query, bounds, true, 16).catch(() => []);
+    boundedRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+
+    if (!refsMap.size || !msScopeViewportOnly) {
+      const globalRefs = await fetchNominatimMosqueRefs(`${query} mosque`, null, false, 14).catch(() => []);
+      globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+    }
+
+    if (!refsMap.size) {
+      msRemoteLookupMissAt.set(qNorm, Date.now());
+      return 0;
+    }
+
+    const elements = await fetchByOsmRefs([...refsMap.values()]);
+    const added = processElements(elements);
+    if (!added) msRemoteLookupMissAt.set(qNorm, Date.now());
+    return added;
+  } catch {
+    return 0;
+  } finally {
+    msRemoteLookupPending = false;
+    msRemoteLookupKey = '';
+  }
+}
+
 function getMosqueHierarchyLine(m) {
   const t = m?.tags || {};
   const n1 = t['addr:suburb'] || t['addr:neighbourhood'] || t['addr:quarter'] || t['addr:hamlet'] || t['addr:village'] || t['addr:city_district'] || '';
@@ -3421,8 +3517,22 @@ function showMosqueDropdown(q) {
     const alt = suggestClosestMosqueQuery(qNorm);
     dropdown.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için sonuç bulunamadı${scopeMsg}${
       alt ? `<br><button class="ms-suggest-btn" onclick="applySuggestedMosqueQuery('${escHtml(alt).replace(/'/g, '&#39;')}')">Bunu mu demek istediniz: ${escHtml(alt)}?</button>` : ''
-    }</div>`;
+    }<br><span style="opacity:.75">Dış kaynakta aranıyor...</span></div>`;
     dropdown.classList.add('show');
+    triggerRemoteMosqueLookup(q, qNorm, bounds).then(added => {
+      const current = document.getElementById('mosque-search')?.value?.trim();
+      if (current !== q) return;
+      if (added > 0) {
+        showMosqueDropdown(q);
+        return;
+      }
+      const scopeMsg2 = msScopeViewportOnly ? ' (mevcut harita alanında)' : '';
+      const alt2 = suggestClosestMosqueQuery(qNorm);
+      dropdown.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için sonuç bulunamadı${scopeMsg2}${
+        alt2 ? `<br><button class="ms-suggest-btn" onclick="applySuggestedMosqueQuery('${escHtml(alt2).replace(/'/g, '&#39;')}')">Bunu mu demek istediniz: ${escHtml(alt2)}?</button>` : ''
+      }</div>`;
+      dropdown.classList.add('show');
+    });
     return;
   }
 
