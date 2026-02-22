@@ -134,6 +134,28 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 #ms-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px;display:none;line-height:1;}
 #ms-clear:hover{color:var(--red);}
 #ms-clear.show{display:block;}
+.ms-scope{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:6px 12px;background:#111118;border-top:1px solid rgba(42,42,58,.45);
+}
+.ms-scope-lbl{font-size:10px;color:var(--muted);}
+.ms-scope-lbl b{color:var(--text);font-weight:600;}
+.ms-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer;}
+.ms-switch input{position:absolute;opacity:0;pointer-events:none;}
+.ms-switch-track{
+  width:34px;height:18px;border-radius:20px;background:#2a2a3a;border:1px solid #3a3a4a;
+  position:relative;transition:all .15s;
+}
+.ms-switch-track::after{
+  content:'';position:absolute;top:1px;left:1px;width:14px;height:14px;border-radius:50%;
+  background:#d1d5db;transition:left .15s;
+}
+.ms-switch input:checked + .ms-switch-track{
+  background:rgba(201,168,76,.25);border-color:rgba(201,168,76,.6);
+}
+.ms-switch input:checked + .ms-switch-track::after{
+  left:17px;background:#c9a84c;
+}
 /* dropdown */
 .ms-dropdown{position:absolute;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:900;max-height:220px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none;}
 .ms-dropdown.show{display:block;}
@@ -294,8 +316,10 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   .mob-bottom-bar{
     display:flex;
     position:fixed;
-    left:10px; right:10px; bottom:10px;
-    z-index:650;
+    left:10px;
+    right:10px;
+    bottom:calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index:1200;
     background:linear-gradient(180deg,rgba(18,18,28,.98),rgba(12,12,20,.96));
     border:1px solid rgba(201,168,76,.45);
     border-radius:14px;
@@ -496,7 +520,11 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 @media (max-width: 480px) {
   .logo-title{font-size:14px;}
   .search-box input{font-size:12px;}
-  .mob-bottom-bar{left:8px;right:8px;bottom:8px;}
+  .mob-bottom-bar{
+    left:8px;
+    right:8px;
+    bottom:calc(8px + env(safe-area-inset-bottom, 0px));
+  }
 }
 </style>
 <link rel="stylesheet" href="./vendor/leaflet/leaflet.css"/>
@@ -915,6 +943,13 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
         <span class="ms-icon">🔍</span>
         <input id="mosque-search" type="text" placeholder="Cami adı ara..." autocomplete="off" spellcheck="false"/>
         <button id="ms-clear" onclick="clearMosqueSearch()">✕</button>
+      </div>
+      <div class="ms-scope">
+        <span class="ms-scope-lbl"><b>Bu alanda ara</b> (harita görünümü)</span>
+        <label class="ms-switch" for="ms-scope-only">
+          <input id="ms-scope-only" type="checkbox" checked/>
+          <span class="ms-switch-track"></span>
+        </label>
       </div>
       <div class="ms-dropdown" id="ms-dropdown"></div>
     </div>
@@ -2998,11 +3033,13 @@ let mosqueFilter = '';        // active filter query
 let msDropdownIdx = -1;       // keyboard navigation index
 let msGeoProbePending = false;
 let msGeoProbeAt = 0;
+let msScopeViewportOnly = true;
 
 function initMosqueSearch() {
   const input    = document.getElementById('mosque-search');
   const dropdown = document.getElementById('ms-dropdown');
   const clearBtn = document.getElementById('ms-clear');
+  const scopeChk = document.getElementById('ms-scope-only');
 
   let debounceTimer = null;
 
@@ -3056,6 +3093,12 @@ function initMosqueSearch() {
 
   document.addEventListener('click', e => {
     if (!e.target.closest('#ms-wrap')) dropdown.classList.remove('show');
+  });
+
+  scopeChk?.addEventListener('change', () => {
+    msScopeViewportOnly = !!scopeChk.checked;
+    const q = input.value.trim();
+    if (q) showMosqueDropdown(q);
   });
 }
 
@@ -3159,16 +3202,20 @@ function showMosqueDropdown(q) {
   const qNorm = normalize(qLow);
   const words = qLow.split(/\s+/).filter(w => w.length > 0);
 
+  const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
   const scored = [];
   for (const m of mosqueDB.values()) {
     const s = msMosqueScore(m, qLow, qNorm, words);
-    if (s > 0) scored.push({ m, s });
+    if (s > 0) scored.push({ m, s, inView: bounds ? bounds.contains([m.lat, m.lng]) : false });
   }
-  scored.sort((a,b) => b.s - a.s);
-  const top = scored.slice(0, 15);
+  const ranked = msScopeViewportOnly && bounds
+    ? scored.filter(x => x.inView).sort((a,b) => b.s - a.s)
+    : scored.sort((a,b) => (b.inView - a.inView) || (b.s - a.s));
+  const top = ranked.slice(0, 15);
 
   if (!top.length) {
-    dropdown.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için sonuç bulunamadı</div>`;
+    const scopeMsg = msScopeViewportOnly ? ' (mevcut harita alanında)' : '';
+    dropdown.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için sonuç bulunamadı${scopeMsg}</div>`;
     dropdown.classList.add('show');
     return;
   }
@@ -3194,7 +3241,7 @@ function showMosqueDropdown(q) {
   });
 
   // "Filter all" footer
-  const total = scored.length;
+  const total = ranked.length;
   if (total > 0) {
     const footer = document.createElement('div');
     footer.style.cssText = 'padding:7px 12px;font-size:10px;color:var(--muted);cursor:pointer;border-top:1px solid var(--border);text-align:center;';
