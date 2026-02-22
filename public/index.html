@@ -1565,7 +1565,6 @@ async function fetchByWikidataQid(qid) {
 function processElements(elements) {
   let added = 0;
   for (const el of elements) {
-    if (mosqueDB.has(el.id)) continue; // already processed
 
     let lat0,lng0,polyCoords=null;
     if (el.type==='node') { lat0=el.lat; lng0=el.lon; }
@@ -1610,9 +1609,24 @@ function processElements(elements) {
     };
     buildSearchIndexForMosque(rec);
     applyAxisFusion(rec);
+    const existing = mosqueDB.get(el.id);
+    if (existing) {
+      const recScore =
+        (rec.axis != null ? 120 : 0) +
+        (Array.isArray(rec.polyCoords) && rec.polyCoords.length >= 4 ? 30 : 0) +
+        (rec.osmType === 'way' || rec.osmType === 'relation' ? 12 : 0) +
+        (rec.baseMethod === 'edge-analysis' ? 8 : 0);
+      const existingScore =
+        (existing.axis != null ? 120 : 0) +
+        (Array.isArray(existing.polyCoords) && existing.polyCoords.length >= 4 ? 30 : 0) +
+        (existing.osmType === 'way' || existing.osmType === 'relation' ? 12 : 0) +
+        (existing.baseMethod === 'edge-analysis' ? 8 : 0);
+      if (recScore <= existingScore) continue;
+    } else {
+      added++;
+    }
     mosqueDB.set(el.id, rec);
     if (rec && (isPlaceholderMosqueName(rec.name) || isGenericMosqueName(rec.name))) enqueueMosqueNameEnrichment(rec);
-    added++;
   }
   return added;
 }
