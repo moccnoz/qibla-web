@@ -1567,6 +1567,7 @@ function processElements(elements) {
       tags: el.tags||{},
       geomComplexity: computeGeometryComplexity(polyCoords)
     };
+    buildSearchIndexForMosque(rec);
     applyAxisFusion(rec);
     mosqueDB.set(el.id, rec);
     if (rec && (isPlaceholderMosqueName(rec.name) || isGenericMosqueName(rec.name))) enqueueMosqueNameEnrichment(rec);
@@ -2083,6 +2084,7 @@ function applyResolvedNameToMosque(m, resolved) {
   if (!m.tags) m.tags = {};
   m.tags.name = m.tags.name || newName;
   m.tags['name:source'] = resolved.source;
+  buildSearchIndexForMosque(m);
   if (changed) {
     const key = enrichCacheKey(m);
     nameEnrichCache.set(key, { name:newName, source:resolved.source, at:Date.now() });
@@ -3039,6 +3041,55 @@ let msGeoProbePending = false;
 let msGeoProbeAt = 0;
 let msScopeViewportOnly = true;
 
+function uniqueNameList(arr) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of arr || []) {
+    const v = String(raw || '').trim();
+    if (!v) continue;
+    const key = trLower(v);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(v);
+  }
+  return out;
+}
+
+function gatherMosqueNameVariants(m) {
+  const tags = m?.tags || {};
+  const wikipediaTitle = (typeof tags.wikipedia === 'string' && tags.wikipedia.includes(':'))
+    ? tags.wikipedia.split(':').slice(1).join(':').replace(/_/g, ' ').trim()
+    : '';
+  const wdLabel = tags.wikidata ? wikidataLabelCache.get(String(tags.wikidata).toUpperCase()) : null;
+  return uniqueNameList([
+    m?.name, m?.nameTr, m?.nameAr,
+    tags['name'], tags['name:tr'], tags['name:en'], tags['name:ar'],
+    tags['official_name'], tags['short_name'], tags['alt_name'], tags['old_name'],
+    tags['loc_name'], tags['int_name'], tags['operator'], wikipediaTitle, wdLabel
+  ]);
+}
+
+function buildSearchIndexForMosque(m) {
+  if (!m) return;
+  const variants = gatherMosqueNameVariants(m);
+  const namesLow = variants.map(v => trLower(v));
+  const namesNorm = namesLow.map(v => normalize(v));
+  const tokenSet = new Set();
+  for (const n of namesLow) {
+    const toks = n.split(/[^a-z0-9ığüşöçâêîû]+/i).filter(t => t.length > 1);
+    for (const t of toks) {
+      tokenSet.add(t);
+      tokenSet.add(normalize(t));
+    }
+  }
+  m.searchIndex = {
+    variants,
+    namesLow,
+    namesNorm,
+    tokens: [...tokenSet]
+  };
+}
+
 function initMosqueSearch() {
   const input    = document.getElementById('mosque-search');
   const dropdown = document.getElementById('ms-dropdown');
@@ -3108,18 +3159,10 @@ function initMosqueSearch() {
 
 // Scoring function for a single mosque against query
 function msMosqueScore(m, qLow, qNorm, words) {
-  // All name variants to search in
-  const names = [
-    m.name,
-    m.tags?.['name:tr'] || '',
-    m.tags?.['name:en'] || '',
-    m.tags?.['name:ar'] || '',
-    m.tags?.['name']    || '',
-    m.tags?.['alt_name']|| '',
-    m.tags?.['old_name']|| '',
-  ].filter(Boolean).map(s => trLower(s));
-
-  const namesNorm = names.map(n => normalize(n));
+  if (!m.searchIndex) buildSearchIndexForMosque(m);
+  const names = m.searchIndex?.namesLow || [trLower(m.name || '')];
+  const namesNorm = m.searchIndex?.namesNorm || names.map(n => normalize(n));
+  const tokenSet = new Set(m.searchIndex?.tokens || []);
 
   let best = 0;
   for (const n of names) {
@@ -3135,12 +3178,14 @@ function msMosqueScore(m, qLow, qNorm, words) {
   // Multi-word: all words must appear somewhere in any name
   if (best === 0 && words.length > 1) {
     const allMatch = words.every(w =>
+      tokenSet.has(w) || tokenSet.has(normalize(w)) ||
       names.some(n => n.includes(w)) || namesNorm.some(n => n.includes(normalize(w)))
     );
     if (allMatch) best = 30;
     else {
       // Partial: at least one word matches
       const anyMatch = words.some(w =>
+        tokenSet.has(w) || tokenSet.has(normalize(w)) ||
         names.some(n => n.includes(w)) || namesNorm.some(n => n.includes(normalize(w)))
       );
       if (anyMatch) best = 10;
