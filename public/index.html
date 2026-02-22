@@ -1233,6 +1233,8 @@ function initMap() {
     clearTimeout(vpDebounceTimer);
     // Zoom < 11 → too wide, skip auto-load
     if (map.getZoom() < 11) { setVpStatus('idle'); return; }
+    // Repaint immediately for already-cached data in current view.
+    if (mosqueDB.size) renderAll();
     vpDebounceTimer = setTimeout(loadViewport, 3000);
   });
   map.on('moveend zoomend', updateHashFromMap);
@@ -1348,7 +1350,12 @@ async function loadViewport() {
   if (isVpLoading) return;
   const bounds = map.getBounds();
   const newCells = getUncachedCells(bounds);
-  if (!newCells.length) { setVpStatus('done'); return; }
+  if (!newCells.length) {
+    // No new fetch needed, but viewport may have changed.
+    if (mosqueDB.size) renderAll();
+    setVpStatus('done');
+    return;
+  }
 
   isVpLoading = true;
   setVpStatus('loading');
