@@ -1119,8 +1119,17 @@ function initMap() {
     if (parsed.city) {
       currentCity = parsed.city;
       document.getElementById('city-input').value = parsed.city;
+      const mq = document.getElementById('mob-quick-city');
+      if (mq) mq.value = parsed.city;
     }
-    setTimeout(() => loadViewport(), 400);
+    setOv(true, `"${currentCity}" yükleniyor...`, 'Hash görünümünden açılıyor');
+    setTimeout(async () => {
+      try {
+        await loadViewport();
+      } finally {
+        setOv(false);
+      }
+    }, 400);
     return;
   }
   autoLocateOnStartup().then(located => {
