@@ -1412,18 +1412,24 @@ function buildMosqueQuery(s,w,n,e) {
 (
   way["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
   node["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
+  relation["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
   way["amenity"="place_of_worship"]["denomination"~"sunni|shia|ibadi",i](${s},${w},${n},${e});
   node["amenity"="place_of_worship"]["denomination"~"sunni|shia|ibadi",i](${s},${w},${n},${e});
+  relation["amenity"="place_of_worship"]["denomination"~"sunni|shia|ibadi",i](${s},${w},${n},${e});
   way["amenity"="mosque"](${s},${w},${n},${e});
   node["amenity"="mosque"](${s},${w},${n},${e});
+  relation["amenity"="mosque"](${s},${w},${n},${e});
   way["building"="mosque"](${s},${w},${n},${e});
   node["building"="mosque"](${s},${w},${n},${e});
+  relation["building"="mosque"](${s},${w},${n},${e});
   way["place_of_worship"="mosque"](${s},${w},${n},${e});
   node["place_of_worship"="mosque"](${s},${w},${n},${e});
+  relation["place_of_worship"="mosque"](${s},${w},${n},${e});
   way["mosque"](${s},${w},${n},${e});
   node["mosque"](${s},${w},${n},${e});
+  relation["mosque"](${s},${w},${n},${e});
 );
-out body geom qt 500;`;
+out body geom center qt 3000;`;
 }
 
 async function fetchOverpassQuery(query) {
