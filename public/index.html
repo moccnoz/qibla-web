@@ -28,10 +28,16 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .logo-title{font-size:16px;font-weight:700;}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
 .divider{width:1px;height:34px;background:var(--border);}
-.search-box{display:flex;gap:7px;flex:1;max-width:360px;}
+.search-box{display:flex;gap:7px;flex:1;max-width:360px;position:relative;}
 .search-box input{background:var(--panel);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:13px;padding:7px 13px;border-radius:6px;flex:1;outline:none;}
 .search-box input:focus{border-color:var(--gold);}
 .search-box input::placeholder{color:var(--muted);}
+.city-smart-dd{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--panel);
+  border:1px solid var(--border);border-radius:8px;z-index:1300;max-height:290px;overflow-y:auto;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);display:none;
+}
+.city-smart-dd.show{display:block;}
 .btn{background:var(--gold);color:#0a0a0f;border:none;font-family:inherit;font-size:12px;font-weight:600;padding:7px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;}
 .btn:hover{background:var(--gold-light);}
 .btn-sm{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:11px;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:inherit;white-space:nowrap;}
@@ -558,6 +564,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir adı..." value=""/>
     <datalist id="city-suggest-list"></datalist>
     <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+    <div class="city-smart-dd" id="city-smart-dd"></div>
   </div>
   <div class="map-switch">
     <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita">🌑 Koyu</button>
@@ -1248,13 +1255,19 @@ function initMap() {
   // Wire buttons
   document.getElementById('search-btn').onclick = doSearch;
   document.getElementById('loc-btn').onclick    = useMyLocation;
-  document.getElementById('city-input').onkeydown = e => { if(e.key==='Enter') doSearch(); };
+  document.getElementById('city-input').onkeydown = e => {
+    if (e.key !== 'Enter') return;
+    const dd = document.getElementById('city-smart-dd');
+    if (dd?.classList.contains('show') && cityDropdownIdx >= 0) return;
+    doSearch();
+  };
   document.getElementById('tol').oninput = e => { tol=+e.target.value; document.getElementById('tol-val').textContent=tol+'°'; recompute(); };
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = document.getElementById('city-input').value || '';
 
   // Init mosque search
   initMosqueSearch();
+  initTopSmartSearch();
   initSidebarPullToRefresh();
   initSidebarSnapSheet();
 
@@ -3060,6 +3073,7 @@ function drawDonut(ok, bad, unk, pct){
 // ══════════════════════════════════════════════════════════════
 let mosqueFilter = '';        // active filter query
 let msDropdownIdx = -1;       // keyboard navigation index
+let cityDropdownIdx = -1;
 let msGeoProbePending = false;
 let msGeoProbeAt = 0;
 let msScopeViewportOnly = true;
@@ -3228,6 +3242,41 @@ function initMosqueSearch() {
     msScopeViewportOnly = !!scopeChk.checked;
     const q = input.value.trim();
     if (q) showMosqueDropdown(q);
+    const cq = document.getElementById('city-input')?.value?.trim();
+    if (cq) showCitySmartDropdown(cq);
+  });
+}
+
+function initTopSmartSearch() {
+  const input = document.getElementById('city-input');
+  const dd = document.getElementById('city-smart-dd');
+  if (!input || !dd) return;
+  let t = null;
+  input.addEventListener('input', () => {
+    const q = input.value.trim();
+    clearTimeout(t);
+    if (!q) { closeCitySmartDropdown(); return; }
+    t = setTimeout(() => showCitySmartDropdown(q), 90);
+  });
+  input.addEventListener('keydown', e => {
+    if (!dd.classList.contains('show')) return;
+    const items = dd.querySelectorAll('.ms-item');
+    if (!items.length) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (e.key === 'ArrowDown') cityDropdownIdx = Math.min(cityDropdownIdx + 1, items.length - 1);
+      else cityDropdownIdx = Math.max(cityDropdownIdx - 1, 0);
+      items.forEach((el,i) => el.classList.toggle('focused', i === cityDropdownIdx));
+      items[cityDropdownIdx]?.scrollIntoView({ block:'nearest' });
+    } else if (e.key === 'Escape') {
+      closeCitySmartDropdown();
+    } else if (e.key === 'Enter' && cityDropdownIdx >= 0) {
+      e.preventDefault();
+      items[cityDropdownIdx]?.click();
+    }
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-box')) closeCitySmartDropdown();
   });
 }
 
@@ -3357,6 +3406,28 @@ function applySuggestedMosqueQuery(text) {
   input.classList.add('has-value');
   document.getElementById('ms-clear')?.classList.add('show');
   showMosqueDropdown(text);
+}
+
+function rankMosqueCandidates(q, limit = 15) {
+  const qLow  = trLower(q);
+  const qNorm = normalize(qLow);
+  const words = qLow.split(/\s+/).filter(w => w.length > 0);
+  const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
+  const scored = [];
+  for (const m of mosqueDB.values()) {
+    const textScore = msMosqueScore(m, qLow, qNorm, words);
+    if (textScore <= 0) continue;
+    const inView = bounds ? bounds.contains([m.lat, m.lng]) : false;
+    const popScore = computeMosquePopularityScore(m);
+    const proxScore = computeMosqueProximityScore(m);
+    const viewportBonus = !bounds ? 0 : (inView ? (msScopeViewportOnly ? 45 : 18) : (msScopeViewportOnly ? -50 : 0));
+    const rankScore = textScore + popScore + proxScore + viewportBonus;
+    scored.push({ m, s:textScore, p:popScore, d:proxScore, inView, rank:rankScore });
+  }
+  const ranked = msScopeViewportOnly && bounds
+    ? scored.filter(x => x.inView).sort((a,b) => b.rank - a.rank || b.s - a.s)
+    : scored.sort((a,b) => b.rank - a.rank || (b.inView - a.inView) || (b.s - a.s));
+  return { ranked: ranked.slice(0, limit), qLow, qNorm, words, bounds };
 }
 
 function toOsmType(v) {
@@ -3504,26 +3575,8 @@ function showMosqueDropdown(q) {
     return;
   }
 
-  const qLow  = trLower(q);
-  const qNorm = normalize(qLow);
-  const words = qLow.split(/\s+/).filter(w => w.length > 0);
-
-  const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
-  const scored = [];
-  for (const m of mosqueDB.values()) {
-    const textScore = msMosqueScore(m, qLow, qNorm, words);
-    if (textScore <= 0) continue;
-    const inView = bounds ? bounds.contains([m.lat, m.lng]) : false;
-    const popScore = computeMosquePopularityScore(m);
-    const proxScore = computeMosqueProximityScore(m);
-    const viewportBonus = !bounds ? 0 : (inView ? (msScopeViewportOnly ? 45 : 18) : (msScopeViewportOnly ? -50 : 0));
-    const rankScore = textScore + popScore + proxScore + viewportBonus;
-    scored.push({ m, s:textScore, p:popScore, d:proxScore, inView, rank:rankScore });
-  }
-  const ranked = msScopeViewportOnly && bounds
-    ? scored.filter(x => x.inView).sort((a,b) => b.rank - a.rank || b.s - a.s)
-    : scored.sort((a,b) => b.rank - a.rank || (b.inView - a.inView) || (b.s - a.s));
-  const top = ranked.slice(0, 15);
+  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 15);
+  const top = ranked;
 
   if (!top.length) {
     const scopeMsg = msScopeViewportOnly ? ' (mevcut harita alanında)' : '';
@@ -3591,10 +3644,66 @@ function showMosqueDropdown(q) {
   dropdown.classList.add('show');
 }
 
+function closeCitySmartDropdown() {
+  const dd = document.getElementById('city-smart-dd');
+  if (!dd) return;
+  dd.classList.remove('show');
+  cityDropdownIdx = -1;
+}
+
+function showCitySmartDropdown(q) {
+  const dd = document.getElementById('city-smart-dd');
+  if (!dd) return;
+  if (!q || q.length < 2 || !mosqueDB.size) { closeCitySmartDropdown(); return; }
+  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 8);
+  if (!ranked.length) {
+    dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
+    dd.classList.add('show');
+    triggerRemoteMosqueLookup(q, qNorm, bounds).then(added => {
+      const cur = document.getElementById('city-input')?.value?.trim();
+      if (cur !== q || added <= 0) return;
+      showCitySmartDropdown(q);
+    });
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  ranked.forEach(({m, p, d, inView}) => {
+    const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+    const addressLine = getMosqueHierarchyLine(m);
+    const userDistance = getUserDistanceLabel(m);
+    const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
+    const badges = [];
+    if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
+    if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
+    if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
+    const div = document.createElement('div');
+    div.className = 'ms-item';
+    div.innerHTML = `
+      <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
+      <div class="ms-item-info">
+        <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
+        <div class="ms-item-sub">${escHtml(addressLine)}</div>
+        ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
+      </div>
+      <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
+    div.onclick = () => {
+      document.getElementById('city-input').value = m.name;
+      closeCitySmartDropdown();
+      selectMosque(m);
+    };
+    frag.appendChild(div);
+  });
+  dd.innerHTML = '';
+  dd.appendChild(frag);
+  dd.classList.add('show');
+}
+
 // Navigate to mosque on map + highlight
 function selectMosque(m) {
   const dropdown = document.getElementById('ms-dropdown');
   dropdown.classList.remove('show');
+  document.getElementById('city-input').value = m.name;
+  closeCitySmartDropdown();
   map.setView([m.lat, m.lng], 17, {animate:true});
   // Small delay for map to settle before animating
   setTimeout(() => handleMosqueClick(m), 150);
@@ -3735,8 +3844,15 @@ async function doSearch(){
   if(!map) return;
   const v=document.getElementById('city-input').value.trim();
   if(!v) return;
+  closeCitySmartDropdown();
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = v;
+  const aliasHints = findAliasGroupsForQuery(normalize(trLower(v)));
+  const smart = rankMosqueCandidates(v, 1).ranked[0] || null;
+  if (smart && (isLikelyMosqueQuery(v) || aliasHints.length || smart.rank >= 118 || smart.s >= 90)) {
+    selectMosque(smart.m);
+    return;
+  }
   const mosqueMode = isLikelyMosqueQuery(v);
   const direct = parseDirectMosqueQuery(v);
   try{
