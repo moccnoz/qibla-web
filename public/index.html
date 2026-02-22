@@ -3253,6 +3253,33 @@ function msMosqueScore(m, qLow, qNorm, words) {
   return best;
 }
 
+function computeMosquePopularityScore(m) {
+  const tags = m?.tags || {};
+  let score = 0;
+  const aliasCount = Array.isArray(m?.searchIndex?.aliasGroups) ? m.searchIndex.aliasGroups.length : 0;
+  if (aliasCount) score += Math.min(20, aliasCount * 6);
+  if (typeof tags.wikipedia === 'string' && tags.wikipedia.trim()) score += 10;
+  if (typeof tags.wikidata === 'string' && tags.wikidata.trim()) score += 12;
+  if (typeof tags.historic === 'string' && tags.historic.trim()) score += 8;
+  if (typeof tags.heritage === 'string' && tags.heritage.trim()) score += 8;
+  if (trLower(tags.tourism || '') === 'attraction') score += 6;
+  if (trLower(tags.place || '') === 'landmark') score += 6;
+  if (!isPlaceholderMosqueName(m?.name) && !isGenericMosqueName(m?.name)) score += 4;
+  return Math.min(40, score);
+}
+
+function computeMosqueProximityScore(m) {
+  if (!userGeoState.enabled || !Number.isFinite(userGeoState.lat) || !Number.isFinite(userGeoState.lng)) return 0;
+  const km = greatCircleKm(userGeoState.lat, userGeoState.lng, m.lat, m.lng);
+  if (!Number.isFinite(km)) return 0;
+  if (km <= 0.25) return 18;
+  if (km <= 1) return 14;
+  if (km <= 3) return 10;
+  if (km <= 8) return 6;
+  if (km <= 20) return 3;
+  return 0;
+}
+
 function getMosqueHierarchyLine(m) {
   const t = m?.tags || {};
   const n1 = t['addr:suburb'] || t['addr:neighbourhood'] || t['addr:quarter'] || t['addr:hamlet'] || t['addr:village'] || t['addr:city_district'] || '';
@@ -3312,12 +3339,18 @@ function showMosqueDropdown(q) {
   const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
   const scored = [];
   for (const m of mosqueDB.values()) {
-    const s = msMosqueScore(m, qLow, qNorm, words);
-    if (s > 0) scored.push({ m, s, inView: bounds ? bounds.contains([m.lat, m.lng]) : false });
+    const textScore = msMosqueScore(m, qLow, qNorm, words);
+    if (textScore <= 0) continue;
+    const inView = bounds ? bounds.contains([m.lat, m.lng]) : false;
+    const popScore = computeMosquePopularityScore(m);
+    const proxScore = computeMosqueProximityScore(m);
+    const viewportBonus = !bounds ? 0 : (inView ? (msScopeViewportOnly ? 45 : 18) : (msScopeViewportOnly ? -50 : 0));
+    const rankScore = textScore + popScore + proxScore + viewportBonus;
+    scored.push({ m, s:textScore, p:popScore, d:proxScore, inView, rank:rankScore });
   }
   const ranked = msScopeViewportOnly && bounds
-    ? scored.filter(x => x.inView).sort((a,b) => b.s - a.s)
-    : scored.sort((a,b) => (b.inView - a.inView) || (b.s - a.s));
+    ? scored.filter(x => x.inView).sort((a,b) => b.rank - a.rank || b.s - a.s)
+    : scored.sort((a,b) => b.rank - a.rank || (b.inView - a.inView) || (b.s - a.s));
   const top = ranked.slice(0, 15);
 
   if (!top.length) {
