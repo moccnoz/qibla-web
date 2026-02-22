@@ -1685,7 +1685,7 @@ function processElements(elements) {
       if(res){ axis=res.angle; method='edge-analysis'; }
     }
 
-    const fallbackName = pickNameFromTags(el.tags) || `İsimsiz Cami (#${el.id})`;
+    const fallbackName = pickNameFromTags(el.tags) || buildTagsAddressFallbackName(el.tags || {}, el.id);
     const rec = {
       id:el.id,
       osmType: el.type,
@@ -2047,6 +2047,25 @@ function buildAddressBasedMosqueName(addr = {}) {
   return `${base} Camii`;
 }
 
+function buildTagsAddressFallbackName(tags = {}, osmId = '') {
+  const addr = {
+    suburb: tags['addr:suburb'],
+    neighbourhood: tags['addr:neighbourhood'],
+    quarter: tags['addr:quarter'],
+    village: tags['addr:village'],
+    hamlet: tags['addr:hamlet'],
+    city_district: tags['addr:city_district'] || tags['addr:district'],
+    town: tags['addr:town'],
+    city: tags['addr:city'],
+    country: tags['addr:country']
+  };
+  const byAddr = buildAddressBasedMosqueName(addr);
+  if (byAddr) return byAddr;
+  const area = tags['addr:place'] || tags['addr:street'] || tags['addr:county'] || tags['addr:state'];
+  if (typeof area === 'string' && area.trim()) return `${area.trim()} Camii`;
+  return `OSM Cami #${osmId}`;
+}
+
 async function fetchWikidataLabel(qid) {
   if (!/^Q\d+$/i.test(String(qid || '').trim())) return null;
   const key = String(qid).toUpperCase();
@@ -2067,7 +2086,7 @@ async function fetchWikidataLabel(qid) {
 
 function isPlaceholderMosqueName(name) {
   const t = trLower(name || '').trim();
-  return !t || t === 'isimsiz cami' || t.startsWith('isimsiz cami (#');
+  return !t || t === 'isimsiz cami' || t.startsWith('isimsiz cami (#') || t.startsWith('osm cami #');
 }
 
 function isGenericMosqueName(name) {
@@ -2831,7 +2850,7 @@ function pickLocalizedMosqueNames(m, tags = {}) {
   const primaryPool = currentLang === 'en'
     ? [...enCands, ...latinGeneric, ...trCands, ...generic, ...arCands]
     : [...trCands, ...latinGeneric, ...enCands, ...generic, ...arCands];
-  const primary = primaryPool[0] || m?.name || 'İsimsiz Cami';
+  const primary = primaryPool[0] || m?.name || `OSM Cami #${m?.id ?? '?'}`;
 
   const arName = arCands.find(x => trLower(x) !== trLower(primary)) || '';
   return { primary, arName };
@@ -4676,16 +4695,35 @@ window.addEventListener('DOMContentLoaded', bootstrap);
     <div class="cmp-inputs">
       <div class="cmp-city-col">
         <div class="cmp-city-label" style="color:#60a5fa">Şehir A</div>
+        <div class="cmp-search-row">
+          <input id="cmp-a-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
+          <select id="cmp-a-level">
+            <option value="city">Şehir</option>
+            <option value="district">İlçe</option>
+          </select>
+        </div>
+        <div class="cmp-search-row">
+          <button class="btn" id="cmp-a-fetch-btn" onclick="fetchCompareSide('a')">Yükle</button>
+          <button class="btn btn-sm" id="cmp-a-clear-btn" onclick="clearCompareSide('a')">Kaldır</button>
+        </div>
         <div class="cmp-city-current" id="cmp-a-name">—</div>
-        <div class="cmp-city-hint">Mevcut harita görünümü</div>
+        <div class="cmp-city-status" id="cmp-a-status"></div>
       </div>
       <div class="cmp-vs">VS</div>
       <div class="cmp-city-col">
         <div class="cmp-city-label" style="color:#f472b6">Şehir B</div>
         <div class="cmp-search-row">
-          <input id="cmp-b-input" type="text" placeholder="Şehir adı girin..." autocomplete="off"/>
-          <button class="btn" id="cmp-fetch-btn" onclick="fetchCityB()">Yükle</button>
+          <input id="cmp-b-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
+          <select id="cmp-b-level">
+            <option value="city">Şehir</option>
+            <option value="district">İlçe</option>
+          </select>
         </div>
+        <div class="cmp-search-row">
+          <button class="btn" id="cmp-b-fetch-btn" onclick="fetchCompareSide('b')">Yükle</button>
+          <button class="btn btn-sm" id="cmp-b-clear-btn" onclick="clearCompareSide('b')">Kaldır</button>
+        </div>
+        <div class="cmp-city-current" id="cmp-b-name">—</div>
         <div class="cmp-city-status" id="cmp-b-status"></div>
       </div>
     </div>
@@ -4749,6 +4787,9 @@ window.addEventListener('DOMContentLoaded', bootstrap);
 .cmp-search-row input{flex:1;background:#16161f;border:1px solid #2a2a3a;color:#e8e4d8;font-family:'DM Mono',monospace;font-size:12px;padding:7px 12px;border-radius:6px;outline:none;}
 .cmp-search-row input:focus{border-color:#c9a84c;}
 .cmp-search-row input::placeholder{color:#6b6b7a;}
+.cmp-search-row select{background:#16161f;border:1px solid #2a2a3a;color:#e8e4d8;font-family:'DM Mono',monospace;font-size:11px;padding:7px 9px;border-radius:6px;outline:none;min-width:84px;}
+.cmp-search-row select:focus{border-color:#c9a84c;}
+.cmp-search-row .btn-sm{padding:7px 10px;font-size:11px;}
 .cmp-city-status{font-size:10px;color:#6b6b7a;min-height:14px;}
 
 /* progress */
@@ -5172,17 +5213,21 @@ window.addEventListener('DOMContentLoaded', bootstrap);
 // ══════════════════════════════════════════════════════════════
 //  COMPARISON MODE (Adım 3)
 // ══════════════════════════════════════════════════════════════
-const compareDB = new Map();   // city B mosque data
-let cityBName = '';
-let cityBLoaded = false;
+const compareDBA = new Map();
+const compareDBB = new Map();
+const compareAreaTotals = { a:null, b:null };
+const comparePlaceMeta = { a:null, b:null };
+const compareLoaded = { a:false, b:false };
 
 function openCompare() {
   document.getElementById('cmp-overlay').classList.add('show');
   document.getElementById('btn-compare').classList.add('active');
-  document.getElementById('cmp-a-name').textContent = currentCity;
+  document.getElementById('cmp-a-name').textContent = comparePlaceMeta.a?.label || '—';
+  document.getElementById('cmp-b-name').textContent = comparePlaceMeta.b?.label || '—';
   document.getElementById('cmp-tol').textContent = tol + '°';
-  // Show city A results if data exists
-  if (mosqueDB.size) renderCompare();
+  const aInput = document.getElementById('cmp-a-input');
+  if (aInput && !aInput.value && currentCity) aInput.value = currentCity;
+  if (compareLoaded.a || compareLoaded.b) renderCompare();
 }
 
 function closeCompare() {
@@ -5192,6 +5237,122 @@ function closeCompare() {
 
 function cmpOverlayClick(e) {
   if (e.target === document.getElementById('cmp-overlay')) closeCompare();
+}
+
+function compareLevelLabel(level) {
+  return level === 'district' ? 'İlçe' : 'Şehir';
+}
+
+function scoreCompareGeocode(item, query, level = 'city') {
+  const q = trLower(query || '');
+  const disp = trLower(item.display_name || '');
+  const type = trLower(item.type || '');
+  const cls = trLower(item.class || '');
+  const addr = item.address || {};
+  let s = Number(item.importance || 0) * 100;
+  if (disp.includes(q)) s += 20;
+  if (disp.startsWith(q + ',')) s += 35;
+  if (cls === 'boundary' || cls === 'place') s += 18;
+  const cityTypes = new Set(['city','town','village','municipality','county','state','province']);
+  const districtTypes = new Set(['district','city_district','borough','suburb','quarter','neighbourhood']);
+  if (level === 'district') {
+    if (districtTypes.has(type)) s += 65;
+    if (addr.city_district || addr.district || addr.suburb || addr.neighbourhood || addr.quarter) s += 24;
+  } else {
+    if (cityTypes.has(type)) s += 65;
+    if (addr.city || addr.town || addr.county || addr.state || addr.province) s += 24;
+  }
+  return s;
+}
+
+function normalizeComparePlace(item, level) {
+  const address = item?.address || {};
+  const city = address.city || address.town || address.county || address.state || address.province || '';
+  const district = address.city_district || address.district || address.suburb || address.neighbourhood || address.quarter || '';
+  const levelVal = level || 'city';
+  const label = levelVal === 'district'
+    ? [district, city].filter(Boolean).join(', ') || (item.display_name || '').split(',').slice(0,2).join(',').trim()
+    : city || (item.display_name || '').split(',')[0].trim();
+  return {
+    query: item.display_name || '',
+    level: levelVal,
+    label: label || '—',
+    city,
+    district,
+    country: address.country || '',
+    lat: +item.lat,
+    lng: +item.lon,
+    bbox: Array.isArray(item.boundingbox) ? item.boundingbox.map(Number) : null,
+    osmType: String(item.osm_type || '').toLowerCase(),
+    osmClass: String(item.class || '').toLowerCase(),
+    osmId: Number(item.osm_id),
+    rawType: String(item.type || '').toLowerCase()
+  };
+}
+
+async function geocodeComparePlace(name, level = 'city') {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=jsonv2&limit=12&addressdetails=1`;
+  const data = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+  if (!Array.isArray(data) || !data.length) throw new Error('Yer bulunamadı');
+  const ranked = data.map(it => ({ it, s: scoreCompareGeocode(it, name, level) })).sort((a,b) => b.s - a.s);
+  return normalizeComparePlace(ranked[0].it, level);
+}
+
+function overpassAreaIdFromPlace(place) {
+  if (!place || !Number.isFinite(place.osmId)) return null;
+  if (place.osmType === 'relation') return 3600000000 + place.osmId;
+  if (place.osmType === 'way') return 2400000000 + place.osmId;
+  return null;
+}
+
+function parseOverpassCountTotal(elements = []) {
+  const countEl = (elements || []).find(x => x?.type === 'count') || (elements || [])[0];
+  const tags = countEl?.tags || {};
+  const direct = Number(tags.total);
+  if (Number.isFinite(direct)) return direct;
+  const sum = Number(tags.nodes || 0) + Number(tags.ways || 0) + Number(tags.relations || 0);
+  return Number.isFinite(sum) ? sum : null;
+}
+
+function buildMosqueCountAreaQuery(areaId) {
+  return `[out:json][timeout:75];
+area(${areaId})->.a;
+(
+  nwr["amenity"="place_of_worship"]["religion"~"muslim|islam",i](area.a);
+  nwr["amenity"="mosque"](area.a);
+  nwr["building"="mosque"](area.a);
+  nwr["place_of_worship"="mosque"](area.a);
+  nwr["mosque"](area.a);
+);
+out count;`;
+}
+
+function buildMosqueCountBboxQuery(s,w,n,e) {
+  return `[out:json][timeout:60];
+(
+  nwr["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
+  nwr["amenity"="mosque"](${s},${w},${n},${e});
+  nwr["building"="mosque"](${s},${w},${n},${e});
+  nwr["place_of_worship"="mosque"](${s},${w},${n},${e});
+  nwr["mosque"](${s},${w},${n},${e});
+);
+out count;`;
+}
+
+async function fetchAreaMosqueTotal(place) {
+  const areaId = overpassAreaIdFromPlace(place);
+  if (areaId) {
+    const els = await fetchOverpassQuery(buildMosqueCountAreaQuery(areaId), { retries:1, timeoutMs:30000, minInterval:320, backoffMs:700 });
+    const total = parseOverpassCountTotal(els);
+    if (Number.isFinite(total)) return total;
+  }
+  if (Array.isArray(place.bbox) && place.bbox.length === 4) {
+    const [s,n,w,e] = place.bbox;
+    const els = await fetchOverpassQuery(buildMosqueCountBboxQuery(s,w,n,e), { retries:1, timeoutMs:26000, minInterval:320, backoffMs:700 });
+    const total = parseOverpassCountTotal(els);
+    if (Number.isFinite(total)) return total;
+  }
+  return null;
 }
 
 // Compute score stats from a Map of mosques
@@ -5206,82 +5367,115 @@ function computeStats(db) {
   const avg = diffs.length ? diffs.reduce((a,b)=>a+b,0)/diffs.length : null;
   const max = diffs.length ? Math.max(...diffs) : null;
   const min = diffs.length ? Math.min(...diffs) : null;
-  // Median
   const sorted = [...diffs].sort((a,b)=>a-b);
   const median = sorted.length ? sorted[Math.floor(sorted.length/2)] : null;
-  // Perfect (<5°) count
   const perfect = withData.filter(m => m.diff < 5).length;
   const grade = pct===null?'—':pct>=85?'A':pct>=65?'B':pct>=45?'C':'D';
   return { all:all.length, withData:withData.length, correct:correct.length, wrong:wrong.length,
            unknown:unknown.length, pct, avg, max, min, median, perfect, grade };
 }
 
-async function fetchCityB() {
-  const v = document.getElementById('cmp-b-input').value.trim();
-  if (!v) return;
-  const btn = document.getElementById('cmp-fetch-btn');
-  btn.disabled = true; btn.textContent = '...';
+function processElementsToCompareMap(elements, outMap) {
+  outMap.clear();
+  for (const el of elements || []) {
+    let lat0 = null, lng0 = null, polyCoords = null;
+    if (el.type === 'node') {
+      lat0 = el.lat; lng0 = el.lon;
+    } else if ((el.type === 'way' || el.type === 'relation') && Array.isArray(el.geometry) && el.geometry.length >= 2) {
+      const pts = el.geometry;
+      lat0 = pts.reduce((s,p)=>s+p.lat,0)/pts.length;
+      lng0 = pts.reduce((s,p)=>s+p.lon,0)/pts.length;
+      polyCoords = pts.map(p => [p.lat, p.lon]);
+    } else if ((el.type === 'way' || el.type === 'relation') && el.center) {
+      lat0 = el.center.lat; lng0 = el.center.lon;
+    }
+    if (!Number.isFinite(lat0) || !Number.isFinite(lng0)) continue;
+    const qibla = qiblaAngle(lat0, lng0);
+    let axis = null, diff = null, method = 'none';
+    const tags = el.tags || {};
+    const dt = tags.direction || tags['building:direction'];
+    if (dt && !isNaN(+dt)) {
+      axis = (+dt % 180 + 180) % 180;
+      diff = angDiff180(qibla % 180, axis);
+      method = 'osm-tag';
+    } else if (polyCoords && polyCoords.length >= 4) {
+      const res = buildingQiblaEdge(polyCoords, qibla);
+      if (res) { axis = res.angle; diff = res.diff; method = 'edge-analysis'; }
+    }
+    outMap.set(`${el.type}:${el.id}`, {
+      id: el.id,
+      osmType: el.type,
+      name: pickNameFromTags(tags) || buildTagsAddressFallbackName(tags, el.id),
+      lat: lat0,
+      lng: lng0,
+      qibla, axis, diff, method,
+      status: diff!==null ? (diff<=tol ? 'correct' : 'wrong') : 'unknown'
+    });
+  }
+}
 
-  document.getElementById('cmp-b-status').textContent = 'Koordinatlar alınıyor...';
+async function fetchCompareSide(side) {
+  const input = document.getElementById(`cmp-${side}-input`);
+  const levelEl = document.getElementById(`cmp-${side}-level`);
+  const statusEl = document.getElementById(`cmp-${side}-status`);
+  const nameEl = document.getElementById(`cmp-${side}-name`);
+  const btn = document.getElementById(`cmp-${side}-fetch-btn`);
+  const v = input?.value?.trim() || '';
+  const level = levelEl?.value === 'district' ? 'district' : 'city';
+  if (!v || !btn || !statusEl || !nameEl) return;
+
+  const mapRef = side === 'a' ? compareDBA : compareDBB;
+  btn.disabled = true;
+  statusEl.textContent = 'Koordinatlar alınıyor...';
   document.getElementById('cmp-progress-wrap').style.display = 'block';
   document.getElementById('cmp-progress-bar').style.width = '10%';
-  document.getElementById('cmp-progress-label').textContent = `"${v}" aranıyor...`;
+  document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · "${v}" aranıyor...`;
   document.getElementById('cmp-results').style.display = 'none';
 
   try {
-    const loc = await geocode(v);
-    document.getElementById('cmp-progress-bar').style.width = '30%';
-    document.getElementById('cmp-progress-label').textContent = 'Camiler yükleniyor...';
+    const place = await geocodeComparePlace(v, level);
+    comparePlaceMeta[side] = place;
+    nameEl.textContent = place.label;
 
-    const pad = 0.05;
-    // Fetch ~4km radius bbox
-    const r = 0.036; // ~4km in degrees
-    const elements = await fetchBbox(loc.lat-r, loc.lng-r, loc.lat+r, loc.lng+r);
+    document.getElementById('cmp-progress-bar').style.width = '35%';
+    document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · Toplam cami sayısı hesaplanıyor...`;
+
+    const totalPromise = fetchAreaMosqueTotal(place).catch(() => null);
+    const r = level === 'district' ? 0.022 : 0.036;
+    const elements = await fetchBbox(place.lat-r, place.lng-r, place.lat+r, place.lng+r, { retries:1, timeoutMs:22000, backoffMs:650, minInterval:320 });
     document.getElementById('cmp-progress-bar').style.width = '75%';
-    document.getElementById('cmp-progress-label').textContent = `${elements.length} cami işleniyor...`;
-    await new Promise(r=>setTimeout(r,40));
+    document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · ${elements.length} kayıt işleniyor...`;
 
-    // Process into compareDB
-    compareDB.clear();
-    for (const el of elements) {
-      let lat0, lng0, polyCoords = null;
-      if (el.type==='node') { lat0=el.lat; lng0=el.lon; }
-      else if (el.type==='way'&&el.geometry) {
-        const pts=el.geometry;
-        lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length;
-        lng0=pts.reduce((s,p)=>s+p.lon,0)/pts.length;
-        polyCoords=pts.map(p=>[p.lat,p.lon]);
-      } else continue;
+    processElementsToCompareMap(elements, mapRef);
+    compareAreaTotals[side] = await totalPromise;
+    compareLoaded[side] = true;
+    statusEl.textContent = `✓ ${compareLevelLabel(level)} yüklendi · analiz:${mapRef.size} · toplam:${compareAreaTotals[side] ?? '—'}`;
 
-      const qibla = qiblaAngle(lat0,lng0);
-      let axis=null, diff=null, method='none';
-      const dt = el.tags?.direction||el.tags?.['building:direction'];
-      if(dt&&!isNaN(+dt)){ axis=+dt%180; diff=angDiff180(qibla%180,axis); method='osm-tag'; }
-      else if(polyCoords&&polyCoords.length>=4){
-        const res=buildingQiblaEdge(polyCoords,qibla);
-        if(res){axis=res.angle;diff=res.diff;method='edge-analysis';}
-      }
-      compareDB.set(el.id,{
-        id:el.id, name:el.tags?.name||'İsimsiz Cami',
-        lat:lat0, lng:lng0, qibla, axis, diff, method,
-        status: diff!==null?(diff<=tol?'correct':'wrong'):'unknown'
-      });
-    }
-
-    cityBName = v;
-    cityBLoaded = true;
     document.getElementById('cmp-progress-bar').style.width = '100%';
-    document.getElementById('cmp-b-status').textContent = `✓ ${compareDB.size} cami yüklendi`;
-    await new Promise(r=>setTimeout(r,400));
-    document.getElementById('cmp-progress-wrap').style.display='none';
+    await new Promise(r => setTimeout(r, 280));
+    document.getElementById('cmp-progress-wrap').style.display = 'none';
     renderCompare();
-
-  } catch(err) {
-    document.getElementById('cmp-progress-wrap').style.display='none';
-    document.getElementById('cmp-b-status').textContent = '❌ Hata: '+err.message;
-    toast('Karşılaştırma yüklenirken hata: '+err.message, 5000);
+  } catch (err) {
+    document.getElementById('cmp-progress-wrap').style.display = 'none';
+    statusEl.textContent = '❌ Hata: ' + err.message;
+    toast('Karşılaştırma yüklenirken hata: ' + err.message, 5000);
   }
-  btn.disabled=false; btn.textContent='Yükle';
+  btn.disabled = false;
+}
+
+function clearCompareSide(side) {
+  const mapRef = side === 'a' ? compareDBA : compareDBB;
+  mapRef.clear();
+  compareAreaTotals[side] = null;
+  comparePlaceMeta[side] = null;
+  compareLoaded[side] = false;
+  const nameEl = document.getElementById(`cmp-${side}-name`);
+  const statusEl = document.getElementById(`cmp-${side}-status`);
+  const input = document.getElementById(`cmp-${side}-input`);
+  if (nameEl) nameEl.textContent = '—';
+  if (statusEl) statusEl.textContent = '';
+  if (input) input.value = '';
+  renderCompare();
 }
 
 function fillScoreBlock(ab, city, st) {
@@ -5441,27 +5635,33 @@ function drawRadar(stA, stB) {
 // (called from recompute when modal is open)
 
 function renderCompare() {
-  if (!mosqueDB.size) return;
-  const stA = computeStats(mosqueDB);
-  const stB = cityBLoaded ? computeStats(compareDB) : null;
+  if (!compareLoaded.a && !compareLoaded.b) {
+    document.getElementById('cmp-results').style.display = 'none';
+    return;
+  }
+  const stA = compareLoaded.a ? computeStats(compareDBA) : computeStats(new Map());
+  const stB = compareLoaded.b ? computeStats(compareDBB) : null;
+  const nameA = comparePlaceMeta.a?.label || 'A';
+  const nameB = comparePlaceMeta.b?.label || 'B';
 
   document.getElementById('cmp-results').style.display = 'flex';
   document.getElementById('cmp-tol').textContent = tol + '°';
-  document.getElementById('cmp-a-name').textContent = currentCity;
+  document.getElementById('cmp-a-name').textContent = compareLoaded.a ? nameA : '—';
+  document.getElementById('cmp-b-name').textContent = compareLoaded.b ? nameB : '—';
 
   // ── Score blocks
-  fillScoreBlock('a', currentCity, stA);
-  if (stB) fillScoreBlock('b', cityBName, stB);
+  fillScoreBlock('a', compareLoaded.a ? nameA : '—', stA);
+  fillScoreBlock('b', compareLoaded.b ? nameB : '—', stB || computeStats(new Map()));
 
   // ── Winner badge
   const badge = document.getElementById('cmp-winner-badge');
   if (stB && stA.pct !== null && stB.pct !== null) {
     const diff = stA.pct - stB.pct;
     if (Math.abs(diff) <= 2)     { badge.textContent = '🤝 Beraberlik';    badge.className = 'cmp-winner-badge tie'; }
-    else if (diff > 0)           { badge.textContent = `🏆 ${currentCity} önde`; badge.className = 'cmp-winner-badge a'; }
-    else                         { badge.textContent = `🏆 ${cityBName} önde`;   badge.className = 'cmp-winner-badge b'; }
+    else if (diff > 0)           { badge.textContent = `🏆 ${nameA} önde`; badge.className = 'cmp-winner-badge a'; }
+    else                         { badge.textContent = `🏆 ${nameB} önde`; badge.className = 'cmp-winner-badge b'; }
   } else {
-    badge.textContent = cityBLoaded ? '' : 'Şehir B bekleniyor →';
+    badge.textContent = compareLoaded.a && !compareLoaded.b ? 'B bekleniyor →' : (!compareLoaded.a && compareLoaded.b ? 'A bekleniyor →' : '');
     badge.className = 'cmp-winner-badge tie';
   }
 
@@ -5476,7 +5676,8 @@ function renderCompare() {
     { label:'Ort. Sapma',   a:stA.avg!==null?+stA.avg.toFixed(1):null, b:stB?.avg!==null?+stB.avg.toFixed(1):null, unit:'°', higherBetter:false },
     { label:'Maks. Sapma',  a:stA.max!==null?+stA.max.toFixed(1):null, b:stB?.max!==null?+stB.max.toFixed(1):null, unit:'°', higherBetter:false },
     { label:'Mükemmel <5°', a:stA.perfect,  b:stB?.perfect, unit:'', higherBetter:true  },
-    { label:'Toplam Cami',  a:stA.all,      b:stB?.all,     unit:'', higherBetter:null  },
+    { label:'Analiz Cami',  a:stA.all,      b:stB?.all,     unit:'', higherBetter:null  },
+    { label:'Toplam Cami (OSM Alan)', a:compareAreaTotals.a, b:compareAreaTotals.b, unit:'', higherBetter:null  },
   ];
   metrics.forEach(m => barsEl.appendChild(buildBarRow(m)));
 
@@ -5485,8 +5686,10 @@ function renderCompare() {
   const fmtPct = v => v!==null&&v!==undefined ? v+'%' : '—';
   const fmtDeg = v => v!==null&&v!==undefined ? v.toFixed(1)+'°' : '—';
   const rows = [
-    ['Şehir',          currentCity,              cityBLoaded ? cityBName : '—'],
-    ['Toplam Cami',    stA.all,                  stB?.all    ?? '—'],
+    ['Bölge',          compareLoaded.a ? nameA : '—',              compareLoaded.b ? nameB : '—'],
+    ['Bölge Tipi',     comparePlaceMeta.a?.level === 'district' ? 'İlçe' : (compareLoaded.a ? 'Şehir' : '—'), comparePlaceMeta.b?.level === 'district' ? 'İlçe' : (compareLoaded.b ? 'Şehir' : '—')],
+    ['Toplam Cami (OSM Alan)', compareAreaTotals.a ?? '—', compareAreaTotals.b ?? '—'],
+    ['Analiz Cami',    stA.all,                  stB?.all    ?? '—'],
     ['Veri Olan',      stA.withData,             stB?.withData ?? '—'],
     ['Doğru Yön',      stA.correct,              stB?.correct  ?? '—'],
     ['Sapma Var',      stA.wrong,                stB?.wrong    ?? '—'],
@@ -5508,8 +5711,8 @@ function renderCompare() {
     <thead>
       <tr>
         <th>Metrik</th>
-        <th style="color:#60a5fa">A: ${escHtml(currentCity)}</th>
-        <th style="color:#f472b6">B: ${escHtml(cityBLoaded ? cityBName : '—')}</th>
+        <th style="color:#60a5fa">A: ${escHtml(compareLoaded.a ? nameA : '—')}</th>
+        <th style="color:#f472b6">B: ${escHtml(compareLoaded.b ? nameB : '—')}</th>
       </tr>
     </thead>
     <tbody>
@@ -6809,7 +7012,7 @@ function populateDetailPanel(m) {
   renderActions(m, tags);
 
   // İsim OSM'de eksikse Wikidata'dan etiketi çekmeyi dene
-  if (/^İsimsiz Cami/i.test(m.name) && typeof tags.wikidata === 'string') {
+  if (isPlaceholderMosqueName(m.name) && typeof tags.wikidata === 'string') {
     fetchWikidataLabel(tags.wikidata).then(lbl => {
       if (!lbl || !m || !m.tags || m.tags.wikidata !== tags.wikidata) return;
       m.name = lbl;
