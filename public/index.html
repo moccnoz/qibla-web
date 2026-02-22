@@ -254,6 +254,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .mob-search-row button{background:#c9a84c;color:#0a0a0f;border:none;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;}
 .mob-bottom-bar{display:none;}
 .mob-layer-stack{display:none;}
+.compass-fab{display:none;}
 
 .sb-snap-panels{display:none;}
 
@@ -293,7 +294,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     display:flex;
     position:fixed;
     left:10px; right:10px; bottom:10px;
-    z-index:7600;
+    z-index:650;
     background:linear-gradient(180deg,rgba(18,18,28,.98),rgba(12,12,20,.96));
     border:1px solid rgba(201,168,76,.45);
     border-radius:14px;
@@ -362,6 +363,31 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
     color:#0a0a0f;
     border-color:#c9a84c;
     font-weight:700;
+  }
+
+  .compass-fab{
+    display:flex;
+    position:absolute;
+    right:10px;
+    bottom:86px;
+    z-index:1450;
+    align-items:center;
+    justify-content:center;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    border:1px solid #3a3a4a;
+    background:rgba(14,14,22,.94);
+    color:#d1d5db;
+    font-family:'DM Mono',monospace;
+    font-size:20px;
+    cursor:pointer;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+  }
+  .compass-fab.active{
+    background:#c9a84c;
+    color:#0a0a0f;
+    border-color:#c9a84c;
   }
 
   /* Stats bar scrollable */
@@ -793,6 +819,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
       <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita">🛰 Uydu</button>
       <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standart harita">🗺 Harita</button>
     </div>
+    <button class="compass-fab" id="compass-fab" onclick="toggleLiveMapCompass()" aria-label="Canlı pusula modu">🧭</button>
     <!-- Mini non-blocking loader -->
     <div class="mini-loader" id="mini-loader">
       <div class="mini-spin"></div>
@@ -962,7 +989,7 @@ let manualAxisDB = {};
 let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
-let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20 };
+let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
 let m3dState = { renderer:null, scene:null, camera:null, raf:0, obj:null };
 const API_RATE = {
   nominatim: { nextAt:0, cooldown:0, minInterval:1100 },
@@ -2626,7 +2653,7 @@ function handleMosqueClick(m) {
   document.querySelectorAll('.m-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('mi-'+m.id);
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
-  if (m.status === 'wrong') haptic(10);
+  if (m.status === 'wrong') haptic(20);
   animateQibla(m);
   openDetailPanel(m);
 }
@@ -3350,6 +3377,7 @@ async function doSearch(){
     if (!mosqueDB.size) {
       toast('Bu şehir için OSM üzerinde cami verisi bulunamadı. Yazımı/ülke adını kontrol edin.', 7000);
     } else {
+      haptic(20);
       toast(`${mosqueDB.size} cami kaydı yüklendi`, 2800);
       saveSnapshot();
     }
@@ -3515,17 +3543,60 @@ function toggleFollowLock() {
 
 function toggleMapCompassSync() {
   uiState.mapSyncWithCompass = !uiState.mapSyncWithCompass;
+  if (!uiState.mapSyncWithCompass && uiState.liveMapCompass) uiState.liveMapCompass = false;
   document.getElementById('btn-map-sync')?.classList.toggle('active', uiState.mapSyncWithCompass);
-  if (!uiState.mapSyncWithCompass) document.getElementById('map').style.transform = '';
+  if (!uiState.mapSyncWithCompass) applyMapHeadingRotation(null);
   toast(uiState.mapSyncWithCompass ? 'Pusula-harita senkronu aktif' : 'Pusula-harita senkronu kapalı', 1800);
+  updateCompassFabUi();
 }
 
 function applyMapHeadingRotation(heading) {
-  if (!uiState.mapSyncWithCompass || heading == null) return;
-  const mapEl = document.getElementById('map');
-  if (!mapEl) return;
-  mapEl.style.transformOrigin = '50% 50%';
-  mapEl.style.transform = `rotate(${-heading.toFixed(1)}deg)`;
+  if (!map) return;
+  const paneNames = ['tilePane', 'overlayPane', 'shadowPane', 'markerPane', 'popupPane'];
+  paneNames.forEach(name => {
+    const pane = map[name] || map['_' + name];
+    if (!pane || !pane.style) return;
+    const raw = pane.style.transform || '';
+    const base = raw.replace(/\s?rotate\([^)]*\)/g, '');
+    if (!uiState.mapSyncWithCompass || heading == null) {
+      pane.style.transform = base;
+      return;
+    }
+    pane.style.transform = `${base} rotate(${-heading.toFixed(1)}deg)`;
+  });
+}
+
+function isCompassModalOpen() {
+  return document.getElementById('cmps-overlay')?.classList.contains('show');
+}
+
+function updateCompassFabUi() {
+  document.getElementById('compass-fab')?.classList.toggle('active', !!uiState.liveMapCompass);
+}
+
+async function toggleLiveMapCompass() {
+  if (uiState.liveMapCompass) {
+    uiState.liveMapCompass = false;
+    uiState.mapSyncWithCompass = false;
+    document.getElementById('btn-map-sync')?.classList.remove('active');
+    applyMapHeadingRotation(null);
+    if (!isCompassModalOpen()) stopCompass();
+    updateCompassFabUi();
+    toast('Canlı pusula modu kapatıldı', 1600);
+    return;
+  }
+  const granted = await requestCompassPermission();
+  if (!granted) {
+    uiState.liveMapCompass = false;
+    uiState.mapSyncWithCompass = false;
+    updateCompassFabUi();
+    return;
+  }
+  uiState.liveMapCompass = true;
+  uiState.mapSyncWithCompass = true;
+  document.getElementById('btn-map-sync')?.classList.add('active');
+  updateCompassFabUi();
+  toast('Canlı pusula modu aktif', 1600);
 }
 
 async function loadNearbyCitySuggestions(showToastMsg = true) {
@@ -6455,23 +6526,26 @@ function openCompass() {
 function closeCompass() {
   document.getElementById('cmps-overlay').classList.remove('show');
   document.getElementById('btn-compass')?.classList.remove('active');
-  stopCompass();
-  if (uiState.mapSyncWithCompass) {
+  if (!uiState.liveMapCompass) stopCompass();
+  if (uiState.mapSyncWithCompass && !uiState.liveMapCompass) {
     uiState.mapSyncWithCompass = false;
     document.getElementById('btn-map-sync')?.classList.remove('active');
-    document.getElementById('map').style.transform = '';
+    applyMapHeadingRotation(null);
   }
+  updateCompassFabUi();
 }
 
 async function requestCompassPermission() {
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       const p = await DeviceOrientationEvent.requestPermission();
-      if (p !== 'granted') { toast('Sensör izni verilmedi', 2200); return; }
+      if (p !== 'granted') { toast('Sensör izni verilmedi', 2200); return false; }
     }
     startCompass();
+    return true;
   } catch {
     toast('Sensör izni alınamadı', 2200);
+    return false;
   }
 }
 
