@@ -2442,6 +2442,7 @@ function setLang(lang, silent=false) {
   if (logo) logo.textContent = t.title;
   document.getElementById('lang-tr')?.classList.toggle('active', currentLang==='tr');
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
+  if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);
 }
 
@@ -2768,10 +2769,46 @@ function closestDirection(axisDeg,targetBearing){
   return a1<=a2?d1:d2;
 }
 
+function isArabicText(s) {
+  return /[\u0600-\u06FF]/.test(String(s || ''));
+}
+
+function uniqNonEmpty(vals) {
+  const out = [];
+  const seen = new Set();
+  for (const v of vals || []) {
+    const t = String(v || '').trim();
+    if (!t) continue;
+    const k = trLower(t);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
+
+function pickLocalizedMosqueNames(m, tags = {}) {
+  const trCands = uniqNonEmpty([m?.nameTr, tags['name:tr'], tags['official_name:tr'], tags['alt_name:tr']]);
+  const enCands = uniqNonEmpty([tags['name:en'], tags['official_name:en'], tags['alt_name:en']]);
+  const arCands = uniqNonEmpty([m?.nameAr, tags['name:ar']]);
+  const generic = uniqNonEmpty([m?.name, tags.name, tags.official_name, tags.int_name, tags.alt_name]);
+  const latinGeneric = generic.filter(x => !isArabicText(x));
+
+  const primaryPool = currentLang === 'en'
+    ? [...enCands, ...latinGeneric, ...trCands, ...generic, ...arCands]
+    : [...trCands, ...latinGeneric, ...enCands, ...generic, ...arCands];
+  const primary = primaryPool[0] || m?.name || 'İsimsiz Cami';
+
+  const arName = arCands.find(x => trLower(x) !== trLower(primary)) || '';
+  return { primary, arName };
+}
+
 // ══════════════════════════════════════════════════════════════
 //  UI
 // ══════════════════════════════════════════════════════════════
 function makePopup(m){
+  const tags = m.tags || {};
+  const names = pickLocalizedMosqueNames(m, tags);
   const s=m.status==='correct'?'<span style="color:#4ade80">✅ Doğru yön</span>':
           m.status==='wrong'?'<span style="color:#f87171">❌ Sapma var</span>':
           '<span style="color:#fbbf24">⚠️ Veri yok</span>';
@@ -2786,7 +2823,7 @@ function makePopup(m){
   // Store mosque in global registry so popup button can find it by id
   window._popupRegistry = window._popupRegistry || {};
   window._popupRegistry[m.id] = m;
-  return`<div class="p-name">${escHtml(m.name)}</div>
+  return`<div class="p-name">${escHtml(names.primary)}</div>
     <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${s}</span></div>
     <div class="p-row"><span class="p-k">Güven</span><span class="p-v">${m.confidence ?? '—'}/100</span></div>
     <div class="p-row"><span class="p-k">Kıble açısı</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
@@ -4373,6 +4410,7 @@ window.addEventListener('DOMContentLoaded', bootstrap);
     <div class="dp-head-left">
       <div class="dp-name" id="dp-name">—</div>
       <div class="dp-name-ar" id="dp-name-ar"></div>
+      <div class="dp-place" id="dp-place"></div>
       <div class="dp-coords" id="dp-coords"></div>
     </div>
     <button class="dp-close" onclick="closeDetailPanel()">✕</button>
@@ -4737,6 +4775,7 @@ window.addEventListener('DOMContentLoaded', bootstrap);
 .dp-head-left{flex:1;min-width:0;padding-right:8px;}
 .dp-name{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;color:#e8e4d8;line-height:1.2;word-break:break-word;}
 .dp-name-ar{font-family:'Noto Naskh Arabic',serif;font-size:15px;color:#c9a84c;margin-top:3px;direction:rtl;text-align:right;}
+.dp-place{font-size:10px;color:#9ca3af;margin-top:4px;letter-spacing:.02em;}
 .dp-coords{font-size:9px;color:#6b6b7a;margin-top:4px;letter-spacing:.05em;}
 .dp-close{background:none;border:none;color:#6b6b7a;cursor:pointer;font-size:16px;padding:2px 5px;border-radius:4px;flex-shrink:0;}
 .dp-close:hover{color:#e8e4d8;background:#2a2a3a;}
@@ -6583,6 +6622,55 @@ window.renderAll = function() {
 // ══════════════════════════════════════════════════════════════
 
 let dpOpen = false;
+let dpPopulateToken = 0;
+const mosquePlaceCache = new Map();
+
+function extractPlaceFromAddress(addr = {}) {
+  if (!addr || typeof addr !== 'object') return { city:'', district:'' };
+  const city = String(
+    addr.city || addr.town || addr.county || addr.province || addr.state || addr.municipality || ''
+  ).trim();
+  const district = String(
+    addr.city_district || addr.district || addr.suburb || addr.neighbourhood || addr.quarter || addr.borough || ''
+  ).trim();
+  return { city, district };
+}
+
+function extractPlaceFromTags(tags = {}) {
+  const city = String(
+    tags['addr:city'] || tags['addr:town'] || tags['addr:county'] || tags['addr:province'] || tags['addr:state'] || ''
+  ).trim();
+  const district = String(
+    tags['addr:district'] || tags['addr:city_district'] || tags['addr:suburb'] || tags['addr:neighbourhood'] || tags['addr:quarter'] || ''
+  ).trim();
+  return { city, district };
+}
+
+function formatPlaceLine(city, district) {
+  if (city && district) return `${district} / ${city}`;
+  if (city) return city;
+  if (district) return district;
+  return currentLang === 'en' ? 'District/city unavailable' : 'İlçe/şehir bilgisi bulunamadı';
+}
+
+async function resolveMosquePlace(m, tags = {}) {
+  const fromTags = extractPlaceFromTags(tags);
+  if (fromTags.city || fromTags.district) return fromTags;
+  const key = `${(m.osmType || 'way')}:${m.id}`;
+  if (mosquePlaceCache.has(key)) return mosquePlaceCache.get(key);
+  try {
+    const langHdr = currentLang === 'en' ? 'en,tr,ar' : 'tr,en,ar';
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${m.lat}&lon=${m.lng}&format=jsonv2&zoom=14&addressdetails=1`;
+    const data = await nominatimFetchJson(url, {'Accept-Language': langHdr});
+    const place = extractPlaceFromAddress(data?.address || {});
+    mosquePlaceCache.set(key, place);
+    return place;
+  } catch {
+    const none = { city:'', district:'' };
+    mosquePlaceCache.set(key, none);
+    return none;
+  }
+}
 
 function openDetailPanel(m) {
   dpOpen = true;
@@ -6604,13 +6692,18 @@ document.addEventListener('keydown', e => {
 
 function populateDetailPanel(m) {
   const tags = m.tags || {};
+  const token = ++dpPopulateToken;
+  const names = pickLocalizedMosqueNames(m, tags);
 
   // ── Name & coords
-  document.getElementById('dp-name').textContent = m.name;
-  const ar = m.nameAr || tags['name:ar'] || '';
+  document.getElementById('dp-name').textContent = names.primary;
+  const ar = names.arName;
   const arEl = document.getElementById('dp-name-ar');
   arEl.textContent = ar;
   arEl.style.display = ar ? '' : 'none';
+  const placeEl = document.getElementById('dp-place');
+  const placeFromTags = extractPlaceFromTags(tags);
+  placeEl.textContent = formatPlaceLine(placeFromTags.city, placeFromTags.district);
   document.getElementById('dp-coords').textContent =
     `${m.lat.toFixed(5)}°N  ${m.lng.toFixed(5)}°E  ·  OSM ${m.osmType||'way'} #${m.id}`;
 
@@ -6626,6 +6719,14 @@ function populateDetailPanel(m) {
   diffEl.style.color = m.diff!==null ? col : '#6b6b7a';
   document.getElementById('dp-dist-val').textContent =
     Math.round(greatCircleKm(m.lat, m.lng, 21.4225, 39.8262)) + ' km';
+
+  if (!(placeFromTags.city || placeFromTags.district)) {
+    resolveMosquePlace(m, tags).then(resolved => {
+      if (token === dpPopulateToken && window._lastClickedMosque?.id == m.id) {
+        placeEl.textContent = formatPlaceLine(resolved.city, resolved.district);
+      }
+    });
+  }
 
   // ── Photo
   loadPhoto(m, tags);
