@@ -21,6 +21,9 @@ body.outdoor-mode{
 
 /* ── HEADER */
 header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var(--surface);border-bottom:1px solid var(--border);z-index:1000;flex-shrink:0;}
+.brand-home{display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:8px;padding:2px 4px;transition:background .15s;}
+.brand-home:hover{background:rgba(201,168,76,.08);}
+.brand-home:focus-visible{outline:1px solid rgba(201,168,76,.55);}
 .logo-arabic{font-size:21px;color:var(--gold);}
 .logo-title{font-size:16px;font-weight:700;}
 .logo-sub{font-size:9px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;}
@@ -250,6 +253,21 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .mob-search-row input:focus{border-color:#c9a84c;}
 .mob-search-row button{background:#c9a84c;color:#0a0a0f;border:none;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;}
 
+@media (max-width: 1460px) and (min-width: 769px) {
+  header{
+    flex-wrap:wrap;
+    row-gap:8px;
+    align-items:flex-start;
+  }
+  .divider{display:none;}
+  .search-box{
+    order:30;
+    flex:1 1 100%;
+    max-width:none;
+  }
+  .btn-sm{padding:6px 9px;font-size:10px;}
+}
+
 @media (max-width: 768px) {
   /* Header collapses */
   header{padding:10px 14px;gap:10px;flex-wrap:nowrap;}
@@ -322,10 +340,12 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 <body>
 
 <header>
-  <div><div class="logo-arabic">قِبْلَة</div></div>
-  <div>
-    <div class="logo-title">Kıble Dedektörü</div>
-    <div class="logo-sub">Bina Yönü Analizi</div>
+  <div class="brand-home" role="button" tabindex="0" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome();}">
+    <div><div class="logo-arabic">قِبْلَة</div></div>
+    <div>
+      <div class="logo-title">Kıble Dedektörü</div>
+      <div class="logo-sub">Bina Yönü Analizi</div>
+    </div>
   </div>
   <div class="divider"></div>
   <div class="search-box">
@@ -3090,6 +3110,27 @@ function getCurrentPositionAsync(options) {
   });
 }
 
+function watchPositionFirstFixAsync(options = {}, hardTimeoutMs = 22000) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (fn, payload) => {
+      if (done) return;
+      done = true;
+      try { navigator.geolocation.clearWatch(watchId); } catch {}
+      clearTimeout(timer);
+      fn(payload);
+    };
+    const watchId = navigator.geolocation.watchPosition(
+      pos => finish(resolve, pos),
+      err => {
+        if (err?.code === 1) finish(reject, err);
+      },
+      options
+    );
+    const timer = setTimeout(() => finish(reject, { code:3, message:'watch timeout' }), hardTimeoutMs);
+  });
+}
+
 async function useMyLocation(opts = {}){
   const showToast = opts.showToast !== false;
   const zoom = Number.isFinite(opts.zoom) ? opts.zoom : 14;
@@ -3105,7 +3146,12 @@ async function useMyLocation(opts = {}){
     } catch (e1) {
       // Fallback: lower accuracy but wider timeout works better on some mobile networks.
       if (e1?.code === 2 || e1?.code === 3) {
-        pos = await getCurrentPositionAsync({ enableHighAccuracy:false, timeout:22000, maximumAge:600000 });
+        try {
+          pos = await getCurrentPositionAsync({ enableHighAccuracy:false, timeout:22000, maximumAge:600000 });
+        } catch {
+          // Last fallback: wait for first watchPosition fix.
+          pos = await watchPositionFirstFixAsync({ enableHighAccuracy:false, maximumAge:0, timeout:15000 }, 24000);
+        }
       } else {
         throw e1;
       }
@@ -3123,6 +3169,32 @@ async function useMyLocation(opts = {}){
     if (showToast) toast(geoErrorMessage(err), 3600);
     return false;
   }
+}
+
+async function resetToHome() {
+  if (!map) return;
+  try {
+    if (followState.enabled) stopFollowLock(true);
+    if (dpOpen) closeDetailPanel();
+    closeMobDrawer?.();
+    clearMosqueSearch?.();
+    hideQiblaPanel?.();
+    map.closePopup();
+    document.getElementById('city-input').value = 'Istanbul';
+    currentCity = 'Istanbul';
+    tileCache.clear();
+    mosqueDB.clear();
+    renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
+    renderLayers = [];
+    if(heatLayer){ try{map.removeLayer(heatLayer);}catch{} heatLayer=null; }
+    updateCacheUI();
+    _hashUpdating = true;
+    history.replaceState(null, '', location.pathname);
+    map.setView([41.015, 28.979], 13, { animate:true });
+    _hashUpdating = false;
+    await doSearch();
+    toast('Ana sayfaya dönüldü ve görünüm sıfırlandı', 1800);
+  } catch {}
 }
 
 function toggleOutdoorMode() {
@@ -3428,6 +3500,11 @@ window.addEventListener('DOMContentLoaded', bootstrap);
         <input id="lb-city-input" type="text" placeholder="Şehir ekle... (örn: Konya, Cairo, Lahore)" autocomplete="off"/>
         <button id="lb-add-btn" onclick="lbAddCity()">+ Analiz Et</button>
       </div>
+      <div class="lb-mode-row">
+        <span class="lb-sort-label">Mod:</span>
+        <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')">🧭 Şehir Analizi</button>
+        <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')">📊 İl/State Sayımı</button>
+      </div>
       <div class="lb-progress-wrap" id="lb-progress-wrap" style="display:none">
         <div class="lb-progress-bar" id="lb-progress-bar"></div>
         <span class="lb-progress-label" id="lb-progress-label">Analiz ediliyor...</span>
@@ -3457,12 +3534,12 @@ window.addEventListener('DOMContentLoaded', bootstrap);
     <div class="lb-table-wrap">
       <div class="lb-table-head">
         <span class="lbt-rank">#</span>
-        <span class="lbt-city">Şehir</span>
-        <span class="lbt-bar">Doğruluk</span>
-        <span class="lbt-pct">%</span>
-        <span class="lbt-not">Not</span>
-        <span class="lbt-count">Cami</span>
-        <span class="lbt-avg">Ort.Sap.</span>
+        <span class="lbt-city" id="lb-h-city">Şehir</span>
+        <span class="lbt-bar" id="lb-h-bar">Doğruluk</span>
+        <span class="lbt-pct" id="lb-h-pct">%</span>
+        <span class="lbt-not" id="lb-h-note">Not</span>
+        <span class="lbt-count" id="lb-h-count">Cami</span>
+        <span class="lbt-avg" id="lb-h-avg">Ort.Sap.</span>
         <span class="lbt-date">Analiz</span>
         <span class="lbt-act"></span>
       </div>
@@ -3899,6 +3976,10 @@ window.addEventListener('DOMContentLoaded', bootstrap);
 .lb-sort{background:transparent;border:1px solid #1e1e2e;color:#6b6b7a;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:4px;cursor:pointer;transition:all .13s;}
 .lb-sort:hover{color:#e8e4d8;}
 .lb-sort.active{background:#1e1e2e;color:#e8e4d8;border-color:#3a3a4a;}
+.lb-mode-row{display:flex;align-items:center;gap:6px;}
+.lb-mode{background:transparent;border:1px solid #1e1e2e;color:#6b6b7a;font-family:'DM Mono',monospace;font-size:10px;padding:3px 9px;border-radius:4px;cursor:pointer;transition:all .13s;}
+.lb-mode:hover{color:#e8e4d8;}
+.lb-mode.active{background:#1e1e2e;color:#e8e4d8;border-color:#3a3a4a;}
 
 /* Summary strip */
 .lb-summary{display:flex;gap:0;border-bottom:1px solid #2a2a3a;flex-shrink:0;}
@@ -6305,6 +6386,7 @@ function render3DScene(m) {
 // ══════════════════════════════════════════════════════════════
 
 const LB_KEY = 'qibla-leaderboard-v2';
+const LB_MODE_KEY = 'qibla-leaderboard-mode-v1';
 
 // Pre-seeded cities with approximate data (will be replaced when user analyses them)
 const LB_SEEDS = [
@@ -6333,6 +6415,7 @@ const LB_SEEDS = [
 let lbData = [];       // array of entry objects
 let lbRegion = 'all';
 let lbSort = 'pct';
+let lbDataset = safeStorageGet(LB_MODE_KEY, 'qibla') === 'admin' ? 'admin' : 'qibla';
 
 // Entry schema:
 // { city, country, region, pct, grade, count, withData, avg, min, max, median, perfect, lat, lng, analysedAt, tol }
@@ -6397,6 +6480,7 @@ function openLeaderboard() {
   lbLoad();
   document.getElementById('lb-overlay').classList.add('show');
   document.getElementById('btn-lb').classList.add('active');
+  lbSetDataset(lbDataset, true);
   renderLeaderboard();
 }
 
@@ -6422,11 +6506,151 @@ function lbSetSort(s) {
   renderLeaderboard();
 }
 
+function lbSetDataset(mode, silent = false) {
+  lbDataset = mode === 'admin' ? 'admin' : 'qibla';
+  safeStorageSet(LB_MODE_KEY, lbDataset);
+  if (lbDataset === 'admin' && (lbSort === 'pct' || lbSort === 'avg')) lbSort = 'count';
+  if (lbDataset === 'qibla' && lbSort === 'count') lbSort = 'pct';
+  document.querySelectorAll('.lb-mode').forEach(b => b.classList.toggle('active', b.dataset.mode === lbDataset));
+  document.querySelectorAll('.lb-sort').forEach(b => b.classList.toggle('active', b.dataset.sort === lbSort));
+  const input = document.getElementById('lb-city-input');
+  const addBtn = document.getElementById('lb-add-btn');
+  if (input) {
+    input.placeholder = lbDataset === 'admin'
+      ? 'İl/Eyalet yaz... (örn: Konya Province, Türkiye)'
+      : 'Şehir ekle... (örn: Konya, Cairo, Lahore)';
+  }
+  if (addBtn) addBtn.textContent = lbDataset === 'admin' ? '+ Sayımı Çek' : '+ Analiz Et';
+  if (!silent) renderLeaderboard();
+}
+
+function lbSelectAdminResult(items = []) {
+  if (!items.length) return null;
+  const prefType = new Set(['administrative','state','province','region','county','municipality']);
+  const ranked = items.map(it => {
+    let s = 0;
+    const cls = trLower(it.class || '');
+    const type = trLower(it.type || '');
+    const osmType = trLower(it.osm_type || '');
+    if (cls === 'boundary') s += 65;
+    if (prefType.has(type)) s += 55;
+    if (osmType === 'relation') s += 48;
+    else if (osmType === 'way') s += 28;
+    s += Number(it.importance || 0) * 30;
+    return { it, s };
+  }).sort((a,b) => b.s - a.s);
+  return ranked[0]?.it || items[0];
+}
+
+function parseOverpassCount(elements = []) {
+  const c = elements.find(x => x.type === 'count');
+  const total = Number(c?.tags?.total ?? 0);
+  return Number.isFinite(total) ? total : 0;
+}
+
+async function fetchMosqueCountByAreaId(areaId) {
+  const q = `[out:json][timeout:90];
+area(${areaId})->.a;
+(
+  nwr["amenity"="place_of_worship"]["religion"~"muslim|islam",i](area.a);
+  nwr["amenity"="mosque"](area.a);
+  nwr["building"="mosque"](area.a);
+  nwr["place_of_worship"="mosque"](area.a);
+  nwr["mosque"](area.a);
+);
+out count;`;
+  const els = await fetchOverpassQuery(q);
+  return parseOverpassCount(els);
+}
+
+async function fetchMosqueCountByBbox(s, w, n, e) {
+  const q = `[out:json][timeout:90];
+(
+  nwr["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
+  nwr["amenity"="mosque"](${s},${w},${n},${e});
+  nwr["building"="mosque"](${s},${w},${n},${e});
+  nwr["place_of_worship"="mosque"](${s},${w},${n},${e});
+  nwr["mosque"](${s},${w},${n},${e});
+);
+out count;`;
+  const els = await fetchOverpassQuery(q);
+  return parseOverpassCount(els);
+}
+
+async function lbCountAdminArea(queryText) {
+  const btn = document.getElementById('lb-add-btn');
+  btn.disabled = true;
+  const pw = document.getElementById('lb-progress-wrap');
+  const pb = document.getElementById('lb-progress-bar');
+  const pl = document.getElementById('lb-progress-label');
+  pw.style.display = 'flex';
+  pb.style.width = '8%';
+  pl.textContent = `"${queryText}" sınırı aranıyor...`;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryText)}&format=jsonv2&limit=8&addressdetails=1`;
+    const hits = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+    const best = lbSelectAdminResult(hits || []);
+    if (!best) throw new Error('İl/eyalet bulunamadı');
+    pb.style.width = '40%';
+    pl.textContent = 'Sınır bulundu, sayı çekiliyor...';
+
+    const osmType = trLower(best.osm_type || '');
+    const osmId = Number(best.osm_id);
+    let total = 0;
+    if (Number.isFinite(osmId) && (osmType === 'relation' || osmType === 'way')) {
+      const areaId = (osmType === 'relation' ? 3600000000 : 2400000000) + osmId;
+      total = await fetchMosqueCountByAreaId(areaId);
+    } else if (Array.isArray(best.boundingbox) && best.boundingbox.length === 4) {
+      const s = Number(best.boundingbox[0]), n = Number(best.boundingbox[1]);
+      const w = Number(best.boundingbox[2]), e = Number(best.boundingbox[3]);
+      total = await fetchMosqueCountByBbox(s, w, n, e);
+    } else {
+      throw new Error('Alan sınırı okunamadı');
+    }
+
+    pb.style.width = '90%';
+    const addr = best.address || {};
+    const cityLike = addr.state || addr.county || addr.province || String(best.display_name || '').split(',')[0].trim() || queryText;
+    const country = addr.country || '';
+    const name = country ? `${cityLike} (${country})` : cityLike;
+    const entry = {
+      city: name,
+      country,
+      region: detectRegion(cityLike, country),
+      pct: null,
+      grade: '—',
+      count: total,
+      withData: null,
+      avg: null, min: null, max: null, median: null, perfect: null,
+      lat: Number(best.lat), lng: Number(best.lon),
+      analysedAt: new Date().toISOString(),
+      tol,
+      mode: 'admin-count',
+      source: 'overpass-area'
+    };
+    lbUpsert(entry);
+    pb.style.width = '100%';
+    pl.textContent = `✓ ${name}: ${total.toLocaleString()} kayıt`;
+    await new Promise(res => setTimeout(res, 550));
+    pw.style.display = 'none';
+    renderLeaderboard();
+    toast(`✓ ${name} sayımı tamamlandı: ${total.toLocaleString()}`, 3600);
+  } catch (err) {
+    pw.style.display = 'none';
+    toast('❌ İl sayımı hatası: ' + (err?.message || 'bilinmeyen hata'), 5200);
+  }
+  btn.disabled = false;
+}
+
 // ── Filtered + sorted data
 function lbFiltered() {
-  let d = lbData;
+  let d = lbData.filter(e => (lbDataset === 'admin' ? e.mode === 'admin-count' : e.mode !== 'admin-count'));
   if (lbRegion !== 'all') d = d.filter(e => e.region === lbRegion);
   return d.slice().sort((a, b) => {
+    if (lbDataset === 'admin') {
+      if (lbSort === 'name') return trLower(a.city).localeCompare(trLower(b.city));
+      return (b.count||0) - (a.count||0);
+    }
     if (lbSort === 'pct') {
       if (a.pct === null && b.pct === null) return 0;
       if (a.pct === null) return 1;
@@ -6448,19 +6672,57 @@ function lbFiltered() {
 // ── Render
 function renderLeaderboard() {
   const filtered = lbFiltered();
+  lbSetDataset(lbDataset, true);
+
+  const hCity = document.getElementById('lb-h-city');
+  const hBar = document.getElementById('lb-h-bar');
+  const hPct = document.getElementById('lb-h-pct');
+  const hNote = document.getElementById('lb-h-note');
+  const hCount = document.getElementById('lb-h-count');
+  const hAvg = document.getElementById('lb-h-avg');
+  if (lbDataset === 'admin') {
+    if (hCity) hCity.textContent = 'İl/Bölge';
+    if (hBar) hBar.textContent = 'Yoğunluk';
+    if (hPct) hPct.textContent = '—';
+    if (hNote) hNote.textContent = 'Tür';
+    if (hCount) hCount.textContent = 'Cami+Mescit';
+    if (hAvg) hAvg.textContent = 'Kaynak';
+  } else {
+    if (hCity) hCity.textContent = 'Şehir';
+    if (hBar) hBar.textContent = 'Doğruluk';
+    if (hPct) hPct.textContent = '%';
+    if (hNote) hNote.textContent = 'Not';
+    if (hCount) hCount.textContent = 'Cami';
+    if (hAvg) hAvg.textContent = 'Ort.Sap.';
+  }
 
   // Summary strip
   const summary = document.getElementById('lb-summary');
-  const total = lbData.length;
-  const analysed = lbData.filter(e => e.pct !== null).length;
-  const totalMosques = lbData.reduce((s, e) => s + (e.count||0), 0);
-  const avgPct = analysed ? Math.round(lbData.filter(e=>e.pct!==null).reduce((s,e)=>s+e.pct,0)/analysed) : null;
-  summary.innerHTML = `
-    <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">Şehir</div></div>
-    <div class="lb-sum-item"><div class="lb-sum-val">${analysed}</div><div class="lb-sum-lbl">Analiz Edildi</div></div>
-    <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">Toplam Cami</div></div>
-    <div class="lb-sum-item"><div class="lb-sum-val" style="color:${pctColor(avgPct)}">${avgPct!==null?avgPct+'%':'—'}</div><div class="lb-sum-lbl">Ort. Doğruluk</div></div>
-  `;
+  if (lbDataset === 'admin') {
+    const adminRows = lbData.filter(e => e.mode === 'admin-count');
+    const total = adminRows.length;
+    const totalMosques = adminRows.reduce((s, e) => s + (e.count||0), 0);
+    const top = adminRows.slice().sort((a,b)=>(b.count||0)-(a.count||0))[0];
+    const avgCount = total ? Math.round(totalMosques / total) : null;
+    summary.innerHTML = `
+      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">İl/Bölge</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">Toplam Cami+Mescit</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${top ? escHtml(top.city) : '—'}</div><div class="lb-sum-lbl">En Yüksek Bölge</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${avgCount!==null?avgCount.toLocaleString():'—'}</div><div class="lb-sum-lbl">Ort. Bölge Sayısı</div></div>
+    `;
+  } else {
+    const qRows = lbData.filter(e => e.mode !== 'admin-count');
+    const total = qRows.length;
+    const analysed = qRows.filter(e => e.pct !== null).length;
+    const totalMosques = qRows.reduce((s, e) => s + (e.count||0), 0);
+    const avgPct = analysed ? Math.round(qRows.filter(e=>e.pct!==null).reduce((s,e)=>s+e.pct,0)/analysed) : null;
+    summary.innerHTML = `
+      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">Şehir</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${analysed}</div><div class="lb-sum-lbl">Analiz Edildi</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">Toplam Cami</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val" style="color:${pctColor(avgPct)}">${avgPct!==null?avgPct+'%':'—'}</div><div class="lb-sum-lbl">Ort. Doğruluk</div></div>
+    `;
+  }
 
   // Updated timestamp
   const latestDate = lbData.map(e=>e.analysedAt).filter(Boolean).sort().reverse()[0];
@@ -6481,15 +6743,18 @@ function renderLeaderboard() {
     return;
   }
 
-  // Best pct for bar scaling
-  const bestPct = Math.max(...filtered.map(e=>e.pct??0), 1);
+  const bestVal = lbDataset === 'admin'
+    ? Math.max(...filtered.map(e=>e.count||0), 1)
+    : Math.max(...filtered.map(e=>e.pct??0), 1);
 
   container.innerHTML = filtered.map((e, i) => {
     const rank = i + 1;
     const rankClass = rank===1?'lb-rank-1':rank===2?'lb-rank-2':rank===3?'lb-rank-3':'lb-rank-n';
     const rankIcon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
-    const col = pctColor(e.pct);
-    const barW = e.pct !== null ? Math.round((e.pct/100)*100) : 0;
+    const col = lbDataset === 'admin' ? '#60a5fa' : pctColor(e.pct);
+    const barW = lbDataset === 'admin'
+      ? Math.round(((e.count||0) / bestVal) * 100)
+      : (e.pct !== null ? Math.round((e.pct/100)*100) : 0);
     const isCurrentCity = trLower(e.city) === trLower(currentCity);
     const needsAnalysis = e.pct === null;
     const dateStr = e.analysedAt ? new Date(e.analysedAt).toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
@@ -6509,15 +6774,15 @@ function renderLeaderboard() {
           ? `<div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barW}%;background:${col}"></div></div>`
           : `<span style="font-size:9px;color:#4a4a5a">analiz bekleniyor</span>`}
       </span>
-      <span class="lbt-pct" style="color:${col}">${e.pct!==null?e.pct+'%':'—'}</span>
-      <span class="lbt-not">${e.grade&&e.grade!=='—'?`<span style="color:${gradeColor(e.grade)};font-weight:700">${e.grade}</span>`:'—'}</span>
-      <span class="lbt-count">${e.count||'—'}</span>
-      <span class="lbt-avg">${e.avg!==null?e.avg.toFixed(1)+'°':'—'}</span>
+      <span class="lbt-pct" style="color:${col}">${lbDataset==='admin'?'—':(e.pct!==null?e.pct+'%':'—')}</span>
+      <span class="lbt-not">${lbDataset==='admin'?'İl/State':(e.grade&&e.grade!=='—'?`<span style="color:${gradeColor(e.grade)};font-weight:700">${e.grade}</span>`:'—')}</span>
+      <span class="lbt-count">${(e.count||0).toLocaleString()}</span>
+      <span class="lbt-avg">${lbDataset==='admin'?(e.source || 'overpass'):(e.avg!==null?e.avg.toFixed(1)+'°':'—')}</span>
       <span class="lbt-date">${dateStr}</span>
       <span class="lbt-act">
         ${needsAnalysis
-          ? `<button class="lb-act-btn" onclick="event.stopPropagation();lbAnalyseCity(decodeURIComponent('${cityEnc}'))">▶ Analiz</button>`
-          : `<button class="lb-act-btn" onclick="event.stopPropagation();lbAnalyseCity(decodeURIComponent('${cityEnc}'))">↺</button>`}
+          ? `<button class="lb-act-btn" onclick="event.stopPropagation();${lbDataset==='admin'?'lbCountAdminArea':'lbAnalyseCity'}(decodeURIComponent('${cityEnc}'))">▶ Analiz</button>`
+          : `<button class="lb-act-btn" onclick="event.stopPropagation();${lbDataset==='admin'?'lbCountAdminArea':'lbAnalyseCity'}(decodeURIComponent('${cityEnc}'))">↺</button>`}
         <button class="lb-act-btn danger" onclick="event.stopPropagation();lbRemove(decodeURIComponent('${cityEnc}'))">✕</button>
       </span>
     </div>`;
@@ -6551,7 +6816,8 @@ async function lbAddCity() {
   const city = input.value.trim();
   if (!city) return;
   input.value = '';
-  await lbAnalyseCity(city);
+  if (lbDataset === 'admin') await lbCountAdminArea(city);
+  else await lbAnalyseCity(city);
 }
 
 // ── Core: analyse a city and store result
