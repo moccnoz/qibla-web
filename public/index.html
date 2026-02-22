@@ -1020,6 +1020,7 @@ let tileLayer = null;
 let renderLayers = [];
 let animLayers = [];
 let vpDebounceTimer = null;
+let vpNeedsReload = false;
 let isVpLoading = false;
 let heatLayer = null;
 let heatVisible = false;
@@ -1360,9 +1361,21 @@ function getUncachedCells(bounds) {
 //  VIEWPORT AUTO-LOAD
 // ══════════════════════════════════════════════════════════════
 async function loadViewport() {
-  if (isVpLoading) return;
+  if (isVpLoading) {
+    vpNeedsReload = true;
+    return;
+  }
+  if (map.getZoom() < 11) {
+    setVpStatus('idle');
+    return;
+  }
   const bounds = map.getBounds();
-  const newCells = getUncachedCells(bounds);
+  const center = bounds.getCenter();
+  const newCells = getUncachedCells(bounds).sort((a, b) => {
+    const da = Math.pow(a.lat - center.lat, 2) + Math.pow(a.lng - center.lng, 2);
+    const db = Math.pow(b.lat - center.lat, 2) + Math.pow(b.lng - center.lng, 2);
+    return da - db;
+  });
   if (!newCells.length) {
     // No new fetch needed, but viewport may have changed.
     if (mosqueDB.size) renderAll();
@@ -1372,26 +1385,37 @@ async function loadViewport() {
 
   isVpLoading = true;
   setVpStatus('loading');
-  showMini(`${newCells.length} yeni alan yükleniyor...`);
+  const batch = newCells.slice(0, 10);
+  showMini(`${batch.length}/${newCells.length} alan yükleniyor...`);
   showSkeletonList();
 
-  // Mark cells as cached immediately (optimistic) to prevent double-fetch
-  newCells.forEach(c => tileCache.add(c.key));
-  updateCacheUI();
-
   try {
-    // Batch: build one Overpass query for the whole bounds (more efficient than per-cell)
-    const pad = GRID * 0.1;
-    const s = bounds.getSouth()-pad, n = bounds.getNorth()+pad;
-    const w = bounds.getWest()-pad,  e = bounds.getEast()+pad;
-    const elements = await fetchBbox(s,w,n,e);
-    processElements(elements);
+    // Fetch per-grid-cell so moving around always loads local area deterministically.
+    let totalAdded = 0;
+    for (const c of batch) {
+      const half = GRID / 2;
+      const pad = GRID * 0.05;
+      const s = c.lat - half - pad;
+      const n = c.lat + half + pad;
+      const w = c.lng - half - pad;
+      const e = c.lng + half + pad;
+      try {
+        const elements = await fetchBbox(s, w, n, e);
+        totalAdded += processElements(elements);
+        tileCache.add(c.key);
+      } catch (err) {
+        // Keep cell uncached so it can retry on next viewport load.
+        console.warn('cell fetch failed', c.key, err?.message || err);
+      }
+    }
+    updateCacheUI();
     renderAll();
     setVpStatus('done');
+    if (newCells.length > batch.length) {
+      clearTimeout(vpDebounceTimer);
+      vpDebounceTimer = setTimeout(loadViewport, 120);
+    }
   } catch(err) {
-    // Rollback cache marks on error so user can retry
-    newCells.forEach(c => tileCache.delete(c.key));
-    updateCacheUI();
     setVpStatus('idle');
     toast('Veri yüklenirken hata: '+err.message, 5000);
     console.error(err);
@@ -1399,6 +1423,11 @@ async function loadViewport() {
 
   hideMini();
   isVpLoading = false;
+  if (vpNeedsReload) {
+    vpNeedsReload = false;
+    clearTimeout(vpDebounceTimer);
+    vpDebounceTimer = setTimeout(loadViewport, 120);
+  }
 }
 
 function showSkeletonList() {
