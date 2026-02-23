@@ -3031,7 +3031,15 @@ function queuePopularityHydration(candidates = [], rerender) {
     .filter(m => getMosqueWikiTag(m))
     .slice(0, 8);
   if (!list.length) return;
+  const before = new Map(list.map(m => [getMosqueKey(m), Number(m.popularityViews) || 0]));
   Promise.all(list.map(m => hydrateMosquePopularity(m))).then(() => {
+    const changed = list.some(m => {
+      const key = getMosqueKey(m);
+      const prev = before.get(key) || 0;
+      const now = Number(m.popularityViews) || 0;
+      return now !== prev;
+    });
+    if (!changed) return;
     try { if (typeof rerender === 'function') rerender(); } catch {}
   }).catch(() => {});
 }
