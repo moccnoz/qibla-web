@@ -18,6 +18,7 @@ let animLayers = [];
 let focusPulseLayer = null;
 let focusPulseRaf = 0;
 let markerClusterLayer = null;
+let placeBoundaryLayer = null;
 let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
 let vpNeedsReload = false;
@@ -782,9 +783,14 @@ function maybeArmSearchAreaButton() {
   if (!searchAreaAnchor) return;
   const km = greatCircleKm(c.lat, c.lng, searchAreaAnchor.lat, searchAreaAnchor.lng);
   if (!Number.isFinite(km)) return;
-  if (km >= 0.5) {
+  const z = map.getZoom();
+  const thresholdKm = z >= 15 ? 0.15 : z >= 13 ? 0.3 : 0.5;
+  if (km >= thresholdKm) {
     btn.classList.add('show');
     searchAreaArmed = true;
+  } else if (searchAreaArmed && km < thresholdKm * 0.6) {
+    btn.classList.remove('show');
+    searchAreaArmed = false;
   }
 }
 
@@ -796,6 +802,7 @@ function refreshSearchArea() {
     tileCache.delete(c.key);
   }
   updateCacheUI();
+  searchAreaAnchor = map.getCenter();
   hideSearchAreaButton();
   scheduleViewportLoad(60);
 }
@@ -901,8 +908,6 @@ async function loadViewport(opts = {}) {
     updateCacheUI();
     renderAll();
     setVpStatus('done');
-    searchAreaAnchor = map?.getCenter?.() || searchAreaAnchor;
-    hideSearchAreaButton();
     if (newCells.length > batch.length) {
       clearTimeout(vpDebounceTimer);
       vpDebounceTimer = setTimeout(loadViewport, 120);
@@ -3924,6 +3929,47 @@ function closeCitySmartDropdown() {
   }
 }
 
+function clearPlaceBoundaryHighlight() {
+  if (!placeBoundaryLayer || !map) return;
+  try { map.removeLayer(placeBoundaryLayer); } catch {}
+  placeBoundaryLayer = null;
+}
+
+function osmTypeToNominatimToken(osmType) {
+  const t = normalizeOsmType(osmType);
+  if (t === 'node') return 'N';
+  if (t === 'way') return 'W';
+  if (t === 'relation') return 'R';
+  return '';
+}
+
+async function highlightPlaceBoundary(item) {
+  if (!map || !item || item.kind === 'mosque') { clearPlaceBoundaryHighlight(); return; }
+  clearPlaceBoundaryHighlight();
+  const token = osmTypeToNominatimToken(item.osmType);
+  const id = String(item.osmId || '').replace(/\D/g, '');
+  if (!token || !id) return;
+  try {
+    const url = `https://nominatim.openstreetmap.org/lookup?format=jsonv2&polygon_geojson=1&osm_ids=${token}${id}`;
+    const rows = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+    const geo = rows?.[0]?.geojson;
+    if (!geo) return;
+    placeBoundaryLayer = L.geoJSON(geo, {
+      style: {
+        color: '#c9a84c',
+        weight: 2,
+        opacity: 0.9,
+        fillColor: '#c9a84c',
+        fillOpacity: 0.08
+      }
+    }).addTo(map);
+    try {
+      const b = placeBoundaryLayer.getBounds?.();
+      if (b?.isValid?.()) map.fitBounds(b.pad(0.12));
+    } catch {}
+  } catch {}
+}
+
 function selectPlaceSuggestion(item) {
   if (!item || !map) return;
   document.getElementById('city-input').value = item.title || '';
@@ -3939,6 +3985,7 @@ function selectPlaceSuggestion(item) {
   }
   map.once('moveend', () => scheduleViewportLoad(80));
   if (isMosque) {
+    clearPlaceBoundaryHighlight();
     const q = item.title || document.getElementById('city-input').value.trim();
     if (q) {
       document.getElementById('mosque-search').value = q;
@@ -3946,6 +3993,8 @@ function selectPlaceSuggestion(item) {
       document.getElementById('ms-clear').classList.add('show');
       applyMosqueFilter(q);
     }
+  } else {
+    highlightPlaceBoundary(item);
   }
 }
 
@@ -4329,6 +4378,8 @@ async function doSearch(){
     } else {
       map.setView([loc.lat,loc.lng],14);
     }
+    searchAreaAnchor = { lat:loc.lat, lng:loc.lng };
+    hideSearchAreaButton();
     // Clear cache for fresh city load
     tileCache.clear(); updateCacheUI();
     mosqueDB.clear();
