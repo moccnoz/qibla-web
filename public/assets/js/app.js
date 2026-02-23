@@ -2637,8 +2637,7 @@ function makePopup(m){
     <div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</span></div>
     ${m.convertedFrom?.converted?`<div class="p-row"><span class="p-k">Yapı geçmişi</span><span class="p-v" style="color:#fbbf24">Dönüştürülmüş olabilir</span></div>`:''}
     <div class="p-row"><span class="p-k">Kabe mesafesi</span><span class="p-v">${dist} km</span></div>
-    <div class="p-method">Yöntem: ${meth}</div>
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
+    <div class="p-method">Yöntem: ${meth}</div>`;
 }
 
 // Store last clicked for popup button
@@ -5839,8 +5838,7 @@ function makeHistoryPopup(m) {
     <div class="p-row"><span class="p-k">İnşaat</span><span class="p-v">${yearStr}</span></div>
     <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${statusStr}</span></div>
     <div class="p-row"><span class="p-k">Kıble</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
-    ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
+    ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}`;
 }
 
 // Compute per-period stats
@@ -7606,7 +7604,6 @@ function renderActions(m, tags) {
 
   el.innerHTML = `
     <button class="dp-action-btn" onclick="focusMosqueOnMap()"> Haritada Göster</button>
-    <button class="dp-action-btn anim" onclick="closeDetailPanel();if(window._lastClickedMosque)animateQibla(window._lastClickedMosque)"> Büyük Daire</button>
     <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)"> İsmi Bul</button>
     <button class="dp-action-btn" onclick="open3D()"> 3D Analiz</button>
     <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener"> OSM'de Gör</a>

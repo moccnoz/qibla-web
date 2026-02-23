@@ -5416,3 +5416,37 @@ body:not(.outdoor-mode) #map::after {
 .leaflet-marker-icon.marker-cluster:hover {
   transform: none !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DETAIL PANEL HOTFIX — single scroll container + modern title
+   ═══════════════════════════════════════════════════════════ */
+.dp-panel {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.dp-panel > div:not(:first-child) {
+  padding: 0 !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+  scrollbar-width: auto !important;
+}
+
+.dp-section {
+  padding: 14px 16px !important;
+}
+
+.dp-actions {
+  padding: 14px 16px 20px !important;
+}
+
+.dp-wiki-body {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.dp-panel .dp-name {
+  font-family: 'Inter', 'Manrope', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em !important;
+}
