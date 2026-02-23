@@ -3633,3 +3633,413 @@ input[type="range"]::-moz-range-thumb {
     gap: 6px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PHASE 6 - MICRO INTERACTIONS & FINAL POLISH
+   ═══════════════════════════════════════════════════════════ */
+
+/* Global animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInBottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50% { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Skeleton */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 25%,
+    rgba(255, 255, 255, 0.08) 50%,
+    rgba(255, 255, 255, 0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-line {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-line.short { width: 60%; }
+.skeleton-line.medium { width: 80%; }
+.skeleton-line.full { width: 100%; }
+
+.skeleton-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.skeleton-card {
+  height: 64px;
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+}
+
+.skeleton-mosque {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+}
+
+.skeleton-mosque .skeleton-name {
+  flex: 1;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.skeleton-mosque .skeleton-badge {
+  width: 42px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+/* Focus visible */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+button:focus-visible,
+.ns-btn:focus-visible,
+.btn:focus-visible,
+.btn-sm:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* Press effect */
+.btn:active,
+.btn-sm:active,
+.ns-btn:active,
+.map-fab-btn:active,
+.ns-lang-btn:active,
+.filter-chip:active,
+.exp-dl-btn:active {
+  transform: scale(0.96);
+  transition-duration: 0.05s;
+}
+
+.ns-btn:active { transform: scale(0.97); }
+.map-fab-btn:active { transform: scale(0.92); }
+
+/* Global tooltip */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 12px;
+  background: var(--panel);
+  color: var(--text-bright);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.15s ease-out;
+  z-index: 9999;
+}
+
+[data-tip]:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+[data-tip-pos="bottom"]::after {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+[data-tip-pos="right"]::after {
+  bottom: auto;
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+[data-tip-pos="right"]:hover::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+.nav-sidebar.collapsed [data-tip]::after {
+  bottom: auto;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+}
+
+.nav-sidebar.collapsed [data-tip]:hover::after {
+  transform: translateY(-50%) translateX(0);
+}
+
+@media (max-width: 768px) {
+  [data-tip]::after {
+    display: none;
+  }
+}
+
+/* Marker animation */
+@keyframes markerBounce {
+  0% { transform: scale(0) translateY(-10px); opacity: 0; }
+  60% { transform: scale(1.15) translateY(0); opacity: 1; }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.leaflet-marker-icon {
+  transition: transform 0.15s ease-out;
+  animation: markerBounce 0.35s ease-out;
+}
+
+.leaflet-marker-icon:hover {
+  transform: scale(1.2) !important;
+  z-index: 10000 !important;
+}
+
+/* Sidebar scroll fade */
+.sidebar {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    black 8px,
+    black calc(100% - 8px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    black 8px,
+    black calc(100% - 8px),
+    transparent 100%
+  );
+}
+
+/* Qibla line draw animation */
+@keyframes drawLine {
+  from { stroke-dashoffset: 1000; }
+  to { stroke-dashoffset: 0; }
+}
+
+.leaflet-overlay-pane svg path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 0;
+  animation: drawLine 1.2s ease-out;
+}
+
+/* Smooth page load */
+body {
+  opacity: 0;
+  animation: fadeIn 0.4s ease-out 0.1s forwards;
+  transition: background-color 0.4s ease, color 0.3s ease;
+}
+
+/* Selection */
+::selection {
+  background: rgba(124, 58, 237, 0.35);
+  color: #fff;
+}
+
+::-moz-selection {
+  background: rgba(124, 58, 237, 0.35);
+  color: #fff;
+}
+
+/* Smooth scroll + global scrollbar */
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+/* Links */
+a {
+  color: var(--accent-light);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Mini loader */
+.mini-loader {
+  position: absolute;
+  bottom: 16px;
+  left: 60px;
+  z-index: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  box-shadow: var(--shadow-sm);
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.mini-loader .mini-spinner,
+.mini-loader .mini-spin {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(148, 163, 184, 0.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Theme transition for major shells */
+header,
+.sidebar,
+.nav-sidebar,
+.stats-bar,
+.mob-drawer {
+  transition: background-color 0.4s ease,
+              border-color 0.3s ease,
+              color 0.3s ease;
+}
+
+/* Print */
+@media print {
+  .nav-sidebar,
+  .mob-bottom-bar,
+  .mob-drawer,
+  .map-fab,
+  .floating-search,
+  .mini-loader,
+  .live-badge,
+  header {
+    display: none !important;
+  }
+
+  .main {
+    margin-left: 0 !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* Accessibility */
+@media (forced-colors: active) {
+  .ns-btn.active,
+  .btn-sm.active,
+  .btn.active {
+    border: 2px solid ButtonText;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

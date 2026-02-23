@@ -8455,3 +8455,81 @@ async function lbAnalyseCity(city) {
     }
   });
 })();
+
+/* ═══ NUMBER COUNTER ANIMATION ═══ */
+function animateCounterIO(element, target, duration = 800) {
+  const start = 0;
+  const startTime = performance.now();
+  const isFloat = String(target).includes('.') && Number(target) % 1 !== 0;
+  const suffix = element.dataset.suffix || '';
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const current = start + (target - start) * easeOut;
+
+    if (isFloat) {
+      element.textContent = current.toFixed(1) + suffix;
+    } else {
+      element.textContent = Math.round(current).toLocaleString() + suffix;
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+function parseCounterTargetIO(el) {
+  const raw = (el.dataset.target || el.textContent || '').trim();
+  if (!raw) return null;
+  const clean = raw
+    .replace(/\s+/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .replace(/[^0-9.-]/g, '');
+  if (!clean) return null;
+  const num = Number(clean);
+  return Number.isFinite(num) ? num : null;
+}
+
+function bindAnimatedCountersIO(root = document) {
+  if (typeof IntersectionObserver === 'undefined') return;
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const node = entry.target;
+      if (node.dataset.counted === 'true') return;
+      const target = parseCounterTargetIO(node);
+      if (target === null) return;
+      node.dataset.counted = 'true';
+      animateCounterIO(node, target);
+    });
+  }, { threshold: 0.5 });
+
+  root.querySelectorAll('.stat-card-value, .sc-score-center, .stat-num').forEach(el => {
+    counterObserver.observe(el);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindAnimatedCountersIO(document);
+
+  const observerTargets = [
+    document.querySelector('.stats-bar'),
+    document.querySelector('.sidebar'),
+    document.querySelector('.score-card')
+  ].filter(Boolean);
+
+  const mo = new MutationObserver(() => {
+    bindAnimatedCountersIO(document);
+  });
+
+  observerTargets.forEach(target => {
+    mo.observe(target, { childList: true, subtree: true });
+  });
+});
