@@ -2171,7 +2171,7 @@ function drawSidebarRadar(stats) {
       i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle = '#2a2a3a';
+    ctx.strokeStyle = '#6a9ec9';
     ctx.lineWidth = 1;
     ctx.stroke();
   }
@@ -2396,7 +2396,7 @@ function drawDonut(ok, bad, unk, pct){
   const total = ok+bad+unk;
   if(!total){ 
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); 
-    ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=14; ctx.stroke(); 
+    ctx.strokeStyle='#6a9ec9'; ctx.lineWidth=14; ctx.stroke(); 
     return; 
   }
 
@@ -3966,16 +3966,16 @@ function buildBarRow(m) {
   const maxVal = Math.max(aVal, bVal, 1);
   const aPct = Math.round(aVal/maxVal*100), bPct = Math.round(bVal/maxVal*100);
   const aWin = m.higherBetter===null ? null : (m.higherBetter ? aVal>=bVal : aVal<=bVal);
-  const aC = aWin===null?'#6b6b7a':aWin?'#60a5fa':'#60a5fa66';
-  const bC = aWin===null?'#6b6b7a':!aWin?'#f472b6':'#f472b666';
+  const aC = aWin===null?'rgba(255,255,255,.50)':aWin?'#60a5fa':'#60a5fa66';
+  const bC = aWin===null?'rgba(255,255,255,.50)':!aWin?'#f472b6':'#f472b666';
   div.innerHTML = `
     <div class="cmp-bar-label">${m.label}</div>
     <div>
-      <div style="font-size:9px;color:#6b6b7a;margin-bottom:3px">A: ${m.a!==null&&m.a!==undefined?m.a+(m.unit):'—'}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.50);margin-bottom:3px">A: ${m.a!==null&&m.a!==undefined?m.a+(m.unit):'—'}</div>
       <div class="cmp-bar-outer"><div class="cmp-bar-inner" style="width:${aPct}%;background:${aC}">${aPct>20?m.a+(m.unit):''}</div></div>
     </div>
     <div>
-      <div style="font-size:9px;color:#6b6b7a;margin-bottom:3px">B: ${m.b!==null&&m.b!==undefined?m.b+(m.unit):'—'}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,.50);margin-bottom:3px">B: ${m.b!==null&&m.b!==undefined?m.b+(m.unit):'—'}</div>
       <div class="cmp-bar-outer"><div class="cmp-bar-inner" style="width:${bPct}%;background:${bC}">${bPct>20?m.b+(m.unit):''}</div></div>
     </div>`;
   return div;
@@ -3989,12 +3989,12 @@ function drawSmallDonut(canvasId, st, color) {
   const cx=40, cy=40, r=34;
   if (!st.withData) {
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=10; ctx.stroke(); return;
+    ctx.strokeStyle='#6a9ec9'; ctx.lineWidth=10; ctx.stroke(); return;
   }
   const slices = [
     {val:st.correct, color:color},
     {val:st.wrong,   color:color+'44'},
-    {val:st.unknown, color:'#2a2a3a'}
+    {val:st.unknown, color:'#6a9ec9'}
   ].filter(s=>s.val>0);
   let angle = -Math.PI/2;
   const total = st.all;
@@ -4046,7 +4046,7 @@ function drawRadar(stA, stB) {
       i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
     }
     ctx.closePath();
-    ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle = '#6a9ec9'; ctx.lineWidth=1; ctx.stroke();
   }
 
   // Draw axes
@@ -4055,10 +4055,10 @@ function drawRadar(stA, stB) {
     ctx.beginPath();
     ctx.moveTo(cx, cy);
     ctx.lineTo(cx+Math.cos(angle)*r, cy+Math.sin(angle)*r);
-    ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle='#6a9ec9'; ctx.lineWidth=1; ctx.stroke();
     // Labels
     const lx = cx+Math.cos(angle)*(r+14), ly = cy+Math.sin(angle)*(r+14);
-    ctx.fillStyle='#6b6b7a'; ctx.font='9px Manrope,monospace';
+    ctx.fillStyle='rgba(255,255,255,.50)'; ctx.font='9px Manrope,monospace';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(axes[i], lx, ly);
   }
@@ -4193,12 +4193,12 @@ function renderCompare() {
           const aNum = parseFloat(va), bNum = parseFloat(vb);
           if (!isNaN(aNum) && !isNaN(bNum) && aNum !== bNum) {
             const aWins = lowerBetterRows.has(label) ? aNum < bNum : aNum > bNum;
-            if (aWins) { aStyle='color:#60a5fa;font-weight:700'; bStyle='color:#6b6b7a'; }
-            else       { bStyle='color:#f472b6;font-weight:700'; aStyle='color:#6b6b7a'; }
+            if (aWins) { aStyle='color:#60a5fa;font-weight:700'; bStyle='color:rgba(255,255,255,.50)'; }
+            else       { bStyle='color:#f472b6;font-weight:700'; aStyle='color:rgba(255,255,255,.50)'; }
           }
         }
         return `<tr>
-          <td style="color:#6b6b7a">${escHtml(label)}</td>
+          <td style="color:rgba(255,255,255,.50)">${escHtml(label)}</td>
           <td style="${aStyle}">${escHtml(va)}</td>
           <td style="${bStyle}">${escHtml(vb)}</td>
         </tr>`;
@@ -4219,7 +4219,7 @@ const PERIODS = {
   early:   { label:'Erken Cum.',   range:[1923, 1950], color:'#fbbf24', cls:'early'   },
   mid:     { label:'Orta Dönem',   range:[1951, 2000], color:'#60a5fa', cls:'mid'     },
   modern:  { label:'Modern',       range:[2001, 9999], color:'#4ade80', cls:'modern'  },
-  unknown: { label:'Bilinmiyor',   range:null,         color:'#9ca3af', cls:'unknown' },
+  unknown: { label:'Bilinmiyor',   range:null,         color:'rgba(255,255,255,.50)', cls:'unknown' },
 };
 
 let historyModeActive = false;
@@ -4247,7 +4247,7 @@ function classifyPeriod(year) {
 }
 
 function getPeriodColor(period) {
-  return PERIODS[period]?.color ?? '#6b6b7a';
+  return PERIODS[period]?.color ?? 'rgba(255,255,255,.50)';
 }
 
 // Enrich each mosque in DB with period info
@@ -4445,9 +4445,9 @@ function drawHistBarChart(stats) {
   // Grid lines
   for (let pct = 0; pct <= 100; pct += 25) {
     const y = pad.t + chartH - (pct/100)*chartH;
-    ctx.strokeStyle = '#1e1e2e'; ctx.lineWidth = 1;
+    ctx.strokeStyle = '#275d8d'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '9px Manrope,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '9px Manrope,monospace';
     ctx.textAlign = 'right';
     ctx.fillText(pct+'%', pad.l-6, y+3);
   }
@@ -4461,7 +4461,7 @@ function drawHistBarChart(stats) {
     const y = pad.t + chartH - barH;
 
     // Bar background
-    ctx.fillStyle = '#1a1a26';
+    ctx.fillStyle = '#225786';
     ctx.fillRect(x, pad.t, barW, chartH);
 
     // Bar fill with gradient
@@ -4489,14 +4489,14 @@ function drawHistBarChart(stats) {
     ctx.fillText(p.label, x + barW/2, H - 6);
 
     // Count
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '8px Manrope,monospace';
+    ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '8px Manrope,monospace';
     ctx.fillText('n='+s.count, x + barW/2, H - 18);
   });
 
   // Legend: red bar = avg deviation
   ctx.fillStyle = 'rgba(248,113,113,0.5)';
   ctx.fillRect(pad.l, pad.t + 2, 8, 8);
-  ctx.fillStyle = '#6b6b7a'; ctx.font = '8px Manrope,monospace'; ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '8px Manrope,monospace'; ctx.textAlign = 'left';
   ctx.fillText('■ ort. sapma (yardımcı)', pad.l + 12, pad.t + 10);
 }
 
@@ -4512,7 +4512,7 @@ function drawHistScatter() {
     if (m.year && m.diff !== null) points.push({year:m.year, diff:m.diff, period:m.period});
   });
   if (!points.length) {
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '11px Manrope,monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '11px Manrope,monospace'; ctx.textAlign = 'center';
     ctx.fillText('Tarih + sapma verisi olan cami bulunamadı', canvas.width/2, canvas.height/2);
     return;
   }
@@ -4528,9 +4528,9 @@ function drawHistScatter() {
   // Grid
   for (let d=0; d<=45; d+=15) {
     const y = pad.t + chartH - (d/maxDiff)*chartH;
-    ctx.strokeStyle='#1e1e2e'; ctx.lineWidth=1;
+    ctx.strokeStyle='#275d8d'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
-    ctx.fillStyle='#6b6b7a'; ctx.font='8px Manrope,monospace'; ctx.textAlign='right';
+    ctx.fillStyle='rgba(255,255,255,.50)'; ctx.font='8px Manrope,monospace'; ctx.textAlign='right';
     ctx.fillText(d+'°', pad.l-4, y+3);
   }
 
@@ -4546,7 +4546,7 @@ function drawHistScatter() {
   const yearStep = Math.ceil((maxY-minY)/5 / 50)*50 || 50;
   for (let y=Math.ceil(minY/yearStep)*yearStep; y<=maxY; y+=yearStep) {
     const x = pad.l + ((y-minY)/(maxY-minY))*chartW;
-    ctx.fillStyle='#6b6b7a'; ctx.font='8px Manrope,monospace'; ctx.textAlign='center';
+    ctx.fillStyle='rgba(255,255,255,.50)'; ctx.font='8px Manrope,monospace'; ctx.textAlign='center';
     ctx.fillText(y, x, H-6);
   }
 
@@ -4576,7 +4576,7 @@ function drawHistScatter() {
     ctx.setLineDash([]);
     // Trend direction label
     const trendDir = slope > 0.01 ? '↑ Sapma artıyor' : slope < -0.01 ? '↓ Sapma azalıyor' : '→ Sabit';
-    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='9px Manrope,monospace'; ctx.textAlign='right';
+    ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='9px Manrope,monospace'; ctx.textAlign='right';
     ctx.fillText(trendDir, W-pad.r-4, pad.t+10);
   }
 }
@@ -4595,7 +4595,7 @@ function renderHistTable(stats) {
         (s.yearMin && s.yearMax ? s.yearMin+(s.yearMin!==s.yearMax?'–'+s.yearMax:'') : p.range?p.range[0]+'–'+(p.range[1]===9999?'bugün':p.range[1]):'—');
       return `<tr>
         <td><span class="hist-period-badge ${key}">${p.label}</span></td>
-        <td style="color:#6b6b7a">${range}</td>
+        <td style="color:rgba(255,255,255,.50)">${range}</td>
         <td>${s.count}</td>
         <td style="color:${p.color};font-weight:700">${s.pct!==null?s.pct+'%':'—'}</td>
         <td>${s.avg!==null?s.avg.toFixed(1)+'°':'—'}</td>
@@ -4626,7 +4626,7 @@ function renderHistList() {
   label.textContent = `${periodLabel} — ${items.length} cami (en kötüden iyiye)`;
 
   if (!items.length) {
-    el.innerHTML = '<div style="color:#6b6b7a;font-size:11px;padding:12px">Bu dönemde cami bulunamadı</div>';
+    el.innerHTML = '<div style="color:rgba(255,255,255,.50);font-size:11px;padding:12px">Bu dönemde cami bulunamadı</div>';
     return;
   }
 
@@ -4816,7 +4816,7 @@ function renderExportSummary() {
       <div class="exp-sum-lbl">Toplam Cami</div>
     </div>
     <div class="exp-sum-card">
-      <div class="exp-sum-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'#6b6b7a'}">${pct!==null?pct+'%':'—'}</div>
+      <div class="exp-sum-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'rgba(255,255,255,.50)'}">${pct!==null?pct+'%':'—'}</div>
       <div class="exp-sum-lbl">Doğruluk</div>
     </div>
     <div class="exp-sum-card">
@@ -4947,7 +4947,7 @@ function exportReport() {
   const pct = withData.length ? Math.round(correct.length/withData.length*100) : null;
   const avg = withData.length ? withData.reduce((s,m)=>s+m.diff,0)/withData.length : null;
   const grade = pct===null?'—':pct>=85?'A':pct>=65?'B':pct>=45?'C':'D';
-  const gradeCol = {A:'#4ade80',B:'#a3e635',C:'#fbbf24',D:'#f87171','—':'#6b6b7a'}[grade];
+  const gradeCol = {A:'#4ade80',B:'#a3e635',C:'#fbbf24',D:'#f87171','—':'rgba(255,255,255,.50)'}[grade];
 
   // Worst 15
   const worst = [...withData].sort((a,b)=>b.diff-a.diff).slice(0,15);
@@ -4961,25 +4961,25 @@ function exportReport() {
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',sans-serif;background:#164773;color:#e8e4d8;padding:32px;max-width:900px;margin:0 auto;}
 h1{font-size:24px;color:#c9a84c;margin-bottom:4px;}
-.subtitle{color:#6b6b7a;font-size:13px;margin-bottom:28px;}
+.subtitle{color:rgba(255,255,255,.50);font-size:13px;margin-bottom:28px;}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
-.card{background:#1b4f7f;border:1px solid #2a2a3a;border-radius:10px;padding:16px;text-align:center;}
+.card{background:#1b4f7f;border:1px solid #6a9ec9;border-radius:10px;padding:16px;text-align:center;}
 .card-val{font-size:28px;font-weight:700;color:#c9a84c;}
-.card-lbl{font-size:10px;color:#6b6b7a;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;}
+.card-lbl{font-size:10px;color:rgba(255,255,255,.50);text-transform:uppercase;letter-spacing:.1em;margin-top:4px;}
 h2{font-size:14px;color:#c9a84c;margin:22px 0 10px;letter-spacing:.08em;text-transform:uppercase;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
-th{text-align:left;padding:8px 10px;background:#1b4f7f;color:#6b6b7a;font-weight:500;border-bottom:1px solid #2a2a3a;}
+th{text-align:left;padding:8px 10px;background:#1b4f7f;color:rgba(255,255,255,.50);font-weight:500;border-bottom:1px solid #6a9ec9;}
 td{padding:7px 10px;border-bottom:1px solid rgba(42,42,58,.4);color:#e8e4d8;}
 .ok{color:#4ade80;font-weight:700;} .bad{color:#f87171;font-weight:700;} .unk{color:#fbbf24;}
 .grade{display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.07);}
-footer{margin-top:32px;padding-top:12px;border-top:1px solid #2a2a3a;font-size:10px;color:#4a4a5a;}
+footer{margin-top:32px;padding-top:12px;border-top:1px solid #6a9ec9;font-size:10px;color:rgba(255,255,255,.50);}
 </style></head><body>
 <h1> Kıble Analiz Raporu</h1>
 <div class="subtitle">${currentCity} · ${new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} · Tolerans: ${tol}°</div>
 
 <div class="cards">
   <div class="card"><div class="card-val">${all.length}</div><div class="card-lbl">Toplam Cami</div></div>
-  <div class="card"><div class="card-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'#6b6b7a'}">${pct!==null?pct+'%':'—'}</div><div class="card-lbl">Doğruluk</div></div>
+  <div class="card"><div class="card-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'rgba(255,255,255,.50)'}">${pct!==null?pct+'%':'—'}</div><div class="card-lbl">Doğruluk</div></div>
   <div class="card"><div class="card-val" style="color:${gradeCol}">${grade}</div><div class="card-lbl">Not</div></div>
   <div class="card"><div class="card-val">${avg!==null?avg.toFixed(1)+'°':'—'}</div><div class="card-lbl">Ort. Sapma</div></div>
 </div>
@@ -5031,7 +5031,7 @@ function buildScoreCardCanvas() {
   const ctx = cv.getContext('2d');
   const bg = ctx.createLinearGradient(0,0,1080,1080);
   bg.addColorStop(0, '#0f1018');
-  bg.addColorStop(1, '#1a1b29');
+  bg.addColorStop(1, '#255b89');
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,1080,1080);
   ctx.fillStyle = '#c9a84c';
@@ -5041,7 +5041,7 @@ function buildScoreCardCanvas() {
   ctx.font = '700 120px "Manrope", monospace';
   ctx.fillText(`${pct}%`, 80, 300);
   ctx.font = '500 44px "Manrope", monospace';
-  ctx.fillStyle = '#9ca3af';
+  ctx.fillStyle = 'rgba(255,255,255,.50)';
   ctx.fillText(currentCity || 'City', 80, 365);
   ctx.fillStyle = '#d1d5db';
   ctx.font = '500 34px "Manrope", monospace';
@@ -5427,7 +5427,7 @@ function populateDetailPanel(m) {
   document.getElementById('dp-axis-val').textContent  = m.axis!==null ? m.axis.toFixed(1)+'°' : '—';
   const diffEl = document.getElementById('dp-diff-val');
   diffEl.textContent = m.diff!==null ? m.diff.toFixed(1)+'°' : '—';
-  diffEl.style.color = m.diff!==null ? col : '#6b6b7a';
+  diffEl.style.color = m.diff!==null ? col : 'rgba(255,255,255,.50)';
   document.getElementById('dp-dist-val').textContent =
     Math.round(greatCircleKm(m.lat, m.lng, 21.4225, 39.8262)) + ' km';
 
@@ -5595,11 +5595,11 @@ function drawDetailCompass(m) {
 
   // Outer ring
   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-  ctx.strokeStyle = '#2a2a3a'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.strokeStyle = '#6a9ec9'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Cardinal labels
   const cardinals = [['K',0],['D',90],['G',180],['B',270]];
-  ctx.font = '8px Manrope,monospace'; ctx.fillStyle = '#4a4a5a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '8px Manrope,monospace'; ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   cardinals.forEach(([lbl, deg]) => {
     const rad = (deg - 90) * Math.PI / 180;
     ctx.fillText(lbl, cx + (r-8)*Math.cos(rad), cy + (r-8)*Math.sin(rad));
@@ -5612,7 +5612,7 @@ function drawDetailCompass(m) {
     ctx.beginPath();
     ctx.moveTo(cx+(r-2)*Math.cos(rad), cy+(r-2)*Math.sin(rad));
     ctx.lineTo(cx+(r-2-len)*Math.cos(rad), cy+(r-2-len)*Math.sin(rad));
-    ctx.strokeStyle = '#3a3a4a'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.strokeStyle = '#84b3d7'; ctx.lineWidth = 1; ctx.stroke();
   }
 
   // Qibla direction (gold dashed)
@@ -5676,7 +5676,7 @@ function renderTagsTable(tags) {
   const el = document.getElementById('dp-tags');
   const title = document.getElementById('dp-tags-title');
   const allKeys = Object.keys(tags);
-  if (!allKeys.length) { el.innerHTML='<div style="color:#6b6b7a;font-size:11px">Etiket bulunamadı</div>'; return; }
+  if (!allKeys.length) { el.innerHTML='<div style="color:rgba(255,255,255,.50);font-size:11px">Etiket bulunamadı</div>'; return; }
 
   // Sort: priority first, then alphabetical
   const sorted = [...allKeys].sort((a,b) => {
@@ -6056,14 +6056,14 @@ function drawCompass() {
   const W = cv.width, H = cv.height, cx=W/2, cy=H/2, r=110;
   ctx.clearRect(0,0,W,H);
   ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#1b4f7f'; ctx.fill();
-  ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=2; ctx.stroke();
+  ctx.strokeStyle='#6a9ec9'; ctx.lineWidth=2; ctx.stroke();
   for (let d=0; d<360; d+=15) {
     const rr = toRad(d-90);
     const len = d%90===0?14:d%45===0?10:6;
     ctx.beginPath();
     ctx.moveTo(cx+Math.cos(rr)*(r-2), cy+Math.sin(rr)*(r-2));
     ctx.lineTo(cx+Math.cos(rr)*(r-len), cy+Math.sin(rr)*(r-len));
-    ctx.strokeStyle = '#3a3a4a'; ctx.lineWidth=1; ctx.stroke();
+    ctx.strokeStyle = '#84b3d7'; ctx.lineWidth=1; ctx.stroke();
   }
   const heading = compassState.heading;
   const qibla = compassState.qibla;
@@ -6135,7 +6135,7 @@ function render3DScene(m) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
   renderer.setSize(w, h, false);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x090910);
+  scene.background = new THREE.Color(0x255b89);
   const camera = new THREE.PerspectiveCamera(45, w/h, 1, 5000);
   camera.position.set(0, 180, 300);
   camera.lookAt(0, 0, 0);
@@ -6291,11 +6291,11 @@ function detectRegion(city, country) {
 }
 
 function gradeColor(grade) {
-  return grade==='A'?'#4ade80':grade==='B'?'#a3e635':grade==='C'?'#fbbf24':grade==='D'?'#f87171':'#6b6b7a';
+  return grade==='A'?'#4ade80':grade==='B'?'#a3e635':grade==='C'?'#fbbf24':grade==='D'?'#f87171':'rgba(255,255,255,.50)';
 }
 
 function pctColor(pct) {
-  if (pct === null) return '#6b6b7a';
+  if (pct === null) return 'rgba(255,255,255,.50)';
   if (pct >= 80) return '#4ade80';
   if (pct >= 60) return '#a3e635';
   if (pct >= 40) return '#fbbf24';
@@ -6565,7 +6565,7 @@ function renderLeaderboard() {
       <div>${lbData.length===0
         ? 'Henüz şehir yok — yukarıdan bir şehir ekleyin!'
         : 'Bu bölgede şehir bulunamadı'}</div>
-      ${lbData.length===0?`<div style="color:#4a4a5a;font-size:11px;margin-top:8px">Örnek: İstanbul, Cairo, Karachi, Jakarta</div>`:''}
+      ${lbData.length===0?`<div style="color:rgba(255,255,255,.50);font-size:11px;margin-top:8px">Örnek: İstanbul, Cairo, Karachi, Jakarta</div>`:''}
     </div>`;
     return;
   }
@@ -6599,7 +6599,7 @@ function renderLeaderboard() {
       <span class="lbt-bar">
         ${e.pct!==null
           ? `<div class="lb-bar-track"><div class="lb-bar-fill" style="width:${barW}%;background:${col}"></div></div>`
-          : `<span style="font-size:9px;color:#4a4a5a">analiz bekleniyor</span>`}
+          : `<span style="font-size:9px;color:rgba(255,255,255,.50)">analiz bekleniyor</span>`}
       </span>
       <span class="lbt-pct" style="color:${col}">${lbDataset==='admin'?'—':(e.pct!==null?e.pct+'%':'—')}</span>
       <span class="lbt-not">${lbDataset==='admin'?'İl/State':(e.grade&&e.grade!=='—'?`<span style="color:${gradeColor(e.grade)};font-weight:700">${e.grade}</span>`:'—')}</span>
