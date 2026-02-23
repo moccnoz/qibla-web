@@ -5674,75 +5674,7 @@ body:not(.outdoor-mode) #map::after {
   border-color: rgba(13, 255, 186, 0.5) !important;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DESKTOP TOP HUD LAYOUT — centered stack and clean spacing
-   ═══════════════════════════════════════════════════════════ */
 @media (min-width: 769px) {
-  body {
-    --hud-search-w: clamp(760px, 72vw, 1320px);
-  }
-
-  .floating-search {
-    left: 50% !important;
-    top: 14px !important;
-    transform: translateX(-50%) !important;
-    width: var(--hud-search-w) !important;
-    max-width: var(--hud-search-w) !important;
-    z-index: 820 !important;
-  }
-
-  .floating-search .search-box,
-  .search-box {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-  .floating-search .search-box:focus-within,
-  .search-box:focus-within {
-    width: 100% !important;
-    min-width: 0 !important;
-  }
-
-  .stats-bar {
-    top: 94px !important;
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
-    width: var(--hud-search-w) !important;
-    max-width: var(--hud-search-w) !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    z-index: 760 !important;
-  }
-
-  body.search-expanded .stats-bar {
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-  }
-
-  .search-area-btn {
-    top: 146px !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
-    z-index: 770 !important;
-    background: #0D40FF !important;
-    border: 1px solid rgba(191, 219, 254, 0.42) !important;
-    color: #eff5ff !important;
-    box-shadow: 0 10px 22px rgba(13, 64, 255, 0.34) !important;
-  }
-
-  .search-area-btn:hover {
-    background: #0c74e8 !important;
-  }
-
-  .mode-pills {
-    top: 146px !important;
-    left: auto !important;
-    right: max(14px, calc(50% - (var(--hud-search-w) / 2))) !important;
-    transform: none !important;
-    z-index: 780 !important;
-  }
-
   .tolerance-pill {
     display: none !important;
   }
@@ -5786,43 +5718,6 @@ body:not(.outdoor-mode) #map::after {
   background: #0C74E8 !important;
   border: 1px solid rgba(147, 197, 253, 0.50) !important;
   color: #eef6ff !important;
-}
-
-@media (min-width: 769px) and (max-width: 1180px) {
-  body {
-    --hud-search-w: min(900px, calc(100vw - 380px));
-  }
-
-  .floating-search,
-  .stats-bar {
-    width: var(--hud-search-w) !important;
-    max-width: var(--hud-search-w) !important;
-  }
-
-  .floating-search {
-    top: 12px !important;
-  }
-
-  .stats-bar {
-    top: 86px !important;
-    gap: 8px !important;
-    justify-content: center !important;
-    overflow-x: auto !important;
-  }
-
-  .search-area-btn {
-    top: 138px !important;
-    left: calc(50% - (var(--hud-search-w) / 2) + 128px) !important;
-    transform: none !important;
-    z-index: 775 !important;
-  }
-
-  .mode-pills {
-    top: 138px !important;
-    right: calc(50% - (var(--hud-search-w) / 2)) !important;
-    left: auto !important;
-    transform: none !important;
-  }
 }
 
 @media (max-width: 768px) {
