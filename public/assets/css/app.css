@@ -346,12 +346,26 @@ header .btn::before, header .btn-sm::before{content:none !important;}
   box-shadow:0 8px 20px rgba(5,18,34,.34);
   opacity:0;
   pointer-events:none;
-  transition:opacity .18s ease, transform .18s ease;
+  transition:opacity .18s ease, transform .18s ease, box-shadow .2s ease, background .2s ease;
 }
 .search-area-btn.show{
   opacity:1;
   pointer-events:auto;
   transform:translateX(-50%) translateY(0);
+}
+.search-area-btn.armed{
+  animation:searchAreaPulse 1.35s ease-in-out infinite;
+}
+.search-area-btn.loading{
+  animation:none;
+  background:rgba(29,78,124,.95);
+  box-shadow:0 10px 26px rgba(5,18,34,.48);
+  cursor:wait;
+}
+.search-area-btn:disabled{opacity:1;pointer-events:none;}
+@keyframes searchAreaPulse{
+  0%,100%{box-shadow:0 8px 20px rgba(5,18,34,.34);}
+  50%{box-shadow:0 10px 26px rgba(201,168,76,.22);}
 }
 
 /* map live badge (always on map, top-left) */
@@ -578,6 +592,21 @@ body:not(.outdoor-mode) #map::after{
   align-items:center;
   gap:6px;
 }
+.ms-group-act{
+  margin-left:auto;
+  border:1px solid rgba(170,214,241,.28);
+  background:rgba(255,255,255,.05);
+  color:rgba(255,255,255,.60);
+  border-radius:8px;
+  font-family:inherit;
+  font-size:9px;
+  padding:2px 8px;
+  cursor:pointer;
+}
+.ms-group-act:hover{
+  color:#f1c96f;
+  border-color:rgba(201,168,76,.42);
+}
 .ms-group-ic{
   display:inline-flex;
   align-items:center;
@@ -590,6 +619,25 @@ body:not(.outdoor-mode) #map::after{
   background:rgba(255,255,255,.05);
   font-size:9px;
   font-weight:700;
+}
+.ms-item-del{
+  margin-left:6px;
+  margin-top:1px;
+  width:19px;
+  height:19px;
+  border-radius:7px;
+  border:1px solid rgba(170,214,241,.26);
+  background:rgba(255,255,255,.04);
+  color:rgba(255,255,255,.55);
+  cursor:pointer;
+  font-size:14px;
+  line-height:16px;
+  padding:0;
+}
+.ms-item-del:hover{
+  color:#f87171;
+  border-color:rgba(248,113,113,.44);
+  background:rgba(248,113,113,.1);
 }
 .ms-suggest-btn{
   margin-top:7px;background:#1b4f7f;border:1px solid rgba(170,214,241,.28);color:#c9a84c;

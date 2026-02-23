@@ -781,6 +781,10 @@ function hideSearchAreaButton() {
   const btn = document.getElementById('search-area-btn');
   if (!btn) return;
   btn.classList.remove('show');
+  btn.classList.remove('loading');
+  btn.classList.remove('armed');
+  btn.disabled = false;
+  btn.textContent = 'Bu alanı tara';
   searchAreaArmed = false;
 }
 
@@ -795,15 +799,19 @@ function maybeArmSearchAreaButton() {
   const thresholdKm = z >= 15 ? 0.15 : z >= 13 ? 0.3 : 0.5;
   if (km >= thresholdKm) {
     btn.classList.add('show');
+    btn.classList.add('armed');
     searchAreaArmed = true;
-  } else if (searchAreaArmed && km < thresholdKm * 0.6) {
-    btn.classList.remove('show');
-    searchAreaArmed = false;
   }
 }
 
-function refreshSearchArea() {
+async function refreshSearchArea() {
   if (!map) return;
+  const btn = document.getElementById('search-area-btn');
+  if (btn) {
+    btn.classList.add('show', 'loading');
+    btn.disabled = true;
+    btn.textContent = 'Taranıyor...';
+  }
   const bounds = map.getBounds();
   const cells = boundsToGridCells(bounds);
   for (const c of cells) {
@@ -811,8 +819,11 @@ function refreshSearchArea() {
   }
   updateCacheUI();
   searchAreaAnchor = map.getCenter();
+  try {
+    await loadViewport();
+    toast('Bu alan güncellendi', 1400);
+  } catch {}
   hideSearchAreaButton();
-  scheduleViewportLoad(60);
 }
 
 function scheduleViewportLoad(delayMs = 420, opts = {}) {
@@ -1791,6 +1802,17 @@ function saveCitySearchHistory() {
   try {
     safeStorageSet(CITY_SEARCH_HISTORY_KEY, JSON.stringify(citySearchHistory.slice(0, 40)));
   } catch {}
+}
+
+function removeCitySearchHistoryEntry(key) {
+  if (!key) return;
+  citySearchHistory = citySearchHistory.filter(x => citySearchHistoryKey(x) !== key);
+  saveCitySearchHistory();
+}
+
+function clearCitySearchHistory() {
+  citySearchHistory = [];
+  saveCitySearchHistory();
 }
 
 function citySearchHistoryKey(rec = {}) {
@@ -3309,9 +3331,11 @@ function showCityFocusDropdown() {
   if (history.length) {
     const hdr = document.createElement('div');
     hdr.className = 'ms-group-hdr';
-    hdr.innerHTML = `<span class="ms-group-ic">H</span>Geçmiş Aramalar`;
+    hdr.innerHTML = `<span class="ms-group-ic">H</span>Geçmiş Aramalar
+      <button class="ms-group-act" type="button" onclick="clearCitySearchHistory();showCityFocusDropdown()">Temizle</button>`;
     frag.appendChild(hdr);
     history.forEach(rec => {
+      const recKey = citySearchHistoryKey(rec);
       const div = document.createElement('div');
       div.className = 'ms-item';
       div.dataset.kind = rec.kind;
@@ -3322,7 +3346,15 @@ function showCityFocusDropdown() {
           <div class="ms-item-name"><span class="ms-item-ic">${rec.kind === 'mosque' ? 'M' : 'P'}</span>${escHtml(rec.title || rec.query)}</div>
           <div class="ms-item-sub">${escHtml(rec.subtitle || 'Son arama')}</div>
         </div>
-        <div class="ms-item-diff" style="color:var(--gold)">${Math.max(1, rec.count || 1)}x</div>`;
+        <div class="ms-item-diff" style="color:var(--gold)">${Math.max(1, rec.count || 1)}x</div>
+        <button class="ms-item-del" type="button" title="Kaydı sil" aria-label="Kaydı sil">×</button>`;
+      const delBtn = div.querySelector('.ms-item-del');
+      delBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        removeCitySearchHistoryEntry(recKey);
+        showCityFocusDropdown();
+      });
       div.onclick = () => selectCityHistoryEntry(rec);
       frag.appendChild(div);
     });
