@@ -741,6 +741,25 @@ body:not(.outdoor-mode) #map::after{
 .cmp-tbl .winner-cell{font-weight:700;}
 
 .cmp-footer{padding:12px 22px;border-top:1px solid #2a2a3a;font-size:10px;color:#6b6b7a;flex-shrink:0;}
+body:not(.outdoor-mode) .cmp-modal{
+  font-family:'Inter','Manrope','Segoe UI','Helvetica Neue',Arial,sans-serif;
+}
+body:not(.outdoor-mode) .cmp-modal :is(
+  .cmp-close,
+  .cmp-city-hint,
+  .cmp-city-status,
+  .cmp-progress-label,
+  .cmp-radar-legend,
+  .cmp-section-label,
+  .cmp-bar-label,
+  .cmp-tbl th,
+  .cmp-footer
+){
+  color:rgba(255,255,255,.50) !important;
+}
+body:not(.outdoor-mode) .cmp-modal .cmp-search-row input::placeholder{
+  color:rgba(255,255,255,.50) !important;
+}
 
 /* ══ DETAIL PANEL CSS ═════════════════════════════════════════ */
 .dp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:4800;display:none;transition:background .25s;}
