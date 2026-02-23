@@ -102,6 +102,13 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 /* cache stats */
 .cache-info{font-size:10px;color:var(--border);padding:0 10px;border-left:1px solid var(--border);}
 .cache-info span{color:var(--muted);}
+.district-pill{
+  display:none;align-items:center;gap:6px;margin-left:8px;padding:2px 7px;border-radius:999px;
+  border:1px solid rgba(201,168,76,.45);background:rgba(201,168,76,.1);font-size:10px;color:var(--gold);
+}
+.district-pill.show{display:inline-flex;}
+.district-pill button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:10px;line-height:1;padding:0 2px;}
+.district-pill button:hover{color:var(--red);}
 
 .tol{display:flex;align-items:center;gap:7px;margin-left:auto;padding:0 15px;font-size:11px;color:var(--muted);}
 .tol input[type=range]{-webkit-appearance:none;width:75px;height:3px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
@@ -214,6 +221,13 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
 .qp-k{color:var(--muted);}
 .qp-v{color:var(--text);}
 .qp-anim{font-size:9px;color:var(--gold);margin-top:6px;letter-spacing:.1em;text-transform:uppercase;}
+.district-hover-chip{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:803;
+  background:rgba(10,10,15,.9);border:1px solid rgba(201,168,76,.35);color:var(--gold);
+  border-radius:999px;padding:6px 10px;font-size:10px;letter-spacing:.03em;pointer-events:none;
+  opacity:0;transition:opacity .2s;
+}
+.district-hover-chip.show{opacity:1;}
 
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:5px;color:var(--muted);font-size:11px;padding:18px;text-align:center;min-height:180px;}
 .empty-icon{font-size:28px;opacity:.35;margin-bottom:5px;}
@@ -442,6 +456,7 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   .stat{flex-shrink:0;}
   .tol{flex-shrink:0;}
   .cache-info{display:none;}
+  .district-pill{flex-shrink:0;}
 
   /* Sidebar becomes bottom sheet */
   .main{position:relative;}
@@ -520,6 +535,9 @@ header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var
   /* Qibla panel smaller */
   .qibla-panel{max-width:160px;font-size:10px;}
   .qp-name{max-width:140px;}
+  .district-hover-chip{
+    top:8px;left:8px;transform:none;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
 
   /* Modals full-screen */
   .hist-modal,.cmp-modal,.lb-modal{width:100% !important;max-height:100vh;border-radius:0;margin:0;}

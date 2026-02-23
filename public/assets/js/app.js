@@ -46,6 +46,20 @@ let followState = { enabled:false, watchId:null, lastFixAt:0 };
 let userGeoState = { lat:null, lng:null, enabled:false, ts:0 };
 let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
 let m3dState = { renderer:null, scene:null, camera:null, raf:0, obj:null };
+const districtBoundaryCache = new Map();
+const districtState = {
+  enabled: false,
+  reverseBusy: false,
+  lastReverseAt: 0,
+  reverseSeq: 0,
+  hoverName: '',
+  hoverContextCity: '',
+  hoverContextCountry: '',
+  selectedName: '',
+  selectedGeo: null,
+  selectedBBox: null,
+  layer: null
+};
 const API_RATE = {
   nominatim: { nextAt:0, cooldown:0, minInterval:1100 },
   overpass: { nextAt:0, cooldown:0, minInterval:500 }
@@ -170,6 +184,153 @@ async function nominatimFetchJson(url, headers = {}) {
   return r.json();
 }
 
+function districtNameFromAddress(addr = {}) {
+  return (addr.city_district || addr.county || addr.township || addr.municipality || addr.state_district || addr.suburb || '').trim();
+}
+
+function districtContextCity(addr = {}) {
+  return (addr.city || addr.town || addr.municipality || addr.province || addr.state || currentCity || '').trim();
+}
+
+function districtCacheKey(name, city = '', country = '') {
+  return `${normalize(trLower(name || ''))}|${normalize(trLower(city || ''))}|${normalize(trLower(country || ''))}`;
+}
+
+function updateDistrictUi() {
+  const btn = document.getElementById('btn-district');
+  if (btn) btn.classList.toggle('active', districtState.enabled || !!districtState.selectedGeo);
+
+  const chip = document.getElementById('district-hover-chip');
+  if (chip) {
+    if (!districtState.enabled) {
+      chip.classList.remove('show');
+    } else if (districtState.hoverName) {
+      chip.textContent = `İlçe: ${districtState.hoverName} (seçmek için tıkla)`;
+      chip.classList.add('show');
+    } else {
+      chip.textContent = 'İlçe modu: harita üzerinde gezdirin';
+      chip.classList.add('show');
+    }
+  }
+
+  const pill = document.getElementById('district-pill');
+  const txt = document.getElementById('district-pill-text');
+  if (pill && txt) {
+    if (districtState.selectedName) {
+      txt.textContent = `İlçe: ${districtState.selectedName}`;
+      pill.classList.add('show');
+    } else {
+      txt.textContent = '—';
+      pill.classList.remove('show');
+    }
+  }
+}
+
+function computeGeoBBox(geo) {
+  let minLat = Infinity, minLng = Infinity, maxLat = -Infinity, maxLng = -Infinity;
+  const walk = (coords) => {
+    if (!Array.isArray(coords) || !coords.length) return;
+    if (typeof coords[0] === 'number') {
+      const lng = Number(coords[0]);
+      const lat = Number(coords[1]);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      return;
+    }
+    coords.forEach(walk);
+  };
+  walk(geo?.coordinates);
+  if (!Number.isFinite(minLat) || !Number.isFinite(minLng) || !Number.isFinite(maxLat) || !Number.isFinite(maxLng)) return null;
+  return { minLat, minLng, maxLat, maxLng };
+}
+
+function pointInRing(lng, lat, ring = []) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > lat) !== (yj > lat))
+      && (lng < (xj - xi) * (lat - yi) / ((yj - yi) || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function pointInGeoJson(lng, lat, geo) {
+  if (!geo || !geo.type) return false;
+  if (geo.type === 'Polygon') {
+    const rings = geo.coordinates || [];
+    if (!rings.length) return false;
+    if (!pointInRing(lng, lat, rings[0])) return false;
+    for (let i = 1; i < rings.length; i++) if (pointInRing(lng, lat, rings[i])) return false;
+    return true;
+  }
+  if (geo.type === 'MultiPolygon') {
+    const polys = geo.coordinates || [];
+    for (const poly of polys) {
+      if (!poly.length) continue;
+      if (!pointInRing(lng, lat, poly[0])) continue;
+      let inHole = false;
+      for (let i = 1; i < poly.length; i++) if (pointInRing(lng, lat, poly[i])) { inHole = true; break; }
+      if (!inHole) return true;
+    }
+    return false;
+  }
+  return false;
+}
+
+function mosqueInSelectedDistrict(m) {
+  if (!districtState.selectedGeo) return true;
+  const b = districtState.selectedBBox;
+  if (b) {
+    if (m.lat < b.minLat || m.lat > b.maxLat || m.lng < b.minLng || m.lng > b.maxLng) return false;
+  }
+  return pointInGeoJson(m.lng, m.lat, districtState.selectedGeo);
+}
+
+function getVisibleMosques(pad = 0.1) {
+  if (!map) return [];
+  const bounds = map.getBounds().pad(pad);
+  let vis = [...mosqueDB.values()].filter(m => bounds.contains([m.lat, m.lng]));
+  if (districtState.selectedGeo) vis = vis.filter(mosqueInSelectedDistrict);
+  return vis;
+}
+
+function clearDistrictSelection(silent = false) {
+  if (districtState.layer && map) {
+    try { map.removeLayer(districtState.layer); } catch {}
+  }
+  districtState.layer = null;
+  districtState.selectedName = '';
+  districtState.selectedGeo = null;
+  districtState.selectedBBox = null;
+  updateDistrictUi();
+  if (!silent) toast('İlçe filtresi temizlendi', 2200);
+}
+
+function setDistrictSelection(name, geo) {
+  clearDistrictSelection(true);
+  districtState.selectedName = name || '';
+  districtState.selectedGeo = geo || null;
+  districtState.selectedBBox = computeGeoBBox(geo);
+  if (map && geo) {
+    districtState.layer = L.geoJSON(geo, {
+      style: {
+        color: '#60a5fa',
+        weight: 2,
+        fillColor: '#60a5fa',
+        fillOpacity: 0.08,
+        dashArray: '6 4'
+      }
+    }).addTo(map);
+    try { districtState.layer.bringToBack(); } catch {}
+  }
+  updateDistrictUi();
+}
+
 const TILES = {
   dark:      { url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',         opts:{ attribution:'©OSM ©CartoDB', subdomains:'abcd', maxZoom:19 } },
   satellite: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opts:{ attribution:'©Esri ©OSM', maxZoom:19 } },
@@ -252,6 +413,11 @@ function initMap() {
   // Wire buttons
   document.getElementById('search-btn').onclick = doSearch;
   document.getElementById('loc-btn').onclick    = useMyLocation;
+  document.getElementById('btn-district').onclick = toggleDistrictMode;
+  document.getElementById('district-pill-clear').onclick = () => {
+    clearDistrictSelection();
+    renderAll();
+  };
   document.getElementById('city-input').onkeydown = e => {
     if (e.key !== 'Enter') return;
     const dd = document.getElementById('city-smart-dd');
@@ -270,6 +436,13 @@ function initMap() {
 
   // Close qibla panel on map click (not on marker)
   map.on('click', hideQiblaPanel);
+  map.on('mousemove', onDistrictMouseMove);
+  map.on('click', onDistrictMapClick);
+  map.on('mouseout', () => {
+    if (!districtState.enabled) return;
+    districtState.hoverName = '';
+    updateDistrictUi();
+  });
 
   // Always start from clean home state on refresh/load (no hash restore, empty search).
   _hashUpdating = true;
@@ -278,6 +451,7 @@ function initMap() {
   currentCity = '';
   document.getElementById('city-input').value = '';
   if (mq) mq.value = '';
+  updateDistrictUi();
   setOv(false);
   if (map.getZoom() >= 11) {
     vpDebounceTimer = setTimeout(loadViewport, 3000);
@@ -310,6 +484,94 @@ async function autoLocateOnStartup() {
   } catch {
     return false;
   }
+}
+
+function toggleDistrictMode() {
+  districtState.enabled = !districtState.enabled;
+  districtState.hoverName = '';
+  updateDistrictUi();
+  toast(districtState.enabled ? 'İlçe modu aktif: harita üzerinde gezdirip tıklayın' : 'İlçe modu kapatıldı', 2200);
+}
+
+async function onDistrictMouseMove(e) {
+  if (!districtState.enabled || !e?.latlng) return;
+  const now = Date.now();
+  if (districtState.reverseBusy || (now - districtState.lastReverseAt) < 1200) return;
+  districtState.lastReverseAt = now;
+  districtState.reverseBusy = true;
+  const seq = ++districtState.reverseSeq;
+  try {
+    const { lat, lng } = e.latlng;
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=12&addressdetails=1`;
+    const d = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+    if (seq !== districtState.reverseSeq) return;
+    const addr = d?.address || {};
+    districtState.hoverName = districtNameFromAddress(addr);
+    districtState.hoverContextCity = districtContextCity(addr);
+    districtState.hoverContextCountry = (addr.country || '').trim();
+    updateDistrictUi();
+  } catch {}
+  districtState.reverseBusy = false;
+}
+
+function pickDistrictPolygonResult(items = [], districtName = '', contextCity = '') {
+  if (!items.length) return null;
+  const dn = normalize(trLower(districtName || ''));
+  const cn = normalize(trLower(contextCity || ''));
+  const ranked = items.map(it => {
+    const addr = it.address || {};
+    const cls = trLower(it.class || '');
+    const type = trLower(it.type || '');
+    const disp = normalize(trLower(it.display_name || ''));
+    const addrDistrict = normalize(trLower(districtNameFromAddress(addr) || ''));
+    const addrCity = normalize(trLower(districtContextCity(addr) || ''));
+    let s = Number(it.importance || 0) * 40;
+    if (cls === 'boundary') s += 55;
+    if (type === 'administrative') s += 35;
+    if (addrDistrict && addrDistrict === dn) s += 120;
+    if (dn && disp.includes(dn)) s += 30;
+    if (cn && addrCity === cn) s += 35;
+    if (cn && disp.includes(cn)) s += 20;
+    if (!it.geojson) s -= 1000;
+    return { it, s };
+  }).sort((a,b) => b.s - a.s);
+  return ranked[0]?.it || null;
+}
+
+async function fetchDistrictPolygonByName(name, contextCity = '', contextCountry = '') {
+  const key = districtCacheKey(name, contextCity, contextCountry);
+  if (districtBoundaryCache.has(key)) return districtBoundaryCache.get(key);
+  const q = [name, contextCity, contextCountry].filter(Boolean).join(', ');
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=8&polygon_geojson=1&addressdetails=1&q=${encodeURIComponent(q)}`;
+  const rows = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
+  const best = pickDistrictPolygonResult(rows || [], name, contextCity);
+  const geo = best?.geojson || null;
+  districtBoundaryCache.set(key, geo);
+  return geo;
+}
+
+async function onDistrictMapClick(e) {
+  if (!districtState.enabled || !e?.latlng) return;
+  const t = e?.originalEvent?.target;
+  if (t && t.classList && t.classList.contains('leaflet-interactive')) return;
+  if (!districtState.hoverName) {
+    toast('Bu noktada ilçe algılanamadı, biraz hareket ettirip tekrar deneyin', 2400);
+    return;
+  }
+  const name = districtState.hoverName;
+  const city = districtState.hoverContextCity;
+  const country = districtState.hoverContextCountry;
+  showMini(`İlçe sınırı yükleniyor: ${name}`);
+  try {
+    const geo = await fetchDistrictPolygonByName(name, city, country);
+    if (!geo) throw new Error('İlçe sınırı bulunamadı');
+    setDistrictSelection(name, geo);
+    renderAll();
+    toast(`İlçe seçildi: ${name}`, 2400);
+  } catch (err) {
+    toast(`İlçe seçilemedi: ${err?.message || 'bilinmeyen hata'}`, 3200);
+  }
+  hideMini();
 }
 
 function switchLayer(type) {
@@ -691,8 +953,7 @@ function renderAll() {
   renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
   renderLayers=[];
 
-  const bounds = map.getBounds().pad(0.1);
-  const visible = [...mosqueDB.values()].filter(m=>bounds.contains([m.lat,m.lng]));
+  const visible = getVisibleMosques(0.1);
   const denseMode = visible.length > 700;
   if (denseMode && !denseModeNotified) {
     toast('Performans modu: yoğun bölgede sade çizim kullanılıyor', 3200);
@@ -1873,9 +2134,7 @@ function animateCounter(el, target) {
 }
 
 function updateStats(){
-  const all=[...mosqueDB.values()];
-  const bounds=map.getBounds().pad(0.1);
-  const vis=all.filter(m=>bounds.contains([m.lat,m.lng]));
+  const vis = getVisibleMosques(0.1);
   if (vis.length) {
     animateCounter(document.getElementById('s-total'), vis.length);
     animateCounter(document.getElementById('s-ok'),    vis.filter(m=>m.status==='correct').length);
@@ -2833,8 +3092,7 @@ function selectMosque(m) {
 function applyMosqueFilter(q) {
   mosqueFilter = q;
   const banner  = document.getElementById('ms-banner');
-  const bounds  = map.getBounds().pad(0.1);
-  const visible = [...mosqueDB.values()].filter(m => bounds.contains([m.lat,m.lng]));
+  const visible = getVisibleMosques(0.1);
 
   if (!q) {
     banner.classList.remove('show');
@@ -2862,8 +3120,7 @@ function clearMosqueSearch() {
   document.getElementById('ms-banner').classList.remove('show');
   // Restore full list
   if (mosqueDB.size && map) {
-    const bounds = map.getBounds().pad(0.1);
-    const visible = [...mosqueDB.values()].filter(m=>bounds.contains([m.lat,m.lng]));
+    const visible = getVisibleMosques(0.1);
     updateList(visible);
   }
 }
@@ -2970,6 +3227,8 @@ async function doSearch(){
   const mosqueMode = isLikelyMosqueQuery(v);
   const direct = parseDirectMosqueQuery(v);
   try{
+    clearDistrictSelection(true);
+    updateDistrictUi();
     if (direct) {
       setOv(true, `"${v}" aranıyor...`, 'Doğrudan kayıt sorgusu');
       tileCache.clear(); updateCacheUI();
@@ -3146,6 +3405,9 @@ async function resetToHome() {
     if (dpOpen) closeDetailPanel();
     closeMobDrawer?.();
     clearMosqueSearch?.();
+    clearDistrictSelection?.(true);
+    districtState.enabled = false;
+    updateDistrictUi?.();
     hideQiblaPanel?.();
     map.closePopup();
     document.getElementById('city-input').value = '';
@@ -6454,5 +6716,3 @@ async function lbAnalyseCity(city) {
 
   btn.disabled = false;
 }
-
-

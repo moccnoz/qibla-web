@@ -38,6 +38,7 @@
       <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]">⚖️ Karşılaştır</button>
       <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]">📅 Tarih</button>
       <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]">🌍 Sıralama</button>
+      <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)">🧩 İlçe</button>
       <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]">📍 Konum</button>
       <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş">📤 Export</button>
     </div>
@@ -325,6 +326,10 @@
     <button id="axis-interior" onclick="setAxisMode('interior')">Inside</button>
   </div>
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
+  <div class="district-pill" id="district-pill">
+    <span id="district-pill-text">—</span>
+    <button id="district-pill-clear" title="İlçe filtresini temizle">✕</button>
+  </div>
   <div class="tol">Tolerans:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
 </div>
 
@@ -349,6 +354,7 @@
       <div class="qp-row"><span class="qp-k">Kabe</span><span class="qp-v" id="qp-dist">—</span></div>
       <div class="qp-anim" id="qp-anim-status">● Kıble çizgisi çiziliyor...</div>
     </div>
+    <div class="district-hover-chip" id="district-hover-chip">İlçe modu: harita üzerinde gezdirin</div>
 
     <!-- Score Card Panel -->
     <div class="score-card" id="score-card">
