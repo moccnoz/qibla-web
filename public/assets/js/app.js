@@ -992,10 +992,15 @@ function processElements(elements) {
       tags: el.tags||{},
       geomComplexity: computeGeometryComplexity(polyCoords)
     };
+    const remoteMeta = msRemoteMetaByRef.get(`${el.type}:${el.id}`);
+    if (remoteMeta) {
+      rec.searchMeta = { ...remoteMeta };
+    }
     buildSearchIndexForMosque(rec);
     applyAxisFusion(rec);
     const existing = mosqueDB.get(el.id);
     if (existing) {
+      if (remoteMeta && !existing.searchMeta) existing.searchMeta = { ...remoteMeta };
       const recScore =
         (rec.axis != null ? 120 : 0) +
         (Array.isArray(rec.polyCoords) && rec.polyCoords.length >= 4 ? 30 : 0) +
@@ -2298,25 +2303,74 @@ function updateSidebarSnapPanels() {
   drawSidebarRadar(stats);
 }
 
+function rankVisibleMosquesByQuery(list, q) {
+  const qLow = trLower(q || '');
+  const qNorm = normalize(qLow);
+  const words = qLow.split(/\s+/).filter(w => w.length > 0);
+  return [...(list || [])]
+    .map(m => {
+      const s = msMosqueScore(m, qLow, qNorm, words);
+      const p = computeMosquePopularityScore(m);
+      const d = computeMosqueProximityScore(m);
+      return { m, rank: s + p + d, s, p, d };
+    })
+    .filter(x => x.s > 0)
+    .sort((a,b) => b.rank - a.rank || b.p - a.p || b.s - a.s)
+    .map(x => x.m);
+}
+
 function updateList(visible){
   const el=document.getElementById('mosque-list');
   if(!visible.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div>Cami bulunamadı</div></div>';document.getElementById('sb-count').textContent='';return;}
   document.getElementById('sb-count').textContent=visible.length;
-  const sorted=[...visible].sort((a,b)=>({wrong:0,unknown:1,correct:2}[a.status]-{wrong:0,unknown:1,correct:2}[b.status]));
+  const hasQuery = !!(mosqueFilter && mosqueFilter.trim().length > 1);
+  const sorted = hasQuery
+    ? rankVisibleMosquesByQuery(visible, mosqueFilter)
+    : [...visible].sort((a,b)=>({wrong:0,unknown:1,correct:2}[a.status]-{wrong:0,unknown:1,correct:2}[b.status]));
   const frag=document.createDocumentFragment();
-  sorted.forEach((m,i)=>{
-    const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
-    const div=document.createElement('div');
-    div.className='m-item';div.id='mi-'+m.id;
-    div.style.animationDelay = Math.min(i*18, 300)+'ms';
-    const convMark = m.convertedFrom?.converted ? ' →' : '';
-    div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
-      <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
-      <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
-      <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
-    div.onclick=()=>handleMosqueClick(m);
-    frag.appendChild(div);
-  });
+  if (hasQuery) {
+    const grouped = new Map();
+    for (const m of sorted) {
+      const key = getSearchProvinceLabel(m);
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(m);
+    }
+    [...grouped.entries()]
+      .sort((a,b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'tr'))
+      .forEach(([province, items]) => {
+        const hdr = document.createElement('div');
+        hdr.className = 'm-group-hdr';
+        hdr.textContent = `${province} (${items.length})`;
+        frag.appendChild(hdr);
+        items.forEach((m,i) => {
+          const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+          const div=document.createElement('div');
+          div.className='m-item';div.id='mi-'+m.id;
+          div.style.animationDelay = Math.min(i*18, 300)+'ms';
+          const convMark = m.convertedFrom?.converted ? ' →' : '';
+          div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
+            <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
+            <div class="m-sub">${escHtml(getMosqueHierarchyLine(m))}</div></div>
+            <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+          div.onclick=()=>handleMosqueClick(m);
+          frag.appendChild(div);
+        });
+      });
+  } else {
+    sorted.forEach((m,i)=>{
+      const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+      const div=document.createElement('div');
+      div.className='m-item';div.id='mi-'+m.id;
+      div.style.animationDelay = Math.min(i*18, 300)+'ms';
+      const convMark = m.convertedFrom?.converted ? ' →' : '';
+      div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
+        <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
+        <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
+        <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+      div.onclick=()=>handleMosqueClick(m);
+      frag.appendChild(div);
+    });
+  }
   el.innerHTML='';el.appendChild(frag);
 }
 
@@ -2563,6 +2617,7 @@ const LANDMARK_ALIAS_COMPILED = LANDMARK_ALIAS_GROUPS.map(g => ({
   key: g.key,
   aliasesNorm: [...new Set((g.aliases || []).map(a => normalize(trLower(a))).filter(Boolean))]
 }));
+const msRemoteMetaByRef = new Map();
 
 function uniqueNameList(arr) {
   const out = [];
@@ -2800,6 +2855,35 @@ function computeMosquePopularityScore(m) {
   return Math.min(40, score);
 }
 
+function pickAddressAdmin(address = {}) {
+  const city = String(
+    address.city || address.town || address.municipality || address.county || address.state_district || ''
+  ).trim();
+  const province = String(
+    address.state || address.province || address.region || address.county || ''
+  ).trim();
+  const country = String(address.country || '').trim();
+  return { city, province, country };
+}
+
+function getMosqueAdminBucket(m) {
+  const t = m?.tags || {};
+  const meta = m?.searchMeta || {};
+  const city = String(
+    t['addr:city'] || t['addr:town'] || t['is_in:city'] || meta.city || ''
+  ).trim();
+  const province = String(
+    t['addr:province'] || t['addr:state'] || t['is_in:state'] || meta.province || city || currentCity || ''
+  ).trim();
+  return { city, province, country: String(meta.country || '').trim() };
+}
+
+function getSearchProvinceLabel(m) {
+  const admin = getMosqueAdminBucket(m);
+  const raw = admin.province || admin.city || currentCity || 'Diğer';
+  return String(raw).toLocaleUpperCase('tr-TR');
+}
+
 function computeMosqueProximityScore(m) {
   if (!userGeoState.enabled || !Number.isFinite(userGeoState.lat) || !Number.isFinite(userGeoState.lng)) return 0;
   const km = greatCircleKm(userGeoState.lat, userGeoState.lng, m.lat, m.lng);
@@ -2865,23 +2949,32 @@ function applySuggestedMosqueQuery(text) {
   showMosqueDropdown(text);
 }
 
-function rankMosqueCandidates(q, limit = 15) {
+function rankMosqueCandidates(q, limit = 15, opts = {}) {
   const qLow  = trLower(q);
   const qNorm = normalize(qLow);
   const words = qLow.split(/\s+/).filter(w => w.length > 0);
+  const strongWords = strongQueryWords(q);
+  const scopeViewportOnly = typeof opts.scopeViewportOnly === 'boolean' ? opts.scopeViewportOnly : msScopeViewportOnly;
   const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
   const scored = [];
   for (const m of mosqueDB.values()) {
     const textScore = msMosqueScore(m, qLow, qNorm, words);
     if (textScore <= 0) continue;
+    if (!m.searchIndex) buildSearchIndexForMosque(m);
+    const namesNorm = m.searchIndex?.namesNorm || [normalize(trLower(m.name || ''))];
+    if (strongWords.length >= 2) {
+      const matchCount = strongWords.filter(w => namesNorm.some(n => n === w || n.includes(w))).length;
+      if (matchCount === 0) continue;
+      if (matchCount < strongWords.length && textScore < 45) continue;
+    }
     const inView = bounds ? bounds.contains([m.lat, m.lng]) : false;
     const popScore = computeMosquePopularityScore(m);
     const proxScore = computeMosqueProximityScore(m);
-    const viewportBonus = !bounds ? 0 : (inView ? (msScopeViewportOnly ? 45 : 18) : (msScopeViewportOnly ? -50 : 0));
+    const viewportBonus = !bounds ? 0 : (inView ? (scopeViewportOnly ? 45 : 18) : (scopeViewportOnly ? -50 : 0));
     const rankScore = textScore + popScore + proxScore + viewportBonus;
     scored.push({ m, s:textScore, p:popScore, d:proxScore, inView, rank:rankScore });
   }
-  const ranked = msScopeViewportOnly && bounds
+  const ranked = scopeViewportOnly && bounds
     ? scored.filter(x => x.inView).sort((a,b) => b.rank - a.rank || b.s - a.s)
     : scored.sort((a,b) => b.rank - a.rank || (b.inView - a.inView) || (b.s - a.s));
   return { ranked: ranked.slice(0, limit), qLow, qNorm, words, bounds };
@@ -2940,7 +3033,8 @@ async function fetchNominatimMosqueRefs(query, bounds, bounded = true, limit = 1
     const osmType = toOsmType(it.osm_type);
     const id = String(it.osm_id || '').replace(/\D/g, '');
     if (!osmType || !id) continue;
-    refs.push({ osmType, id });
+    const admin = pickAddressAdmin(it.address || {});
+    refs.push({ osmType, id, city: admin.city, province: admin.province, country: admin.country, displayName: it.display_name || '' });
   }
   return refs;
 }
@@ -2964,7 +3058,7 @@ async function fetchByOsmRefs(refs) {
   return fetchOverpassQuery(q);
 }
 
-async function triggerRemoteMosqueLookup(query, qNorm, bounds) {
+async function triggerRemoteMosqueLookup(query, qNorm, bounds, opts = {}) {
   if (!query || !qNorm || qNorm.length < 3) return 0;
   if (msRemoteLookupPending && msRemoteLookupKey === qNorm) return 0;
   const missAt = msRemoteLookupMissAt.get(qNorm);
@@ -2976,7 +3070,7 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds) {
     const boundedRefs = await fetchNominatimMosqueRefs(query, bounds, true, 16).catch(() => []);
     boundedRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
 
-    if (!refsMap.size || !msScopeViewportOnly) {
+    if (!refsMap.size || !msScopeViewportOnly || opts.preferGlobal) {
       const globalRefs = await fetchNominatimMosqueRefs(`${query} mosque`, null, false, 14).catch(() => []);
       globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
     }
@@ -2985,6 +3079,10 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds) {
       msRemoteLookupMissAt.set(qNorm, Date.now());
       return 0;
     }
+
+    refsMap.forEach((r, key) => {
+      msRemoteMetaByRef.set(key, { city:r.city || '', province:r.province || '', country:r.country || '', displayName:r.displayName || '' });
+    });
 
     const elements = await fetchByOsmRefs([...refsMap.values()]);
     const added = processElements(elements);
@@ -3000,10 +3098,13 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds) {
 
 function getMosqueHierarchyLine(m) {
   const t = m?.tags || {};
+  const admin = getMosqueAdminBucket(m);
   const n1 = t['addr:suburb'] || t['addr:neighbourhood'] || t['addr:quarter'] || t['addr:hamlet'] || t['addr:village'] || t['addr:city_district'] || '';
-  const n2 = t['addr:district'] || t['addr:township'] || t['addr:county'] || '';
-  const n3 = t['addr:city'] || t['addr:town'] || t['addr:municipality'] || t['addr:state'] || t['is_in:city'] || t['is_in:state'] || '';
-  const parts = [n1, n2, n3].map(x => String(x || '').trim()).filter(Boolean);
+  const n2 = t['addr:district'] || t['addr:township'] || '';
+  const n3 = admin.city || '';
+  const n4 = admin.province || '';
+  const n5 = admin.country || '';
+  const parts = [n1, n2, n3, n4, n5].map(x => String(x || '').trim()).filter(Boolean);
   if (parts.length) return parts.join(', ');
   return 'Mahalle / ilçe / şehir bilgisi yok';
 }
@@ -3050,7 +3151,7 @@ function showMosqueDropdown(q) {
     return;
   }
 
-  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 15);
+  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24);
   const top = ranked;
 
   if (!top.length) {
@@ -3060,7 +3161,7 @@ function showMosqueDropdown(q) {
       alt ? `<br><button class="ms-suggest-btn" onclick="applySuggestedMosqueQuery('${escHtml(alt).replace(/'/g, '&#39;')}')">Bunu mu demek istediniz: ${escHtml(alt)}?</button>` : ''
     }<br><span style="opacity:.75">Dış kaynakta aranıyor...</span></div>`;
     dropdown.classList.add('show');
-    triggerRemoteMosqueLookup(q, qNorm, bounds).then(added => {
+    triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal: !msScopeViewportOnly }).then(added => {
       const current = document.getElementById('mosque-search')?.value?.trim();
       if (current !== q) return;
       if (added > 0) {
@@ -3078,29 +3179,48 @@ function showMosqueDropdown(q) {
   }
 
   const frag = document.createDocumentFragment();
-  top.forEach(({m, p, d, inView}) => {
-    const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
-    const addressLine = getMosqueHierarchyLine(m);
-    const userDistance = getUserDistanceLabel(m);
-    const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
-    const badges = [];
-    if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
-    if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
-    if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
-    const div = document.createElement('div');
-    div.className = 'ms-item';
-    div.innerHTML = `
-      <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
-      <div class="ms-item-info">
-        <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
-        <div class="ms-item-sub">${escHtml(addressLine)}</div>
-        ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
-        <div class="ms-item-sub meta">Kıble:${m.qibla.toFixed(1)}°${m.diff!==null?' | '+m.diff.toFixed(1)+'° sapma':''}</div>
-      </div>
-      <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
-    div.onclick = () => selectMosque(m);
-    frag.appendChild(div);
+  const grouped = new Map();
+  for (const item of top) {
+    const key = getSearchProvinceLabel(item.m);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(item);
+  }
+  const groups = [...grouped.entries()].sort((a, b) => {
+    const aTop = Math.max(...a[1].map(x => x.rank || 0));
+    const bTop = Math.max(...b[1].map(x => x.rank || 0));
+    return bTop - aTop || a[0].localeCompare(b[0], 'tr');
   });
+
+  for (const [province, items] of groups) {
+    const hdr = document.createElement('div');
+    hdr.className = 'ms-group-hdr';
+    hdr.textContent = province;
+    frag.appendChild(hdr);
+    items.sort((a,b) => b.rank - a.rank || b.p - a.p || b.s - a.s);
+    items.forEach(({m, p, d, inView}) => {
+      const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+      const addressLine = getMosqueHierarchyLine(m);
+      const userDistance = getUserDistanceLabel(m);
+      const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
+      const badges = [];
+      if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
+      if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
+      if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
+      const div = document.createElement('div');
+      div.className = 'ms-item';
+      div.innerHTML = `
+        <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
+        <div class="ms-item-info">
+          <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
+          <div class="ms-item-sub">${escHtml(addressLine)}</div>
+          ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
+          <div class="ms-item-sub meta">Kıble:${m.qibla.toFixed(1)}°${m.diff!==null?' | '+m.diff.toFixed(1)+'° sapma':''}</div>
+        </div>
+        <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
+      div.onclick = () => selectMosque(m);
+      frag.appendChild(div);
+    });
+  }
 
   // "Filter all" footer
   const total = ranked.length;
@@ -3130,11 +3250,11 @@ function showCitySmartDropdown(q) {
   const dd = document.getElementById('city-smart-dd');
   if (!dd) return;
   if (!q || q.length < 2 || !mosqueDB.size) { closeCitySmartDropdown(); return; }
-  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 8);
+  const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24, { scopeViewportOnly:false });
   if (!ranked.length) {
     dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
     dd.classList.add('show');
-    triggerRemoteMosqueLookup(q, qNorm, bounds).then(added => {
+    triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal:true }).then(added => {
       const cur = document.getElementById('city-input')?.value?.trim();
       if (cur !== q || added <= 0) return;
       showCitySmartDropdown(q);
@@ -3142,32 +3262,50 @@ function showCitySmartDropdown(q) {
     return;
   }
   const frag = document.createDocumentFragment();
-  ranked.forEach(({m, p, d, inView}) => {
-    const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
-    const addressLine = getMosqueHierarchyLine(m);
-    const userDistance = getUserDistanceLabel(m);
-    const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
-    const badges = [];
-    if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
-    if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
-    if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
-    const div = document.createElement('div');
-    div.className = 'ms-item';
-    div.innerHTML = `
-      <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
-      <div class="ms-item-info">
-        <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
-        <div class="ms-item-sub">${escHtml(addressLine)}</div>
-        ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
-      </div>
-      <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
-    div.onclick = () => {
-      document.getElementById('city-input').value = m.name;
-      closeCitySmartDropdown();
-      selectMosque(m);
-    };
-    frag.appendChild(div);
+  const grouped = new Map();
+  for (const item of ranked) {
+    const key = getSearchProvinceLabel(item.m);
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key).push(item);
+  }
+  const groups = [...grouped.entries()].sort((a, b) => {
+    const aTop = Math.max(...a[1].map(x => x.rank || 0));
+    const bTop = Math.max(...b[1].map(x => x.rank || 0));
+    return bTop - aTop || a[0].localeCompare(b[0], 'tr');
   });
+  for (const [province, items] of groups) {
+    const hdr = document.createElement('div');
+    hdr.className = 'ms-group-hdr';
+    hdr.textContent = province;
+    frag.appendChild(hdr);
+    items.sort((a,b) => b.rank - a.rank || b.p - a.p || b.s - a.s);
+    items.forEach(({m, p, d, inView}) => {
+      const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+      const addressLine = getMosqueHierarchyLine(m);
+      const userDistance = getUserDistanceLabel(m);
+      const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
+      const badges = [];
+      if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
+      if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
+      if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
+      const div = document.createElement('div');
+      div.className = 'ms-item';
+      div.innerHTML = `
+        <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
+        <div class="ms-item-info">
+          <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
+          <div class="ms-item-sub">${escHtml(addressLine)}</div>
+          ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
+        </div>
+        <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
+      div.onclick = () => {
+        document.getElementById('city-input').value = m.name;
+        closeCitySmartDropdown();
+        selectMosque(m);
+      };
+      frag.appendChild(div);
+    });
+  }
   dd.innerHTML = '';
   dd.appendChild(frag);
   dd.classList.add('show');
@@ -3332,7 +3470,7 @@ async function doSearch(){
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = v;
   const aliasHints = findAliasGroupsForQuery(normalize(trLower(v)));
-  const smart = rankMosqueCandidates(v, 1).ranked[0] || null;
+  const smart = rankMosqueCandidates(v, 1, { scopeViewportOnly:false }).ranked[0] || null;
   if (smart && isStrongSmartSelection(v, smart, aliasHints)) {
     selectMosque(smart.m);
     return;

@@ -288,6 +288,17 @@ body:not(.outdoor-mode) #map::after{
 .m-name{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .m-sub{font-size:10px;color:var(--muted);margin-top:2px;}
 .m-diff{font-size:10px;font-weight:600;flex-shrink:0;}
+.m-group-hdr{
+  padding:6px 13px;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:rgba(255,255,255,.50);
+  background:rgba(21,62,101,.48);
+  border-top:1px solid rgba(170,214,241,.24);
+  border-bottom:1px solid rgba(170,214,241,.16);
+}
 /* ── MOSQUE SEARCH */
 .ms-wrap{position:relative;border-bottom:1px solid var(--border);flex-shrink:0;}
 .ms-box{display:flex;align-items:center;gap:7px;padding:8px 12px;background:var(--panel);}
@@ -339,6 +350,17 @@ body:not(.outdoor-mode) #map::after{
 .ms-badge.view{color:#4ade80;border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.1);}
 .ms-item-diff{font-size:10px;font-weight:600;flex-shrink:0;margin-top:2px;white-space:nowrap;}
 .ms-no-result{padding:12px 13px;font-size:11px;color:var(--muted);text-align:center;}
+.ms-group-hdr{
+  padding:6px 12px;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  font-weight:700;
+  color:rgba(255,255,255,.50);
+  background:rgba(21,62,101,.52);
+  border-top:1px solid rgba(170,214,241,.26);
+  border-bottom:1px solid rgba(170,214,241,.18);
+}
 .ms-suggest-btn{
   margin-top:7px;background:#1b4f7f;border:1px solid rgba(170,214,241,.28);color:#c9a84c;
   font-family:inherit;font-size:10px;padding:5px 8px;border-radius:6px;cursor:pointer;
