@@ -687,7 +687,7 @@ body:not(.outdoor-mode) #map::after{
 .mini-spin{width:12px;height:12px;border:1.5px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .6s linear infinite;flex-shrink:0;}
 
 /* ── KIBLE ANIMATION PANEL */
-.qibla-panel{position:absolute;top:12px;left:12px;z-index:800;background:rgba(27,79,127,.92);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);min-width:200px;pointer-events:none;opacity:0;transition:opacity .3s;backdrop-filter:blur(6px);}
+.qibla-panel{position:absolute;top:clamp(118px,17vh,170px);left:12px;z-index:800;background:rgba(27,79,127,.92);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--muted);min-width:200px;pointer-events:none;opacity:0;transition:opacity .3s;backdrop-filter:blur(6px);}
 .qibla-panel.show{opacity:1;}
 .qp-name{color:var(--gold);font-size:12px;font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
 .qp-row{display:flex;justify-content:space-between;gap:16px;margin-bottom:3px;}
@@ -1117,7 +1117,7 @@ body:not(.outdoor-mode) #map::after{
   .score-card{right:8px;top:8px;width:200px;}
 
   /* Qibla panel smaller */
-  .qibla-panel{max-width:160px;font-size:10px;}
+  .qibla-panel{top:128px;left:10px;max-width:min(340px,calc(100% - 20px));font-size:10px;}
   .qp-name{max-width:140px;}
   .district-hover-chip{
     top:8px;left:8px;transform:none;max-width:calc(100% - 16px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
