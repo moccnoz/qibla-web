@@ -31,6 +31,8 @@ const LANG_KEY = 'qibla-lang-v1';
 const MANUAL_AXIS_KEY = 'qibla-manual-axis-v1';
 const OUTDOOR_KEY = 'qibla-outdoor-v1';
 const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
+const POPULARITY_KEY = 'qibla-popularity-v1';
+const VISIT_TRAFFIC_KEY = 'qibla-visit-traffic-v1';
 const nameEnrichCache = new Map();
 const nameEnrichQueue = [];
 const nameEnrichQueued = new Set();
@@ -40,6 +42,9 @@ let analysisLayerMode = 'final'; // final | raw | interior
 let snapshots = [];
 let currentLang = 'tr';
 let manualAxisDB = {};
+const popularityCache = new Map();
+const popularityInFlight = new Set();
+const visitTrafficCache = new Map();
 let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
@@ -423,6 +428,8 @@ function loadScript(src) {
 
 async function bootstrap() {
   loadNameEnrichCache();
+  loadPopularityCache();
+  loadVisitTrafficCache();
   loadInteriorDB();
   loadManualAxisDB();
   loadSnapshots();
@@ -485,7 +492,15 @@ function initMap() {
   };
   document.getElementById('city-input').onkeydown = e => {
     if (e.key !== 'Enter') return;
+    e.preventDefault();
     const dd = document.getElementById('city-smart-dd');
+    const q = document.getElementById('city-input').value.trim();
+    if (isLikelyMosqueQuery(q)) {
+      cityDropdownIdx = -1;
+      closeCitySmartDropdown();
+      doSearch();
+      return;
+    }
     if (dd?.classList.contains('show') && cityDropdownIdx >= 0) return;
     doSearch();
   };
@@ -1408,6 +1423,72 @@ function saveNameEnrichCache() {
     nameEnrichCache.forEach((v,k) => { obj[k] = v; });
     safeStorageSet(NAME_ENRICH_KEY, JSON.stringify(obj));
   } catch {}
+}
+
+function loadPopularityCache() {
+  try {
+    const raw = safeStorageGet(POPULARITY_KEY, null);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    Object.entries(parsed).forEach(([k,v]) => {
+      if (!v || typeof v !== 'object') return;
+      if (!Number.isFinite(v.views) || !Number.isFinite(v.ts)) return;
+      popularityCache.set(k, { views: Math.max(0, Math.round(v.views)), ts: v.ts });
+    });
+  } catch {}
+}
+
+function savePopularityCache() {
+  try {
+    const obj = {};
+    popularityCache.forEach((v,k) => { obj[k] = v; });
+    safeStorageSet(POPULARITY_KEY, JSON.stringify(obj));
+  } catch {}
+}
+
+function loadVisitTrafficCache() {
+  try {
+    const raw = safeStorageGet(VISIT_TRAFFIC_KEY, null);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    Object.entries(parsed).forEach(([k,v]) => {
+      if (!v || typeof v !== 'object') return;
+      if (!Number.isFinite(v.count) || !Number.isFinite(v.ts)) return;
+      visitTrafficCache.set(k, { count: Math.max(0, Math.round(v.count)), ts: v.ts });
+    });
+  } catch {}
+}
+
+function saveVisitTrafficCache() {
+  try {
+    const obj = {};
+    visitTrafficCache.forEach((v,k) => { obj[k] = v; });
+    safeStorageSet(VISIT_TRAFFIC_KEY, JSON.stringify(obj));
+  } catch {}
+}
+
+function getVisitTrafficCacheKey(m) {
+  if (!m) return '';
+  const raw = getMosqueKey(m);
+  return raw ? `mosque:${raw}` : '';
+}
+
+function getVisitTrafficCount(m) {
+  const key = getVisitTrafficCacheKey(m);
+  if (!key) return 0;
+  const rec = visitTrafficCache.get(key);
+  return rec && Number.isFinite(rec.count) ? rec.count : 0;
+}
+
+function bumpVisitTrafficCount(m) {
+  const key = getVisitTrafficCacheKey(m);
+  if (!key) return;
+  const prev = visitTrafficCache.get(key);
+  const nextCount = Math.max(1, (prev?.count || 0) + 1);
+  visitTrafficCache.set(key, { count: nextCount, ts: Date.now() });
+  saveVisitTrafficCache();
 }
 
 function enrichCacheKey(m) {
@@ -2766,6 +2847,7 @@ function initTopSmartSearch() {
   let t = null;
   input.addEventListener('input', () => {
     const q = input.value.trim();
+    cityDropdownIdx = -1;
     clearTimeout(t);
     if (!q) { closeCitySmartDropdown(); return; }
     t = setTimeout(() => showCitySmartDropdown(q), 90);
@@ -2782,9 +2864,19 @@ function initTopSmartSearch() {
       items[cityDropdownIdx]?.scrollIntoView({ block:'nearest' });
     } else if (e.key === 'Escape') {
       closeCitySmartDropdown();
-    } else if (e.key === 'Enter' && cityDropdownIdx >= 0) {
-      e.preventDefault();
-      items[cityDropdownIdx]?.click();
+    } else if (e.key === 'Enter') {
+      const q = input.value.trim();
+      if (isLikelyMosqueQuery(q)) {
+        e.preventDefault();
+        cityDropdownIdx = -1;
+        closeCitySmartDropdown();
+        doSearch();
+        return;
+      }
+      if (cityDropdownIdx >= 0) {
+        e.preventDefault();
+        items[cityDropdownIdx]?.click();
+      }
     }
   });
   document.addEventListener('click', e => {
@@ -2800,6 +2892,9 @@ function msMosqueScore(m, qLow, qNorm, words) {
   const tokenSet = new Set(m.searchIndex?.tokens || []);
   const mosqueAliasGroups = new Set(m.searchIndex?.aliasGroups || []);
   const queryAliasGroups = findAliasGroupsForQuery(qNorm);
+  const genericWords = new Set(['cami','camii','mescit','mescid','mosque','masjid']);
+  const normalizedWords = words.map(w => normalize(trLower(w || ''))).filter(Boolean);
+  const strongWords = normalizedWords.filter(w => w.length > 1 && !genericWords.has(w));
 
   let best = 0;
   for (const n of names) {
@@ -2814,18 +2909,22 @@ function msMosqueScore(m, qLow, qNorm, words) {
 
   // Multi-word: all words must appear somewhere in any name
   if (best === 0 && words.length > 1) {
-    const allMatch = words.every(w =>
-      tokenSet.has(w) || tokenSet.has(normalize(w)) ||
-      names.some(n => n.includes(w)) || namesNorm.some(n => n.includes(normalize(w)))
+    const baseWords = strongWords.length ? strongWords : normalizedWords;
+    const allMatch = baseWords.length && baseWords.every(w =>
+      tokenSet.has(w) ||
+      namesNorm.some(n => n.includes(w))
     );
-    if (allMatch) best = 30;
+    if (allMatch) best = 34;
     else {
-      // Partial: at least one word matches
-      const anyMatch = words.some(w =>
-        tokenSet.has(w) || tokenSet.has(normalize(w)) ||
-        names.some(n => n.includes(w)) || namesNorm.some(n => n.includes(normalize(w)))
+      // Partial: at least one strong word must match; generic-only hits are ignored.
+      const anyStrongMatch = strongWords.some(w =>
+        tokenSet.has(w) || namesNorm.some(n => n.includes(w))
       );
-      if (anyMatch) best = 10;
+      if (anyStrongMatch) {
+        best = 14;
+        const hasGenericHit = normalizedWords.some(w => genericWords.has(w));
+        if (hasGenericHit) best += 8;
+      }
     }
   }
 
@@ -2843,6 +2942,7 @@ function msMosqueScore(m, qLow, qNorm, words) {
 function computeMosquePopularityScore(m) {
   const tags = m?.tags || {};
   let score = 0;
+  const visitTraffic = getVisitTrafficCount(m);
   const aliasCount = Array.isArray(m?.searchIndex?.aliasGroups) ? m.searchIndex.aliasGroups.length : 0;
   if (aliasCount) score += Math.min(20, aliasCount * 6);
   if (typeof tags.wikipedia === 'string' && tags.wikipedia.trim()) score += 10;
@@ -2852,7 +2952,87 @@ function computeMosquePopularityScore(m) {
   if (trLower(tags.tourism || '') === 'attraction') score += 6;
   if (trLower(tags.place || '') === 'landmark') score += 6;
   if (!isPlaceholderMosqueName(m?.name) && !isGenericMosqueName(m?.name)) score += 4;
-  return Math.min(40, score);
+  if (visitTraffic > 0) {
+    score += Math.min(36, Math.log10(visitTraffic + 1) * 18);
+  }
+  if (Number.isFinite(m?.popularityViews) && m.popularityViews > 0) {
+    score += Math.min(44, Math.log10(m.popularityViews + 10) * 12);
+  }
+  return Math.min(84, score);
+}
+
+function getMosqueWikiTag(m) {
+  const t = m?.tags || {};
+  const wiki = String(t.wikipedia || '').trim();
+  if (!wiki) return '';
+  if (!wiki.includes(':')) return `tr:${wiki}`;
+  return wiki;
+}
+
+function wikiPopularityCacheKey(wikiTag) {
+  return `wiki:${wikiTag}`;
+}
+
+function getCachedWikiViews(wikiTag) {
+  if (!wikiTag) return null;
+  const key = wikiPopularityCacheKey(wikiTag);
+  const cached = popularityCache.get(key);
+  if (!cached) return null;
+  const age = Date.now() - cached.ts;
+  if (age > 1000 * 60 * 60 * 24 * 7) return null;
+  return cached.views;
+}
+
+async function fetchWikiMonthlyViews(wikiTag) {
+  const [langRaw, ...titleParts] = wikiTag.split(':');
+  const lang = (langRaw || 'tr').trim().toLowerCase();
+  const title = titleParts.join(':').trim();
+  if (!title) return 0;
+  const api = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageviews&format=json&origin=*`;
+  const r = await fetch(api);
+  if (!r.ok) return 0;
+  const d = await r.json();
+  const pages = d?.query?.pages || {};
+  const page = Object.values(pages)[0];
+  const pv = page?.pageviews || {};
+  const vals = Object.values(pv).map(v => Number(v)).filter(Number.isFinite).slice(-30);
+  return vals.reduce((s, v) => s + v, 0);
+}
+
+async function hydrateMosquePopularity(m) {
+  const wikiTag = getMosqueWikiTag(m);
+  if (!wikiTag) return 0;
+  const cacheHit = getCachedWikiViews(wikiTag);
+  if (cacheHit != null) {
+    m.popularityViews = cacheHit;
+    return cacheHit;
+  }
+  const key = wikiPopularityCacheKey(wikiTag);
+  if (popularityInFlight.has(key)) return m.popularityViews || 0;
+  popularityInFlight.add(key);
+  try {
+    const views = await fetchWikiMonthlyViews(wikiTag);
+    if (Number.isFinite(views) && views >= 0) {
+      popularityCache.set(key, { views: Math.round(views), ts: Date.now() });
+      m.popularityViews = Math.round(views);
+      savePopularityCache();
+      return m.popularityViews;
+    }
+  } catch {}
+  finally {
+    popularityInFlight.delete(key);
+  }
+  return 0;
+}
+
+function queuePopularityHydration(candidates = [], rerender) {
+  const list = [...new Set((candidates || []).map(x => x?.m || x).filter(Boolean))]
+    .filter(m => getMosqueWikiTag(m))
+    .slice(0, 8);
+  if (!list.length) return;
+  Promise.all(list.map(m => hydrateMosquePopularity(m))).then(() => {
+    try { if (typeof rerender === 'function') rerender(); } catch {}
+  }).catch(() => {});
 }
 
 function pickAddressAdmin(address = {}) {
@@ -3153,6 +3333,10 @@ function showMosqueDropdown(q) {
 
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24);
   const top = ranked;
+  queuePopularityHydration(top, () => {
+    const qNow = document.getElementById('mosque-search')?.value?.trim();
+    if (qNow === q) showMosqueDropdown(q);
+  });
 
   if (!top.length) {
     const scopeMsg = msScopeViewportOnly ? ' (mevcut harita alanında)' : '';
@@ -3251,6 +3435,10 @@ function showCitySmartDropdown(q) {
   if (!dd) return;
   if (!q || q.length < 2 || !mosqueDB.size) { closeCitySmartDropdown(); return; }
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24, { scopeViewportOnly:false });
+  queuePopularityHydration(ranked, () => {
+    const cur = document.getElementById('city-input')?.value?.trim();
+    if (cur === q) showCitySmartDropdown(q);
+  });
   if (!ranked.length) {
     dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
     dd.classList.add('show');
@@ -3313,6 +3501,7 @@ function showCitySmartDropdown(q) {
 
 // Navigate to mosque on map + highlight
 function selectMosque(m) {
+  bumpVisitTrafficCount(m);
   const dropdown = document.getElementById('ms-dropdown');
   dropdown.classList.remove('show');
   document.getElementById('city-input').value = m.name;
@@ -3342,11 +3531,8 @@ function applyMosqueFilter(q) {
     return;
   }
 
-  const qLow  = trLower(q);
-  const qNorm = normalize(qLow);
-  const words = qLow.split(/\s+/).filter(w => w.length > 0);
-
-  const filtered = visible.filter(m => msMosqueScore(m, qLow, qNorm, words) > 0);
+  const rankedAll = rankMosqueCandidates(q, Math.max(50, mosqueDB.size), { scopeViewportOnly:false }).ranked;
+  const filtered = rankedAll.map(x => x.m || x);
 
   document.getElementById('ms-banner-text').textContent = `"${q}" — ${filtered.length} sonuç`;
   banner.classList.add('show');
@@ -3469,18 +3655,58 @@ async function doSearch(){
   closeCitySmartDropdown();
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = v;
+  const mosqueMode = isLikelyMosqueQuery(v);
   const aliasHints = findAliasGroupsForQuery(normalize(trLower(v)));
   const smart = rankMosqueCandidates(v, 1, { scopeViewportOnly:false }).ranked[0] || null;
-  if (smart && isStrongSmartSelection(v, smart, aliasHints)) {
+  if (!mosqueMode && smart && isStrongSmartSelection(v, smart, aliasHints)) {
     selectMosque(smart.m);
     return;
   }
-  const mosqueMode = isLikelyMosqueQuery(v);
   const direct = parseDirectMosqueQuery(v);
   try{
     throwIfAborted(searchSignal);
     clearDistrictSelection(true);
     updateDistrictUi();
+    if (mosqueMode && !direct) {
+      const local = rankMosqueCandidates(v, 250, { scopeViewportOnly:false }).ranked;
+      if (local.length) {
+        document.getElementById('mosque-search').value = v;
+        document.getElementById('mosque-search').classList.add('has-value');
+        document.getElementById('ms-clear').classList.add('show');
+        applyMosqueFilter(v);
+        showMosqueDropdown(v);
+        queuePopularityHydration(local, () => {
+          if (mosqueFilter === v) applyMosqueFilter(v);
+          const qNow = document.getElementById('mosque-search')?.value?.trim();
+          if (qNow === v) showMosqueDropdown(v);
+        });
+        toast(`"${v}" için ${local.length} cami listelendi`, 2200);
+        setOv(false);
+        return;
+      }
+      setOv(true, `"${v}" aranıyor...`, 'Cami verisi dış kaynaklarda taranıyor');
+      const added = await triggerRemoteMosqueLookup(v, normalize(trLower(v)), map?.getBounds?.(), { preferGlobal:true });
+      throwIfAborted(searchSignal);
+      if (added > 0) {
+        const found = rankMosqueCandidates(v, 250, { scopeViewportOnly:false }).ranked;
+        if (found.length) {
+          document.getElementById('mosque-search').value = v;
+          document.getElementById('mosque-search').classList.add('has-value');
+          document.getElementById('ms-clear').classList.add('show');
+          applyMosqueFilter(v);
+          showMosqueDropdown(v);
+          queuePopularityHydration(found, () => {
+            if (mosqueFilter === v) applyMosqueFilter(v);
+            const qNow = document.getElementById('mosque-search')?.value?.trim();
+            if (qNow === v) showMosqueDropdown(v);
+          });
+          toast(`"${v}" için ${found.length} cami listelendi`, 2400);
+          setOv(false);
+          return;
+        }
+      }
+      setOv(false);
+    }
     if (direct) {
       setOv(true, `"${v}" aranıyor...`, 'Doğrudan kayıt sorgusu');
       tileCache.clear(); updateCacheUI();
@@ -5774,6 +6000,28 @@ async function loadPhoto(m, tags) {
     const url = await fetchWikiPageImage(wiki);
     if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikipedia'; return; }
   }
+
+  // 3. wikidata P18 image
+  const wd = String(tags.wikidata || '').trim();
+  if (wd) {
+    const url = await fetchWikidataImageUrl(wd);
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia (Wikidata)'; return; }
+  }
+
+  // 4. Commons category fallback
+  if (wmc && /^Category:/i.test(wmc)) {
+    const url = await fetchCommonsCategoryImage(wmc);
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia Commons'; return; }
+  }
+
+  // 5. Name/location based Commons search fallback
+  const fallback = await fetchCommonsFallbackPhoto(m, tags);
+  if (fallback?.url) {
+    img.src = fallback.url;
+    wrap.style.display = '';
+    cred.textContent = fallback.source || '© Wikimedia Commons';
+    return;
+  }
 }
 
 async function resolveWikimediaUrl(val) {
@@ -5806,6 +6054,88 @@ async function fetchWikiPageImage(wikiTag) {
     const page = Object.values(pages)[0];
     return page?.thumbnail?.source || null;
   } catch { return null; }
+}
+
+async function fetchWikidataImageUrl(qid) {
+  try {
+    const id = String(qid || '').trim().toUpperCase();
+    if (!/^Q\d+$/.test(id)) return null;
+    const api = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${encodeURIComponent(id)}&props=claims&format=json&origin=*`;
+    const r = await fetch(api);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const entity = d?.entities?.[id];
+    const claim = entity?.claims?.P18?.[0];
+    const file = claim?.mainsnak?.datavalue?.value;
+    if (!file || typeof file !== 'string') return null;
+    return await resolveWikimediaUrl(`File:${file}`);
+  } catch { return null; }
+}
+
+async function fetchCommonsCategoryImage(catName) {
+  try {
+    const clean = String(catName || '').replace(/^Category:/i,'').trim();
+    if (!clean) return null;
+    const api = `https://commons.wikimedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(clean)}&cmnamespace=6&cmlimit=20&format=json&origin=*`;
+    const r = await fetch(api);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const files = d?.query?.categorymembers || [];
+    if (!files.length) return null;
+    const title = files[0]?.title;
+    if (!title) return null;
+    return await resolveWikimediaUrl(title);
+  } catch { return null; }
+}
+
+function buildPhotoFallbackTerms(m, tags = {}) {
+  const t = tags || {};
+  const city = String(t['addr:city'] || t['addr:town'] || t['is_in:city'] || m?.searchMeta?.city || '').trim();
+  const province = String(t['addr:state'] || t['addr:province'] || t['is_in:state'] || m?.searchMeta?.province || '').trim();
+  const wikiTitle = String(t.wikipedia || '').includes(':')
+    ? String(t.wikipedia).split(':').slice(1).join(':').replace(/_/g, ' ').trim()
+    : '';
+  const base = [m?.name, wikiTitle].map(x => String(x || '').trim()).filter(Boolean);
+  const out = [];
+  for (const b of base) {
+    out.push(`${b} mosque`);
+    out.push(`${b} camii`);
+    if (city) out.push(`${b} ${city} mosque`);
+    if (province && province !== city) out.push(`${b} ${province} mosque`);
+  }
+  const seen = new Set();
+  return out.filter(x => {
+    const k = normalize(trLower(x || ''));
+    if (!k || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  }).slice(0, 8);
+}
+
+async function fetchCommonsBySearchTerm(term) {
+  try {
+    const api = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(term)}&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=url&format=json&origin=*`;
+    const r = await fetch(api);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const pages = Object.values(d?.query?.pages || {});
+    for (const p of pages) {
+      const title = String(p?.title || '');
+      const isPhotoLike = /\.(jpg|jpeg|png|webp)$/i.test(title);
+      const url = p?.imageinfo?.[0]?.url;
+      if (url && isPhotoLike) return url;
+    }
+    return pages[0]?.imageinfo?.[0]?.url || null;
+  } catch { return null; }
+}
+
+async function fetchCommonsFallbackPhoto(m, tags) {
+  const terms = buildPhotoFallbackTerms(m, tags);
+  for (const term of terms) {
+    const url = await fetchCommonsBySearchTerm(term);
+    if (url) return { url, source:'© Wikimedia Commons (search)' };
+  }
+  return null;
 }
 
 // ── Wikipedia summary
