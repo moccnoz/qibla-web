@@ -2400,3 +2400,69 @@ body.light-theme:not(.outdoor-mode) .main{
   body.light-theme:not(.outdoor-mode) .floating-search-ico,
   body.light-theme:not(.outdoor-mode) .theme-fab.in-pill{display:none !important;}
 }
+
+/* Phase 1: Global Sofa Style */
+:root {
+  /* Light Mode (Zen Palette) */
+  --bg: #f8fafc;
+  --surface: rgba(255, 255, 255, 0.75);
+  --text: #1e293b;
+  --muted: #64748b;
+  --accent: #d4af37;
+  --glass: blur(20px) saturate(180%);
+  --shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+  --radius: 24px;
+}
+
+/* Tüm ekranı harita yap */
+#map {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+}
+
+/* UI Elemanlarını Haritanın Üzerine Uçur */
+.floating-ui {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.floating-ui > * {
+  pointer-events: auto;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+}
+
+/* Existing containers using floating-ui need direct interactivity */
+.floating-ui.floating-search,
+.floating-ui.stats-bar,
+.floating-ui.sidebar {
+  pointer-events: auto;
+}
+
+/* Keep app content above fixed map */
+.main,
+.dp-panel,
+.dp-backdrop,
+.overlay,
+.toast,
+.exp-overlay,
+.biz-overlay,
+.lab-overlay,
+.cmps-overlay,
+.m3d-overlay,
+.ks-overlay,
+.lb-overlay,
+.hist-overlay,
+.cmp-overlay {
+  position: relative;
+  z-index: 2;
+}
