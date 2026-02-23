@@ -5042,3 +5042,131 @@ body:not(.outdoor-mode) #map::after {
   transform: scale(1.15);
   z-index: 10000 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   FINAL HOTFIX — search/info separation + visibility + clean map overlays
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  body {
+    --nav-offset-live: 180px;
+    --search-box-w-collapsed: 320px;
+    --search-box-w-expanded: 470px;
+    --search-gap: 16px;
+  }
+
+  body.nav-collapsed {
+    --nav-offset-live: 52px;
+  }
+
+  .floating-search {
+    left: calc(var(--nav-offset-live) + 14px) !important;
+    top: 12px !important;
+    z-index: 620 !important;
+  }
+
+  .floating-search .search-box,
+  .search-box {
+    width: var(--search-box-w-collapsed) !important;
+    transition:
+      width 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      box-shadow 200ms ease,
+      border-color 200ms ease,
+      transform 200ms ease !important;
+  }
+
+  .floating-search .search-box:focus-within,
+  .search-box:focus-within {
+    width: var(--search-box-w-expanded) !important;
+  }
+
+  .stats-bar {
+    margin-left: 0 !important;
+    left: calc(var(--nav-offset-live) + 14px + var(--search-box-w-collapsed) + var(--search-gap)) !important;
+    top: 12px !important;
+    transform: none !important;
+    transition:
+      left 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      background-color 200ms ease,
+      border-color 200ms ease !important;
+    z-index: 560 !important;
+  }
+
+  body.search-expanded .stats-bar {
+    left: calc(var(--nav-offset-live) + 14px + var(--search-box-w-expanded) + var(--search-gap)) !important;
+  }
+
+  .mode-pills {
+    top: 58px !important;
+    right: 330px !important;
+  }
+
+  .tolerance-pill {
+    top: 58px !important;
+    right: 14px !important;
+  }
+}
+
+/* Search button — stronger 2026 visibility */
+#search-btn,
+.floating-search #search-btn {
+  position: relative;
+  isolation: isolate;
+  min-width: 74px;
+  padding: 9px 18px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.98), rgba(99, 102, 241, 0.95)) !important;
+  color: #f8faff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.01em;
+  box-shadow:
+    0 8px 24px rgba(99, 102, 241, 0.32),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset !important;
+}
+
+#search-btn::before,
+.floating-search #search-btn::before {
+  content: "⌕";
+  margin-right: 6px;
+  opacity: 0.92;
+}
+
+#search-btn:hover,
+.floating-search #search-btn:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 12px 28px rgba(99, 102, 241, 0.40),
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset !important;
+}
+
+/* Cluster bubbles — smoky + transparent */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: rgba(31, 41, 55, 0.28) !important;
+}
+
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div,
+.marker-cluster div {
+  background: rgba(55, 65, 81, 0.52) !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  color: rgba(236, 239, 244, 0.88) !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24) !important;
+}
+
+/* Remove extra click info boxes; keep main detail panel */
+#qibla-panel,
+.qibla-panel {
+  display: none !important;
+}
+
+#map .leaflet-popup,
+#map .leaflet-popup-pane {
+  display: none !important;
+}

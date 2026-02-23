@@ -583,6 +583,19 @@ function initMap() {
     if (dd?.classList.contains('show')) return;
     doSearch();
   };
+  const searchBox = document.querySelector('.floating-search .search-box');
+  if (searchBox) {
+    searchBox.addEventListener('focusin', () => {
+      document.body.classList.add('search-expanded');
+    });
+    searchBox.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (!searchBox.contains(document.activeElement)) {
+          document.body.classList.remove('search-expanded');
+        }
+      }, 0);
+    });
+  }
   document.getElementById('tol').oninput = e => { tol=+e.target.value; document.getElementById('tol-val').textContent=tol+'°'; recompute(); };
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = document.getElementById('city-input').value || '';
@@ -1313,7 +1326,6 @@ function renderAll() {
 
     const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#164773',weight:1.5,fillOpacity:.95});
     mk.mosque = m;
-    mk.bindPopup(makePopup(m));
     mk.on('click',()=>handleMosqueClick(m));
     if (useCluster && markerClusterLayer) markerClusterLayer.addLayer(mk);
     else mk.addTo(map);
@@ -5812,7 +5824,6 @@ function applyPeriodColors() {
       radius:5, fillColor:col, color:'#164773', weight:1.5, fillOpacity:opacity
     }).addTo(map);
     mk.mosque = m;
-    mk.bindPopup(makeHistoryPopup(m));
     mk.on('click', () => handleMosqueClick(m));
     renderLayers.push(mk);
   }
@@ -7571,7 +7582,7 @@ function focusMosqueOnMap() {
   map.flyTo([m.lat, m.lng], Math.max(map.getZoom() || 15, 16), { duration: 0.7 });
   setTimeout(() => {
     const marker = renderLayers.find(layer => layer?.mosque?.id == m.id);
-    if (marker?.openPopup) marker.openPopup();
+    if (marker?.bringToFront) marker.bringToFront();
   }, 450);
 }
 
