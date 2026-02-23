@@ -2792,14 +2792,15 @@ function updateList(visible){
         frag.appendChild(hdr);
         items.forEach((m,i) => {
           const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+          const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
           const div=document.createElement('div');
-          div.className='m-item';div.id='mi-'+m.id;
+          div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
           div.style.animationDelay = Math.min(i*18, 300)+'ms';
           const convMark = m.convertedFrom?.converted ? ' →' : '';
           div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
             <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
             <div class="m-sub">${escHtml(getMosqueHierarchyLine(m))}</div></div>
-            <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+            <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
           div.onclick=()=>handleMosqueClick(m);
           frag.appendChild(div);
         });
@@ -2807,14 +2808,15 @@ function updateList(visible){
   } else {
     sorted.forEach((m,i)=>{
       const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+      const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
       const div=document.createElement('div');
-      div.className='m-item';div.id='mi-'+m.id;
+      div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
       div.style.animationDelay = Math.min(i*18, 300)+'ms';
       const convMark = m.convertedFrom?.converted ? ' →' : '';
       div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
         <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
         <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
-        <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+        <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
       div.onclick=()=>handleMosqueClick(m);
       frag.appendChild(div);
     });
@@ -8412,3 +8414,44 @@ async function lbAnalyseCity(city) {
 
   btn.disabled = false;
 }
+
+/* ═══ MOBILE SIDEBAR BOTTOM SHEET ═══ */
+(function() {
+  if (window.innerWidth > 768) return;
+
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+
+  let startY = 0;
+  let dragging = false;
+
+  sidebar.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches.length) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+
+  sidebar.addEventListener('touchmove', (e) => {
+    if (!dragging || !e.touches || !e.touches.length) return;
+    const diff = e.touches[0].clientY - startY;
+    if (diff < -20) {
+      sidebar.classList.add('expanded');
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('touchend', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (!e.changedTouches || !e.changedTouches.length) return;
+    const diff = e.changedTouches[0].clientY - startY;
+    if (diff > 40) {
+      sidebar.classList.remove('expanded');
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('click', () => {
+    if (!sidebar.classList.contains('expanded')) {
+      sidebar.classList.add('expanded');
+    }
+  });
+})();
