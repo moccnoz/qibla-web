@@ -453,7 +453,7 @@ function setDistrictSelection(name, geo) {
 const TILES = {
   dark:      { url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',         opts:{ attribution:'©OSM ©CartoDB', subdomains:'abcd', maxZoom:19 } },
   satellite: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opts:{ attribution:'©Esri ©OSM', maxZoom:19 } },
-  osm:       { url:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',       opts:{ attribution:'©OSM ©CartoDB', subdomains:'abcd', maxZoom:19 } }
+  osm:       { url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',                   opts:{ attribution:'©OSM', subdomains:'abc', maxZoom:19 } }
 };
 let currentLayer = 'dark';
 
@@ -569,9 +569,7 @@ async function bootstrap() {
 
 function initMap() {
   map = L.map('map', { center:[41.015,28.979], zoom:13, zoomControl:false });
-  tileLayer = L.tileLayer(TILES.osm.url, TILES.osm.opts).addTo(map);
-  currentLayer = 'osm';
-  setLayerButtonActive('osm');
+  tileLayer = L.tileLayer(TILES.dark.url, TILES.dark.opts).addTo(map);
   L.control.zoom({ position:'bottomleft' }).addTo(map);
 
   // Kaaba marker (permanent)
