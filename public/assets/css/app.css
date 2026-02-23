@@ -201,6 +201,19 @@ header{
 .btn-sm{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:11px;padding:6px 11px;border-radius:10px;cursor:pointer;font-family:inherit;white-space:nowrap;}
 .btn-sm:hover{color:var(--text);}
 .btn-sm.active{background:rgba(255,255,255,.14);color:rgba(255,255,255,.70);border-color:rgba(255,255,255,.34);}
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large{
+  background:rgba(22,71,115,.35) !important;
+}
+.marker-cluster div{
+  background:rgba(27,79,127,.92) !important;
+  color:rgba(255,255,255,.9) !important;
+  border:1px solid rgba(170,214,241,.42);
+  font-family:inherit;
+  font-weight:700;
+  box-shadow:0 6px 16px rgba(5,18,34,.35);
+}
 
 /* ── SCORE CARD */
 .score-card{

@@ -17,6 +17,7 @@ let renderLayers = [];
 let animLayers = [];
 let focusPulseLayer = null;
 let focusPulseRaf = 0;
+let markerClusterLayer = null;
 let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
 let vpNeedsReload = false;
@@ -1230,9 +1231,26 @@ function renderAll() {
   // Remove old visual layers
   renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
   renderLayers=[];
+  if (markerClusterLayer) {
+    try { map.removeLayer(markerClusterLayer); } catch {}
+    markerClusterLayer = null;
+  }
 
   const visible = getVisibleMosques(0.1);
   const denseMode = visible.length > 700;
+  const canCluster = typeof L !== 'undefined' && typeof L.markerClusterGroup === 'function';
+  const useCluster = canCluster && visible.length > 140 && map.getZoom() <= 15;
+  const simplifiedMode = denseMode || useCluster;
+  if (useCluster) {
+    markerClusterLayer = L.markerClusterGroup({
+      spiderfyOnMaxZoom:true,
+      showCoverageOnHover:false,
+      removeOutsideVisibleBounds:true,
+      disableClusteringAtZoom:16,
+      chunkedLoading:true,
+      maxClusterRadius:52
+    });
+  }
   if (denseMode && !denseModeNotified) {
     toast('Performans modu: yoğun bölgede sade çizim kullanılıyor', 3200);
     denseModeNotified = true;
@@ -1244,20 +1262,20 @@ function renderAll() {
     const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
     const dispAxis = getDisplayAxis(m);
 
-    if(!denseMode && m.polyCoords){
+    if(!simplifiedMode && m.polyCoords){
       const poly=L.polygon(m.polyCoords,{color:col,weight:1.5,fillColor:col,fillOpacity:.07,opacity:.45}).addTo(map);
       poly.on('click',()=>handleMosqueClick(m));
       renderLayers.push(poly);
     }
 
     // Kıble direction line (dashed gold)
-    if (!denseMode) {
+    if (!simplifiedMode) {
       const qEnd=destination(m.lat,m.lng,m.qibla,200);
       renderLayers.push(L.polyline([[m.lat,m.lng],[qEnd.lat,qEnd.lng]],{color:'#c9a84c',weight:1.5,opacity:.7,dashArray:'6 5'}).addTo(map));
     }
 
     // Building axis arrow
-    if(!denseMode && dispAxis!==null){
+    if(!simplifiedMode && dispAxis!==null){
       const fd=closestDirection(dispAxis,m.qibla);
       const e1=destination(m.lat,m.lng,fd,90);
       const e2=destination(m.lat,m.lng,(fd+180)%360,90);
@@ -1269,11 +1287,17 @@ function renderAll() {
       renderLayers.push(L.polygon([[tip.lat,tip.lng],[aL.lat,aL.lng],[aR.lat,aR.lng]],{color:col,fillColor:col,weight:0,fillOpacity:.9}).addTo(map));
     }
 
-    const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#164773',weight:1.5,fillOpacity:.95}).addTo(map);
+    const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#164773',weight:1.5,fillOpacity:.95});
     mk.mosque = m;
     mk.bindPopup(makePopup(m));
     mk.on('click',()=>handleMosqueClick(m));
+    if (useCluster && markerClusterLayer) markerClusterLayer.addLayer(mk);
+    else mk.addTo(map);
     renderLayers.push(mk);
+  }
+  if (useCluster && markerClusterLayer) {
+    markerClusterLayer.addTo(map);
+    renderLayers.push(markerClusterLayer);
   }
 
   updateStats();
