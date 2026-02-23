@@ -25,6 +25,7 @@ let vpNeedsReload = false;
 let isVpLoading = false;
 let searchAreaAnchor = null;
 let searchAreaArmed = false;
+let lastSidebarVisiblePx = 0;
 let heatLayer = null;
 let heatVisible = false;
 let scoreCardVisible = false;
@@ -58,6 +59,9 @@ let followState = { enabled:false, watchId:null, lastFixAt:0 };
 let userGeoState = { lat:null, lng:null, enabled:false, ts:0 };
 let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
 let m3dState = { renderer:null, scene:null, camera:null, raf:0, obj:null };
+const MOBILE_SHEET_SNAP = Object.freeze({ min:20, half:50, full:95 });
+let mobileSheetSnapIdx = 1;
+let mobileSheetSyncTimer = 0;
 const districtBoundaryCache = new Map();
 const districtState = {
   enabled: false,
@@ -2548,6 +2552,7 @@ function handleMosqueClick(m) {
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
   if (m.status === 'wrong') haptic(20);
   pulseMosqueFocus(m);
+  ensureSelectedMosqueVisibleOnMobile(m, { animate:true });
   animateQibla(m);
   openDetailPanel(m);
   hydrateMosqueDetailOnDemand(m);
@@ -4758,34 +4763,87 @@ function initSidebarPullToRefresh() {
 function setSidebarSnap(vh) {
   const sb = document.querySelector('.sidebar');
   if (!sb || window.innerWidth > 768) return;
-  uiState.sheetSnap = Math.max(20, Math.min(95, vh));
+  uiState.sheetSnap = Math.max(MOBILE_SHEET_SNAP.min, Math.min(MOBILE_SHEET_SNAP.full, vh));
   sb.style.setProperty('--sheet-snap', uiState.sheetSnap);
   const snapState = uiState.sheetSnap <= 30 ? 'min' : uiState.sheetSnap <= 72 ? 'half' : 'full';
   sb.setAttribute('data-snap', snapState);
+  mobileSheetSnapIdx = snapState === 'min' ? 0 : snapState === 'half' ? 1 : 2;
   updateSidebarSnapPanels();
+  syncMobileMapLayout();
+}
+
+function getMobileSheetVisiblePx() {
+  if (window.innerWidth > 768) return 0;
+  const sb = document.querySelector('.sidebar');
+  if (!sb) return 0;
+  const cs = getComputedStyle(sb);
+  if (cs.display === 'none' || cs.visibility === 'hidden') return 0;
+  return Math.round(window.innerHeight * (uiState.sheetSnap / 100));
+}
+
+function ensureSelectedMosqueVisibleOnMobile(m, opts = {}) {
+  if (!map || !m || window.innerWidth > 768) return;
+  const dp = document.getElementById('dp-panel');
+  if (dp?.classList.contains('open')) return;
+  const sheetPx = getMobileSheetVisiblePx();
+  if (sheetPx < 8) return;
+  const zoom = map.getZoom();
+  const size = map.getSize();
+  const markerPt = map.project([m.lat, m.lng], zoom);
+  const centerPt = map.project(map.getCenter(), zoom);
+  const markerScreenY = markerPt.y - centerPt.y + (size.y / 2);
+  const topOfSheetY = size.y - sheetPx;
+  const desiredY = Math.min(size.y * 0.42, Math.max(84, topOfSheetY - 36));
+  if (markerScreenY <= topOfSheetY - 18 && markerScreenY >= 52) return;
+  const nextCenterPt = L.point(centerPt.x, markerPt.y + (size.y / 2) - desiredY);
+  const nextCenter = map.unproject(nextCenterPt, zoom);
+  map.panTo(nextCenter, { animate: opts.animate !== false, duration:0.38, noMoveStart:true });
+}
+
+function syncMobileMapLayout() {
+  if (!map) return;
+  if (mobileSheetSyncTimer) clearTimeout(mobileSheetSyncTimer);
+  const apply = (animate = false) => {
+    const cont = map.getContainer?.();
+    if (!cont) return;
+    const px = getMobileSheetVisiblePx();
+    const changed = Math.abs(px - lastSidebarVisiblePx);
+    lastSidebarVisiblePx = px;
+    cont.style.setProperty('--mobile-sheet-offset', `${Math.max(74, px + 10)}px`);
+    if (window._lastClickedMosque && changed >= 8) {
+      ensureSelectedMosqueVisibleOnMobile(window._lastClickedMosque, { animate });
+    }
+  };
+  apply(false);
+  mobileSheetSyncTimer = setTimeout(() => apply(true), 320);
 }
 
 function initSidebarSnapSheet() {
   const sb = document.querySelector('.sidebar');
   const head = document.getElementById('sb-head-handle');
   if (!sb || !head) return;
-  const snaps = [20, 50, 95];
-  let idx = 1;
-  setSidebarSnap(snaps[idx]);
+  const snaps = [MOBILE_SHEET_SNAP.min, MOBILE_SHEET_SNAP.half, MOBILE_SHEET_SNAP.full];
+  mobileSheetSnapIdx = Math.max(0, Math.min(snaps.length - 1, mobileSheetSnapIdx));
+  setSidebarSnap(snaps[mobileSheetSnapIdx]);
   head.onclick = () => {
     if (window.innerWidth > 768) return;
-    idx = (idx + 1) % snaps.length;
-    setSidebarSnap(snaps[idx]);
+    mobileSheetSnapIdx = (mobileSheetSnapIdx + 1) % snaps.length;
+    setSidebarSnap(snaps[mobileSheetSnapIdx]);
   };
   let sy = 0;
-  sb.addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, {passive:true});
-  sb.addEventListener('touchend', e => {
+  head.addEventListener('touchstart', e => { sy = e.touches[0].clientY; }, {passive:true});
+  head.addEventListener('touchend', e => {
     if (window.innerWidth > 768) return;
     const dy = e.changedTouches[0].clientY - sy;
-    if (dy < -38) idx = Math.min(snaps.length - 1, idx + 1);
-    if (dy > 38) idx = Math.max(0, idx - 1);
-    setSidebarSnap(snaps[idx]);
+    if (dy < -30) mobileSheetSnapIdx = Math.min(snaps.length - 1, mobileSheetSnapIdx + 1);
+    if (dy > 30) mobileSheetSnapIdx = Math.max(0, mobileSheetSnapIdx - 1);
+    setSidebarSnap(snaps[mobileSheetSnapIdx]);
   }, {passive:true});
+  if (!initSidebarSnapSheet._boundResize) {
+    window.addEventListener('resize', () => syncMobileMapLayout());
+    window.addEventListener('orientationchange', () => setTimeout(() => syncMobileMapLayout(), 160));
+    initSidebarSnapSheet._boundResize = true;
+  }
 }
 
 window.addEventListener('DOMContentLoaded', bootstrap);

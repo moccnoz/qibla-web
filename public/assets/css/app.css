@@ -438,7 +438,7 @@ header .btn::before, header .btn-sm::before{content:none !important;}
 
 /* ── MAIN */
 .main{display:flex;flex:1;overflow:hidden;}
-#map{flex:1;position:relative;}
+#map{flex:1;position:relative;--mobile-sheet-offset:90px;}
 body:not(.outdoor-mode) #map::after{
   content:'';
   position:absolute;
@@ -1069,7 +1069,7 @@ body:not(.outdoor-mode) #map::after{
   }
   #vp-label{font-size:11px;}
   #vp-meta{font-size:9px;}
-  #map .leaflet-bottom.leaflet-left{left:10px;bottom:90px;}
+  #map .leaflet-bottom.leaflet-left{left:10px;bottom:calc(var(--mobile-sheet-offset, 90px) + env(safe-area-inset-bottom, 0px));}
   .search-area-btn{
     top:56px;
     font-size:11px;
