@@ -2806,6 +2806,8 @@ function drawDonut(ok, bad, unk, pct){
 let mosqueFilter = '';        // active filter query
 let msDropdownIdx = -1;       // keyboard navigation index
 let cityDropdownIdx = -1;
+let citySuggestController = null;
+let citySuggestSeq = 0;
 let msGeoProbePending = false;
 let msGeoProbeAt = 0;
 let msScopeViewportOnly = true;
@@ -2839,6 +2841,7 @@ const LANDMARK_ALIAS_COMPILED = LANDMARK_ALIAS_GROUPS.map(g => ({
   aliasesNorm: [...new Set((g.aliases || []).map(a => normalize(trLower(a))).filter(Boolean))]
 }));
 const msRemoteMetaByRef = new Map();
+const PLACE_SUGGEST_CACHE = new Map();
 
 function uniqueNameList(arr) {
   const out = [];
@@ -2990,7 +2993,7 @@ function initTopSmartSearch() {
     cityDropdownIdx = -1;
     clearTimeout(t);
     if (!q) { closeCitySmartDropdown(); return; }
-    t = setTimeout(() => showCitySmartDropdown(q), 90);
+    t = setTimeout(() => showCitySmartDropdown(q), 300);
   });
   input.addEventListener('keydown', e => {
     if (!dd.classList.contains('show')) return;
@@ -3011,6 +3014,11 @@ function initTopSmartSearch() {
         cityDropdownIdx = -1;
         closeCitySmartDropdown();
         doSearch();
+        return;
+      }
+      if (cityDropdownIdx < 0 && items.length === 1) {
+        e.preventDefault();
+        items[0]?.click();
         return;
       }
       if (cityDropdownIdx >= 0) {
@@ -3376,6 +3384,152 @@ function nominatimViewboxParams(bounds, bounded = true) {
   return `&viewbox=${left},${top},${right},${bottom}${bounded ? '&bounded=1' : ''}`;
 }
 
+function normalizeOsmType(raw) {
+  const t = String(raw || '').trim().toLowerCase();
+  if (t === 'n' || t === 'node') return 'node';
+  if (t === 'w' || t === 'way') return 'way';
+  if (t === 'r' || t === 'relation') return 'relation';
+  return '';
+}
+
+function getSuggestCacheKey(q, bounds) {
+  const b = bounds
+    ? `${bounds.getSouth().toFixed(3)}:${bounds.getWest().toFixed(3)}:${bounds.getNorth().toFixed(3)}:${bounds.getEast().toFixed(3)}`
+    : 'global';
+  return `${normalize(trLower(q || ''))}|${b}`;
+}
+
+function inBoundsSafe(bounds, lat, lng) {
+  if (!bounds || !Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  try { return bounds.contains([lat, lng]); } catch { return false; }
+}
+
+function textScoreForSuggestion(query, label) {
+  const q = normalize(trLower(query || ''));
+  const l = normalize(trLower(label || ''));
+  if (!q || !l) return 0;
+  if (l === q) return 120;
+  if (l.startsWith(q)) return 95;
+  if (l.includes(` ${q}`)) return 70;
+  if (l.includes(q)) return 48;
+  return 0;
+}
+
+function computeSuggestionScore(item, query, bounds) {
+  const text = textScoreForSuggestion(query, item.title || item.subtitle || '');
+  const imp = Number.isFinite(item.importance) ? Math.max(0, Math.min(1, item.importance)) * 55 : 0;
+  const vp = inBoundsSafe(bounds, item.lat, item.lng) ? 45 : 0;
+  let prox = 0;
+  if (userGeoState.enabled && Number.isFinite(userGeoState.lat) && Number.isFinite(userGeoState.lng)) {
+    const km = greatCircleKm(userGeoState.lat, userGeoState.lng, item.lat, item.lng);
+    if (Number.isFinite(km)) prox = Math.max(0, 42 - Math.min(42, km * 3.5));
+  }
+  const mosqueBoost = item.kind === 'mosque' ? 18 : 0;
+  return text + imp + vp + prox + mosqueBoost;
+}
+
+async function fetchPhotonPlaceSuggestions(query, bounds, signal) {
+  const center = map?.getCenter?.();
+  const params = new URLSearchParams({
+    q: query,
+    limit: '10',
+    lang: currentLang === 'en' ? 'en' : 'tr'
+  });
+  if (center && Number.isFinite(center.lat) && Number.isFinite(center.lng)) {
+    params.set('lat', String(center.lat));
+    params.set('lon', String(center.lng));
+  }
+  const url = `https://photon.komoot.io/api/?${params.toString()}`;
+  const data = await limitedFetch(url, {}, {
+    hostKey:'nominatim',
+    minInterval:700,
+    retries:1,
+    timeoutMs:9000,
+    backoffMs:500,
+    signal
+  }).then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)));
+  const features = Array.isArray(data?.features) ? data.features : [];
+  return features.map((f) => {
+    const p = f?.properties || {};
+    const coords = Array.isArray(f?.geometry?.coordinates) ? f.geometry.coordinates : [];
+    const lng = Number(coords[0]);
+    const lat = Number(coords[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const name = String(p.name || p.street || p.city || p.state || '').trim();
+    const city = String(p.city || p.county || p.district || '').trim();
+    const state = String(p.state || '').trim();
+    const country = String(p.country || '').trim();
+    const osmType = normalizeOsmType(p.osm_type);
+    const osmId = String(p.osm_id || '').replace(/\D/g,'');
+    const kind = isLikelyMosqueQuery(name) || /(mosque|cami|mescid|mescit|masjid)/i.test(String(p.osm_value || '')) ? 'mosque' : 'place';
+    return {
+      source:'photon',
+      lat, lng,
+      title:name || city || state || country || 'Bilinmeyen',
+      subtitle:[city, state, country].filter(Boolean).join(', '),
+      importance:Number.isFinite(+p.importance) ? +p.importance : 0,
+      kind,
+      osmType,
+      osmId,
+      bbox:null
+    };
+  }).filter(Boolean);
+}
+
+async function fetchNominatimPlaceSuggestions(query, bounds, signal) {
+  const vb = nominatimViewboxParams(bounds, false);
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=10&addressdetails=1&extratags=1&q=${encodeURIComponent(query)}${vb}`;
+  const rows = await nominatimFetchJson(url, {'Accept-Language':'tr,en'}, { signal });
+  return (rows || []).map((r) => {
+    const lat = Number(r.lat), lng = Number(r.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    const parts = String(r.display_name || '').split(',');
+    const title = String(parts[0] || r.name || '').trim() || 'Bilinmeyen';
+    const subtitle = parts.slice(1,4).map(s => s.trim()).filter(Boolean).join(', ');
+    const bbox = Array.isArray(r.boundingbox) && r.boundingbox.length === 4
+      ? [Number(r.boundingbox[0]), Number(r.boundingbox[1]), Number(r.boundingbox[2]), Number(r.boundingbox[3])]
+      : null;
+    const osmType = normalizeOsmType(r.osm_type);
+    const osmId = String(r.osm_id || '').replace(/\D/g,'');
+    const kind = isLikelyMosqueHit(r) ? 'mosque' : 'place';
+    return {
+      source:'nominatim',
+      lat, lng,
+      title,
+      subtitle,
+      importance:Number.isFinite(+r.importance) ? +r.importance : 0,
+      kind,
+      osmType,
+      osmId,
+      bbox
+    };
+  }).filter(Boolean);
+}
+
+async function fetchPlaceSuggestions(query, bounds, signal) {
+  const key = getSuggestCacheKey(query, bounds);
+  const cached = PLACE_SUGGEST_CACHE.get(key);
+  if (cached && (Date.now() - cached.ts) < 45000) return cached.items;
+  let photon = [];
+  let nom = [];
+  try { photon = await fetchPhotonPlaceSuggestions(query, bounds, signal); } catch {}
+  try { nom = await fetchNominatimPlaceSuggestions(query, bounds, signal); } catch {}
+  const merged = [...photon, ...nom];
+  const dedupe = new Map();
+  for (const it of merged) {
+    const k = it.osmType && it.osmId
+      ? `${it.osmType}:${it.osmId}`
+      : `${normalize(trLower(it.title))}:${it.lat.toFixed(4)}:${it.lng.toFixed(4)}`;
+    if (!dedupe.has(k)) dedupe.set(k, it);
+  }
+  const out = [...dedupe.values()]
+    .map(it => ({ ...it, score:computeSuggestionScore(it, query, bounds) }))
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 12);
+  PLACE_SUGGEST_CACHE.set(key, { ts:Date.now(), items:out });
+  return out;
+}
+
 async function fetchNominatimMosqueRefs(query, bounds, bounded = true, limit = 12) {
   const vb = nominatimViewboxParams(bounds, bounded);
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limit}&addressdetails=1&extratags=1&q=${encodeURIComponent(query)}${vb}`;
@@ -3646,12 +3800,113 @@ function closeCitySmartDropdown() {
   if (!dd) return;
   dd.classList.remove('show');
   cityDropdownIdx = -1;
+  if (citySuggestController) {
+    try { citySuggestController.abort(); } catch {}
+    citySuggestController = null;
+  }
 }
 
-function showCitySmartDropdown(q) {
+function selectPlaceSuggestion(item) {
+  if (!item || !map) return;
+  document.getElementById('city-input').value = item.title || '';
+  closeCitySmartDropdown();
+  const isMosque = item.kind === 'mosque';
+  const zoom = isMosque ? 17 : 14;
+  if (Array.isArray(item.bbox) && item.bbox.length === 4 && item.bbox.every(Number.isFinite) && !isMosque) {
+    const s = item.bbox[0], n = item.bbox[1], w = item.bbox[2], e = item.bbox[3];
+    if (Math.abs(n - s) > 0.001 && Math.abs(e - w) > 0.001) map.fitBounds([[s, w], [n, e]]);
+    else map.flyTo([item.lat, item.lng], zoom, { duration:0.6 });
+  } else {
+    map.flyTo([item.lat, item.lng], zoom, { duration:0.6 });
+  }
+  map.once('moveend', () => scheduleViewportLoad(80));
+  if (isMosque) {
+    const q = item.title || document.getElementById('city-input').value.trim();
+    if (q) {
+      document.getElementById('mosque-search').value = q;
+      document.getElementById('mosque-search').classList.add('has-value');
+      document.getElementById('ms-clear').classList.add('show');
+      applyMosqueFilter(q);
+    }
+  }
+}
+
+async function showCitySmartDropdown(q) {
   const dd = document.getElementById('city-smart-dd');
   if (!dd) return;
-  if (!q || q.length < 2 || !mosqueDB.size) { closeCitySmartDropdown(); return; }
+  if (!q || q.length < 2) { closeCitySmartDropdown(); return; }
+  if (isLikelyMosqueQuery(q) && !mosqueDB.size) {
+    dd.innerHTML = `<div class="ms-no-result">Önce haritadan veri yüklenmeli</div>`;
+    dd.classList.add('show');
+    return;
+  }
+  if (!isLikelyMosqueQuery(q)) {
+    if (citySuggestController) {
+      try { citySuggestController.abort(); } catch {}
+    }
+    citySuggestController = new AbortController();
+    const seq = ++citySuggestSeq;
+    const signal = citySuggestController.signal;
+    const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
+    dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" aranıyor...</div>`;
+    dd.classList.add('show');
+    let items = [];
+    try {
+      items = await fetchPlaceSuggestions(q, bounds, signal);
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+    }
+    if (seq !== citySuggestSeq) return;
+    if (!items.length) {
+      dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
+      dd.classList.add('show');
+      return;
+    }
+    const frag = document.createDocumentFragment();
+    const recents = [];
+    const nearby = [];
+    const global = [];
+    for (const it of items) {
+      const dist = computeMosqueDistanceKm(it);
+      const rec = { ...it, dist };
+      const localHist = it.osmType && it.osmId
+        ? getVisitTrafficRecord({ osmType:it.osmType, id:it.osmId })
+        : null;
+      if (localHist && localHist.count > 0) recents.push(rec);
+      else if (Number.isFinite(dist) && dist < 8) nearby.push(rec);
+      else global.push(rec);
+    }
+    const groups = [
+      { title:'Geçmiş Aramalar ve Analizler', icon:'🕒', items:recents.slice(0,4) },
+      { title:'Yakınınızdakiler', icon:'🕌', items:nearby.slice(0,4) },
+      { title:'Küresel Sonuçlar', icon:'📍', items:global.slice(0,8) }
+    ].filter(g => g.items.length);
+    groups.forEach((g) => {
+      const hdr = document.createElement('div');
+      hdr.className = 'ms-group-hdr';
+      hdr.textContent = `${g.icon} ${g.title}`;
+      frag.appendChild(hdr);
+      g.items.forEach((it) => {
+        const rightBadge = Number.isFinite(it.dist) ? `${getUserDistanceLabel(it)} yakınınızda` : '—';
+        const dotCol = it.kind === 'mosque' ? '#4ade80' : '#60a5fa';
+        const div = document.createElement('div');
+        div.className = 'ms-item';
+        div.innerHTML = `
+          <div class="ms-item-dot" style="background:${dotCol};box-shadow:0 0 4px ${dotCol}"></div>
+          <div class="ms-item-info">
+            <div class="ms-item-name">${highlightMatch(it.title, q)}</div>
+            <div class="ms-item-sub">${escHtml(it.subtitle || '')}</div>
+          </div>
+          <div class="ms-item-diff" style="color:var(--gold)">${escHtml(rightBadge)}</div>`;
+        div.onclick = () => selectPlaceSuggestion(it);
+        frag.appendChild(div);
+      });
+    });
+    dd.innerHTML = '';
+    dd.appendChild(frag);
+    dd.classList.add('show');
+    return;
+  }
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24, { scopeViewportOnly:false });
   queuePopularityHydration(ranked, () => {
     const cur = document.getElementById('city-input')?.value?.trim();
