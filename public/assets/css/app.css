@@ -2241,3 +2241,162 @@ body:not(.outdoor-mode) :where(.btn,.btn-sm,.dp-action-btn,.mob-drawer-btn,.mob-
   body:not(.outdoor-mode) .sidebar{width:min(340px, calc(100% - 32px));}
   body:not(.outdoor-mode) .qibla-panel{left:364px;max-width:min(320px, calc(100% - 380px));}
 }
+
+/* ══ V10 SOFA DEFINITIVE (ZEN LIGHT SPEC) ═════════════════════════════════ */
+body.light-theme:not(.outdoor-mode){
+  --bg:#f8f9fa;
+  --surface:rgba(255,255,255,.70);
+  --panel:rgba(255,255,255,.78);
+  --glass:rgba(255,255,255,.70);
+  --text:#2d3436;
+  --muted:#6b7280;
+  --accent:#d4af37;
+  --gold:#d4af37;
+  --border:rgba(0,0,0,.05);
+}
+
+body.light-theme:not(.outdoor-mode),
+body.light-mode:not(.outdoor-mode){
+  background:linear-gradient(160deg,#fcfcf9,#f8f9fa) !important;
+}
+
+body.light-theme:not(.outdoor-mode) :where(.btn,.btn-sm,.dp-action-btn,.mob-drawer-btn,.mob-layer-btn,.compass-fab,.theme-fab,.lb-act-btn,.hist-chip,.cmp-search-row .btn-sm){
+  border-radius:50px !important;
+  border:1px solid var(--border) !important;
+  background:var(--surface) !important;
+  color:var(--text) !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.04) !important;
+}
+
+body.light-theme:not(.outdoor-mode) :where(.sidebar,.score-card,.qibla-panel,.dp-panel,.exp-modal,.biz-modal,.lab-modal,.cmps-modal,.m3d-modal,.ks-modal,.lb-modal,.hist-modal,.cmp-modal,.mob-drawer,.stat,.sb-mini-panel,.sb-half-panel,.stats-bar,.search-box,.floating-search,header){
+  border-radius:24px !important;
+  border:1px solid var(--border) !important;
+  background:var(--glass) !important;
+  box-shadow:0 10px 30px rgba(0,0,0,.04) !important;
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+
+body.light-theme:not(.outdoor-mode) #map{
+  position:fixed !important;
+  inset:0;
+  z-index:1;
+  border-radius:0 !important;
+}
+
+body.light-theme:not(.outdoor-mode) .main{
+  position:relative;
+  z-index:2;
+  padding:0 !important;
+  display:block !important;
+}
+
+@media (min-width:769px){
+  body.light-theme:not(.outdoor-mode) header{
+    position:fixed !important;
+    top:20px;
+    right:20px;
+    left:auto;
+    width:min(760px, calc(100vw - 600px));
+    min-width:540px;
+    margin:0 !important;
+    padding:8px 10px;
+    z-index:1705;
+  }
+  body.light-theme:not(.outdoor-mode) header .search-box,
+  body.light-theme:not(.outdoor-mode) header .divider,
+  body.light-theme:not(.outdoor-mode) header .brand-home{
+    display:none !important;
+  }
+  body.light-theme:not(.outdoor-mode) header .header-actions{width:100%;}
+  body.light-theme:not(.outdoor-mode) header .header-row-groups{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:8px;
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  body.light-theme:not(.outdoor-mode) header .header-row-groups::-webkit-scrollbar{display:none;}
+  body.light-theme:not(.outdoor-mode) header .nav-group{flex-shrink:0;background:rgba(255,255,255,.55) !important;}
+  body.light-theme:not(.outdoor-mode) header .nav-group-title{font-size:10px;color:#7b8794 !important;}
+
+  body.light-theme:not(.outdoor-mode) .floating-search{
+    position:fixed !important;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(540px, calc(100vw - 40px));
+    max-width:540px;
+    border-radius:50px !important;
+    padding:8px 10px;
+    gap:8px;
+    z-index:1710;
+  }
+  body.light-theme:not(.outdoor-mode) .floating-search-ico{
+    width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+    color:#7f8a96;background:rgba(0,0,0,.03);flex-shrink:0;
+  }
+  body.light-theme:not(.outdoor-mode) .floating-search input{font-size:16px;padding:10px 4px;}
+  body.light-theme:not(.outdoor-mode) #search-btn{border-radius:50px !important;padding:10px 16px !important;background:rgba(212,175,55,.16) !important;color:#705a16 !important;}
+  body.light-theme:not(.outdoor-mode) .theme-fab.in-pill{width:38px;height:38px;border-radius:50% !important;}
+
+  body.light-theme:not(.outdoor-mode) .stats-bar{
+    display:none !important;
+  }
+
+  body.light-theme:not(.outdoor-mode) .sidebar{
+    position:fixed !important;
+    left:20px;
+    top:100px;
+    bottom:auto;
+    width:min(370px, calc(100vw - 40px));
+    max-height:calc(100vh - 140px);
+    z-index:1700;
+    overflow:hidden;
+  }
+  body.light-theme:not(.outdoor-mode) .sb-head{font-size:12px;letter-spacing:.04em;color:#6f7b87 !important;padding:12px 14px;}
+  body.light-theme:not(.outdoor-mode) .mosque-list{overflow:auto;max-height:52vh;}
+  body.light-theme:not(.outdoor-mode) .m-item{border-bottom:1px solid rgba(0,0,0,.05);}
+  body.light-theme:not(.outdoor-mode) .m-item:hover{background:rgba(0,0,0,.02) !important;}
+
+  body.light-theme:not(.outdoor-mode) .live-vp-badge{
+    position:fixed !important;
+    right:20px;
+    top:100px;
+    left:auto;
+    z-index:1700;
+  }
+
+  body.light-theme:not(.outdoor-mode) .qibla-panel{
+    position:fixed !important;
+    right:20px;
+    top:164px;
+    left:auto;
+    z-index:1698;
+    max-width:min(340px, calc(100vw - 40px));
+  }
+
+  body.light-theme:not(.outdoor-mode) .score-card{
+    position:fixed !important;
+    right:20px;
+    top:164px;
+    z-index:1697;
+  }
+
+  body.light-theme:not(.outdoor-mode) .search-area-btn{
+    position:fixed !important;
+    top:82px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:1702;
+    border-radius:50px !important;
+    border:1px solid var(--border) !important;
+    background:var(--glass) !important;
+    color:var(--text) !important;
+  }
+}
+
+@media (max-width:768px){
+  body.light-theme:not(.outdoor-mode) .floating-search-ico,
+  body.light-theme:not(.outdoor-mode) .theme-fab.in-pill{display:none !important;}
+}
