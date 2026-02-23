@@ -6001,18 +6001,20 @@ function populateDetailPanel(m) {
   // ── Action buttons
   renderActions(m, tags);
 
-  // İsim OSM'de eksikse Wikidata'dan etiketi çekmeyi dene
-  if (isPlaceholderMosqueName(m.name) && typeof tags.wikidata === 'string') {
-    fetchWikidataLabel(tags.wikidata).then(lbl => {
-      if (!lbl || !m || !m.tags || m.tags.wikidata !== tags.wikidata) return;
-      m.name = lbl;
-      document.getElementById('dp-name').textContent = lbl;
-      // Sidebar/görünüm güncelle
+  // İsim generic/eksikse panel açıkken güçlü kaynaklardan yeniden çöz.
+  if (isPlaceholderMosqueName(m.name) || isGenericMosqueName(m.name)) {
+    enrichMosqueName(m, { force:true }).then(() => {
+      if (token !== dpPopulateToken || window._lastClickedMosque?.id != m.id) return;
+      if (isPlaceholderMosqueName(m.name) || isGenericMosqueName(m.name)) return;
+      document.getElementById('dp-name').textContent = m.name;
       const bounds = map?.getBounds?.().pad(0.1);
       if (bounds) {
         const visible = [...mosqueDB.values()].filter(x => bounds.contains([x.lat, x.lng]));
-        updateList(visible);
+        if (mosqueFilter) applyMosqueFilter(mosqueFilter);
+        else updateList(visible);
       }
+      // İsim netleşince foto eşleşmesi de daha güvenli hale gelir; yeniden dene.
+      loadPhoto(m, m.tags || {});
     }).catch(()=>{});
   }
 }
@@ -6053,6 +6055,7 @@ async function loadPhoto(m, tags) {
   }
 
   // 5. Name/location based Commons search fallback
+  if (!canUseLoosePhotoFallback(m, tags)) return;
   const fallback = await fetchCommonsFallbackPhoto(m, tags);
   if (fallback?.url) {
     img.src = fallback.url;
@@ -6150,27 +6153,76 @@ function buildPhotoFallbackTerms(m, tags = {}) {
   }).slice(0, 8);
 }
 
-async function fetchCommonsBySearchTerm(term) {
+function tokenizePhotoTokens(text) {
+  return normalize(trLower(String(text || '')))
+    .split(/[^a-z0-9ığüşöçâêîû]+/i)
+    .map(s => s.trim())
+    .filter(s => s.length > 2);
+}
+
+function getPhotoContext(m, tags = {}) {
+  const t = tags || {};
+  const wikiTitle = String(t.wikipedia || '').includes(':')
+    ? String(t.wikipedia).split(':').slice(1).join(':').replace(/_/g, ' ').trim()
+    : '';
+  const city = String(t['addr:city'] || t['addr:town'] || t['is_in:city'] || m?.searchMeta?.city || '').trim();
+  const district = String(t['addr:district'] || t['addr:suburb'] || t['addr:neighbourhood'] || '').trim();
+  const province = String(t['addr:state'] || t['addr:province'] || t['is_in:state'] || m?.searchMeta?.province || '').trim();
+  const generic = new Set(['cami','camii','mescit','mescid','mosque','masjid']);
+  const nameTokens = [...new Set(tokenizePhotoTokens(`${m?.name || ''} ${wikiTitle}`).filter(tk => !generic.has(tk)))];
+  const locTokens = [...new Set(tokenizePhotoTokens(`${city} ${district} ${province}`).filter(tk => !generic.has(tk)))];
+  return { nameTokens, locTokens, hasStrongName: nameTokens.some(tk => tk.length >= 4) };
+}
+
+function canUseLoosePhotoFallback(m, tags = {}) {
+  if (!m) return false;
+  if (isPlaceholderMosqueName(m.name) || isGenericMosqueName(m.name)) return false;
+  const ctx = getPhotoContext(m, tags);
+  return ctx.hasStrongName;
+}
+
+function scoreCommonsTitleRelevance(title, ctx) {
+  const txt = normalize(trLower(String(title || '').replace(/^file:/i, '').replace(/_/g, ' ')));
+  if (!txt) return { score:0, matchedName:0 };
+  const mosqueHint = /(cami|camii|mosque|masjid|mescit|mescid)/.test(txt) ? 8 : 0;
+  let matchedName = 0;
+  let matchedLoc = 0;
+  for (const tk of ctx.nameTokens) {
+    if (tk && txt.includes(tk)) matchedName++;
+  }
+  for (const tk of ctx.locTokens) {
+    if (tk && txt.includes(tk)) matchedLoc++;
+  }
+  const score = (matchedName * 24) + (matchedLoc * 9) + mosqueHint;
+  return { score, matchedName };
+}
+
+async function fetchCommonsBySearchTerm(term, ctx) {
   try {
     const api = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(term)}&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=url&format=json&origin=*`;
     const r = await fetch(api);
     if (!r.ok) return null;
     const d = await r.json();
     const pages = Object.values(d?.query?.pages || {});
+    let best = null;
     for (const p of pages) {
       const title = String(p?.title || '');
       const isPhotoLike = /\.(jpg|jpeg|png|webp)$/i.test(title);
       const url = p?.imageinfo?.[0]?.url;
-      if (url && isPhotoLike) return url;
+      if (!url || !isPhotoLike) continue;
+      const rel = scoreCommonsTitleRelevance(title, ctx);
+      if (rel.matchedName < 1) continue;
+      if (!best || rel.score > best.score) best = { url, score:rel.score };
     }
-    return pages[0]?.imageinfo?.[0]?.url || null;
+    return best && best.score >= 24 ? best.url : null;
   } catch { return null; }
 }
 
 async function fetchCommonsFallbackPhoto(m, tags) {
+  const ctx = getPhotoContext(m, tags);
   const terms = buildPhotoFallbackTerms(m, tags);
   for (const term of terms) {
-    const url = await fetchCommonsBySearchTerm(term);
+    const url = await fetchCommonsBySearchTerm(term, ctx);
     if (url) return { url, source:'© Wikimedia Commons (search)' };
   }
   return null;
