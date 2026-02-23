@@ -3166,6 +3166,7 @@ function rankMosqueCandidates(q, limit = 15, opts = {}) {
   const qNorm = normalize(qLow);
   const words = qLow.split(/\s+/).filter(w => w.length > 0);
   const strongWords = strongQueryWords(q);
+  const ambiguousQuery = isAmbiguousMosqueQuery(q);
   const scopeViewportOnly = typeof opts.scopeViewportOnly === 'boolean' ? opts.scopeViewportOnly : msScopeViewportOnly;
   const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
   const scored = [];
@@ -3182,8 +3183,9 @@ function rankMosqueCandidates(q, limit = 15, opts = {}) {
     const inView = bounds ? bounds.contains([m.lat, m.lng]) : false;
     const popScore = computeMosquePopularityScore(m);
     const proxScore = computeMosqueProximityScore(m);
+    const proxWeight = ambiguousQuery ? 3.2 : 1;
     const viewportBonus = !bounds ? 0 : (inView ? (scopeViewportOnly ? 45 : 18) : (scopeViewportOnly ? -50 : 0));
-    const rankScore = textScore + popScore + proxScore + viewportBonus;
+    const rankScore = textScore + popScore + (proxScore * proxWeight) + viewportBonus;
     scored.push({ m, s:textScore, p:popScore, d:proxScore, inView, rank:rankScore });
   }
   const ranked = scopeViewportOnly && bounds
@@ -3197,6 +3199,12 @@ function strongQueryWords(query) {
   return normalize(trLower(query || ''))
     .split(/[^a-z0-9ığüşöçâêîû]+/i)
     .filter(w => w.length > 1 && !generic.has(w));
+}
+
+function isAmbiguousMosqueQuery(query) {
+  if (!isLikelyMosqueQuery(query)) return false;
+  const strong = strongQueryWords(query);
+  return strong.length <= 1;
 }
 
 function isStrongSmartSelection(query, smart, aliasHints = []) {
@@ -3365,10 +3373,17 @@ function showMosqueDropdown(q) {
 
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24);
   const top = ranked;
+  const ambiguousQuery = isAmbiguousMosqueQuery(q);
   queuePopularityHydration(top, () => {
     const qNow = document.getElementById('mosque-search')?.value?.trim();
     if (qNow === q) showMosqueDropdown(q);
   });
+  if (ambiguousQuery && top.length > 0 && top.length < 18 && !msRemoteLookupPending) {
+    triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal:true }).then(added => {
+      const cur = document.getElementById('mosque-search')?.value?.trim();
+      if (cur === q && added > 0) showMosqueDropdown(q);
+    }).catch(() => {});
+  }
 
   if (!top.length) {
     const scopeMsg = msScopeViewportOnly ? ' (mevcut harita alanında)' : '';
@@ -3417,7 +3432,7 @@ function showMosqueDropdown(q) {
       const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
       const addressLine = getMosqueHierarchyLine(m);
       const userDistance = getUserDistanceLabel(m);
-      const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
+      const rightBadge = userDistance ? `${userDistance} yakınınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
       const badges = [];
       if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
       if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
@@ -3503,7 +3518,7 @@ function showCitySmartDropdown(q) {
       const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
       const addressLine = getMosqueHierarchyLine(m);
       const userDistance = getUserDistanceLabel(m);
-      const rightBadge = userDistance ? `${userDistance} uzağınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
+      const rightBadge = userDistance ? `${userDistance} yakınınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
       const badges = [];
       if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
       if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
