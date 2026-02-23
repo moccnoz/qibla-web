@@ -5351,3 +5351,68 @@ body:not(.outdoor-mode) #map::after {
     margin-bottom: calc(var(--mobile-sheet-offset, 92px) + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP FIXES — cluster hover bug + search clarity + nav state colors
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  body {
+    --search-box-w-collapsed: clamp(340px, 30vw, 460px);
+    --search-box-w-expanded: clamp(500px, 42vw, 660px);
+    --search-gap: 18px;
+  }
+
+  .floating-search .search-box,
+  .search-box {
+    background: linear-gradient(180deg, rgba(26, 48, 92, 0.90), rgba(30, 58, 116, 0.86)) !important;
+    border-color: rgba(148, 163, 184, 0.34) !important;
+    box-shadow: 0 12px 28px rgba(5, 14, 36, 0.45) !important;
+  }
+
+  .floating-search .search-box input,
+  .search-box input[type="text"] {
+    color: #f8fbff !important;
+  }
+
+  .floating-search .search-box input::placeholder,
+  .search-box input::placeholder {
+    color: rgba(226, 232, 240, 0.74) !important;
+  }
+
+  .stats-bar {
+    left: calc(var(--nav-offset-live) + 14px + var(--search-box-w-collapsed) + var(--search-gap)) !important;
+    right: 334px !important;
+    max-width: none !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+  }
+
+  body.search-expanded .stats-bar {
+    left: calc(var(--nav-offset-live) + 14px + var(--search-box-w-expanded) + var(--search-gap)) !important;
+  }
+
+  .nav-sidebar .ns-btn {
+    background: rgba(13, 64, 255, 0.18) !important;
+    border: 1px solid rgba(13, 64, 255, 0.40) !important;
+    color: #dbe7ff !important;
+  }
+
+  .nav-sidebar .ns-btn:hover {
+    background: rgba(13, 64, 255, 0.30) !important;
+    border-color: rgba(13, 64, 255, 0.55) !important;
+    color: #ffffff !important;
+  }
+
+  .nav-sidebar .ns-btn.active {
+    background: #0c74e8 !important;
+    border-color: #0c74e8 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 10px 22px rgba(12, 116, 232, 0.36) !important;
+  }
+}
+
+/* Fix: marker cluster hover should never override leaflet translate transform */
+.leaflet-marker-icon:hover,
+.leaflet-marker-icon.marker-cluster:hover {
+  transform: none !important;
+}

@@ -6826,6 +6826,48 @@ window.switchLayer = function(type) {
   syncNavSidebarLayerState(type);
 };
 
+function syncNavProxyStates() {
+  const pairs = [
+    ['btn-district', 'ns-btn-district'],
+    ['btn-heat', 'ns-btn-heat'],
+    ['btn-score', 'ns-btn-score'],
+    ['btn-compare', 'ns-btn-compare'],
+    ['btn-history', 'ns-btn-history'],
+    ['btn-lb', 'ns-btn-lb'],
+    ['loc-btn', 'ns-btn-loc'],
+    ['btn-compass', 'ns-btn-compass'],
+    ['btn-follow', 'ns-btn-follow'],
+    ['btn-nearby', 'ns-btn-nearby'],
+    ['btn-export', 'ns-btn-export'],
+    ['btn-lab', 'ns-btn-lab'],
+    ['btn-outdoor', 'ns-btn-outdoor']
+  ];
+  pairs.forEach(([srcId, navId]) => {
+    const src = document.getElementById(srcId);
+    const nav = document.getElementById(navId);
+    if (!src || !nav) return;
+    nav.classList.toggle('active', src.classList.contains('active'));
+  });
+  const langTr = document.getElementById('lang-tr');
+  const langEn = document.getElementById('lang-en');
+  document.getElementById('ns-lang-tr')?.classList.toggle('active', !!langTr?.classList.contains('active'));
+  document.getElementById('ns-lang-en')?.classList.toggle('active', !!langEn?.classList.contains('active'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  syncNavProxyStates();
+  const watchIds = [
+    'btn-district', 'btn-heat', 'btn-score', 'btn-compare', 'btn-history', 'btn-lb',
+    'loc-btn', 'btn-compass', 'btn-follow', 'btn-nearby', 'btn-export', 'btn-lab', 'btn-outdoor',
+    'lang-tr', 'lang-en'
+  ];
+  const observer = new MutationObserver(syncNavProxyStates);
+  watchIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+});
+
 // ── Touch swipe to close detail panel on mobile
 (function() {
   let startY = 0, startX = 0;
