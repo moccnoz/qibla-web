@@ -767,13 +767,11 @@ async function loadViewport(opts = {}) {
       vpDebounceTimer = setTimeout(loadViewport, 120);
     }
   } catch(err) {
-    if (err?.name === 'AbortError') {
-      setVpStatus('idle');
-      return;
-    }
     setVpStatus('idle');
-    toast('Veri yüklenirken hata: '+err.message, 5000);
-    console.error(err);
+    if (err?.name !== 'AbortError') {
+      toast('Veri yüklenirken hata: '+err.message, 5000);
+      console.error(err);
+    }
   }
 
   hideMini();
