@@ -458,8 +458,9 @@ async function bootstrap() {
 }
 
 function initMap() {
-  map = L.map('map', { center:[41.015,28.979], zoom:13 });
+  map = L.map('map', { center:[41.015,28.979], zoom:13, zoomControl:false });
   tileLayer = L.tileLayer(TILES.dark.url, TILES.dark.opts).addTo(map);
+  L.control.zoom({ position:'bottomleft' }).addTo(map);
 
   // Kaaba marker (permanent)
   L.circleMarker([KAABA.lat,KAABA.lng],{ radius:9,fillColor:'#c9a84c',color:'#e8c97a',weight:2,fillOpacity:1 })
@@ -3615,12 +3616,18 @@ function normalize(s) {
 // ── Status indicators
 function setVpStatus(s){
   const dot=document.getElementById('vp-dot'),lbl=document.getElementById('vp-label');
-  const box=document.querySelector('.vp-status');
+  const box=document.getElementById('live-vp-badge') || document.querySelector('.vp-status');
   dot.className='vp-dot'+(s==='loading'?' loading':s==='done'?' done':'');
-  if (box) box.className='vp-status'+(s==='loading'?' loading':s==='done'?' done':'');
+  if (box) box.className=`live-vp-badge ${s==='loading'?'loading':s==='done'?'done':'idle'}`;
   lbl.textContent=s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır';
 }
-function updateCacheUI(){ document.getElementById('cache-count').textContent=tileCache.size; }
+function updateCacheUI(){
+  const count = tileCache.size;
+  const cacheEl = document.getElementById('cache-count');
+  if (cacheEl) cacheEl.textContent = count;
+  const metaEl = document.getElementById('vp-meta');
+  if (metaEl) metaEl.textContent = `Cache: ${count} tile`;
+}
 function showMini(t){ document.getElementById('mini-text').textContent=t; document.getElementById('mini-loader').classList.add('show'); }
 function hideMini(){ document.getElementById('mini-loader').classList.remove('show'); }
 

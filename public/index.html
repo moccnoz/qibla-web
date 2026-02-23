@@ -344,10 +344,6 @@
   <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Doğru</div></div>
   <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Sapma</div></div>
   <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">Veri Yok</div></div>
-  <div class="vp-status">
-    <div class="vp-dot" id="vp-dot"></div>
-    <span id="vp-label">Hazır</span>
-  </div>
   <div class="map-switch" id="axis-switch">
     <button id="axis-final" class="active" onclick="setAxisMode('final')">Final</button>
     <button id="axis-raw" onclick="setAxisMode('raw')">Raw</button>
@@ -363,6 +359,15 @@
 
 <div class="main">
   <div id="map">
+    <button class="live-vp-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
+      <span class="live-vp-icon-wrap">
+        <span class="vp-dot" id="vp-dot"></span>
+      </span>
+      <span class="live-vp-copy">
+        <span id="vp-label">Canlı hazır</span>
+        <span id="vp-meta">Cache: 0 tile</span>
+      </span>
+    </button>
     <div class="mob-layer-stack" id="mob-layer-stack">
       <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita"> Koyu</button>
       <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita"> Uydu</button>
