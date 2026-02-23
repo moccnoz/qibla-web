@@ -2801,6 +2801,24 @@ function rankMosqueCandidates(q, limit = 15) {
   return { ranked: ranked.slice(0, limit), qLow, qNorm, words, bounds };
 }
 
+function strongQueryWords(query) {
+  const generic = new Set(['cami','camii','mescit','mescid','mosque','masjid']);
+  return normalize(trLower(query || ''))
+    .split(/[^a-z0-9ığüşöçâêîû]+/i)
+    .filter(w => w.length > 1 && !generic.has(w));
+}
+
+function isStrongSmartSelection(query, smart, aliasHints = []) {
+  if (!query || !smart?.m) return false;
+  if (aliasHints.length && smart.s >= 120) return true;
+  if (smart.s < 80) return false;
+  if (!smart.m.searchIndex) buildSearchIndexForMosque(smart.m);
+  const namesNorm = smart.m.searchIndex?.namesNorm || [normalize(trLower(smart.m.name || ''))];
+  const words = strongQueryWords(query);
+  if (!words.length) return false;
+  return words.every(w => namesNorm.some(n => n === w || n.includes(w)));
+}
+
 function toOsmType(v) {
   const t = trLower(String(v || '').trim());
   if (t === 'n' || t === 'node') return 'node';
@@ -3220,7 +3238,7 @@ async function doSearch(){
   if (mq) mq.value = v;
   const aliasHints = findAliasGroupsForQuery(normalize(trLower(v)));
   const smart = rankMosqueCandidates(v, 1).ranked[0] || null;
-  if (smart && (isLikelyMosqueQuery(v) || aliasHints.length || smart.rank >= 118 || smart.s >= 90)) {
+  if (smart && isStrongSmartSelection(v, smart, aliasHints)) {
     selectMosque(smart.m);
     return;
   }
