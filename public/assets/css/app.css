@@ -66,6 +66,99 @@ body:not(.outdoor-mode) :is(#lb-add-btn,.exp-copy-btn,.biz-cta.primary,.mob-sear
   border:1px solid rgba(255,255,255,.30) !important;
   color:rgba(255,255,255,.70) !important;
 }
+/* Global dark-mode button normalization */
+body:not(.outdoor-mode) :where(
+  button,
+  .btn,
+  .btn-sm,
+  .mob-drawer-btn,
+  .mob-bottom-bar button,
+  .mob-layer-btn,
+  .compass-fab,
+  .dp-action-btn,
+  .biz-cta,
+  .exp-copy-btn,
+  #lb-add-btn,
+  .lb-act-btn,
+  .hist-chip,
+  .cmp-search-row .btn-sm
+){
+  background:rgba(27,79,127,.68) !important;
+  color:rgba(255,255,255,.86) !important;
+  border-color:rgba(170,214,241,.42) !important;
+  box-shadow:none !important;
+  font-family:'Inter','Manrope','Segoe UI','Helvetica Neue',Arial,sans-serif !important;
+}
+body:not(.outdoor-mode) :where(
+  button,
+  .btn,
+  .btn-sm,
+  .mob-drawer-btn,
+  .mob-bottom-bar button,
+  .mob-layer-btn,
+  .compass-fab,
+  .dp-action-btn,
+  .biz-cta,
+  .exp-copy-btn,
+  #lb-add-btn,
+  .lb-act-btn,
+  .hist-chip,
+  .cmp-search-row .btn-sm
+):hover{
+  background:rgba(42,101,148,.82) !important;
+  color:rgba(255,255,255,.92) !important;
+  border-color:rgba(194,228,248,.52) !important;
+}
+body:not(.outdoor-mode) :where(
+  button,
+  .btn,
+  .btn-sm,
+  .mob-drawer-btn,
+  .mob-bottom-bar button,
+  .mob-layer-btn,
+  .compass-fab,
+  .dp-action-btn,
+  .biz-cta,
+  .exp-copy-btn,
+  #lb-add-btn,
+  .lb-act-btn,
+  .hist-chip,
+  .cmp-search-row .btn-sm
+):active{
+  background:rgba(22,71,115,.9) !important;
+}
+body:not(.outdoor-mode) :where(
+  button,
+  .btn,
+  .btn-sm,
+  .mob-drawer-btn,
+  .mob-bottom-bar button,
+  .mob-layer-btn,
+  .compass-fab,
+  .dp-action-btn,
+  .biz-cta,
+  .exp-copy-btn,
+  #lb-add-btn,
+  .lb-act-btn,
+  .hist-chip,
+  .cmp-search-row .btn-sm
+):disabled{
+  background:rgba(27,79,127,.44) !important;
+  color:rgba(255,255,255,.52) !important;
+  border-color:rgba(170,214,241,.26) !important;
+  cursor:not-allowed !important;
+}
+body:not(.outdoor-mode) :where(
+  .btn::before,
+  .btn-sm::before,
+  .mob-drawer-btn::before,
+  .dp-action-btn::before,
+  .biz-cta::before,
+  .exp-copy-btn::before,
+  .lb-act-btn::before
+){
+  color:rgba(255,255,255,.86) !important;
+}
 
 /* ── HEADER */
 header{display:flex;align-items:center;gap:14px;padding:11px 18px;background:var(--surface);border-bottom:1px solid var(--border);z-index:1000;flex-shrink:0;}
