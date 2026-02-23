@@ -991,7 +991,7 @@ function renderAll() {
       renderLayers.push(L.polygon([[tip.lat,tip.lng],[aL.lat,aL.lng],[aR.lat,aR.lng]],{color:col,fillColor:col,weight:0,fillOpacity:.9}).addTo(map));
     }
 
-    const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#0a0a0f',weight:1.5,fillOpacity:.95}).addTo(map);
+    const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#164773',weight:1.5,fillOpacity:.95}).addTo(map);
     mk.mosque = m;
     mk.bindPopup(makePopup(m));
     mk.on('click',()=>handleMosqueClick(m));
@@ -1181,7 +1181,7 @@ function drawDiffArc(m){
   animLayers.push(L.marker([midPt.lat,midPt.lng],{
     icon: L.divIcon({
       className:'',
-      html:`<div style="background:rgba(10,10,15,.85);border:1px solid ${m.diff<=tol?'#4ade80':'#f87171'};color:${m.diff<=tol?'#4ade80':'#f87171'};font-family:monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap">${m.diff.toFixed(1)}°</div>`,
+      html:`<div style="background:rgba(22,71,115,.85);border:1px solid ${m.diff<=tol?'#4ade80':'#f87171'};color:${m.diff<=tol?'#4ade80':'#f87171'};font-family:monospace;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap">${m.diff.toFixed(1)}°</div>`,
       iconAnchor:[20,10]
     })
   }).addTo(map));
@@ -2426,7 +2426,7 @@ function drawDonut(ok, bad, unk, pct){
   }
 
   // Gap lines between slices
-  ctx.strokeStyle='#0a0a0f';
+  ctx.strokeStyle='#164773';
   ctx.lineWidth=2;
   angle=-Math.PI/2;
   for(const s of slices){
@@ -4309,7 +4309,7 @@ function applyPeriodColors() {
     }
 
     const mk = L.circleMarker([m.lat,m.lng], {
-      radius:5, fillColor:col, color:'#0a0a0f', weight:1.5, fillOpacity:opacity
+      radius:5, fillColor:col, color:'#164773', weight:1.5, fillOpacity:opacity
     }).addTo(map);
     mk.mosque = m;
     mk.bindPopup(makeHistoryPopup(m));
@@ -4941,16 +4941,16 @@ function exportReport() {
 <title>Kıble Analiz Raporu — ${currentCity}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI',sans-serif;background:#0a0a0f;color:#e8e4d8;padding:32px;max-width:900px;margin:0 auto;}
+body{font-family:'Segoe UI',sans-serif;background:#164773;color:#e8e4d8;padding:32px;max-width:900px;margin:0 auto;}
 h1{font-size:24px;color:#c9a84c;margin-bottom:4px;}
 .subtitle{color:#6b6b7a;font-size:13px;margin-bottom:28px;}
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px;}
-.card{background:#111118;border:1px solid #2a2a3a;border-radius:10px;padding:16px;text-align:center;}
+.card{background:#1b4f7f;border:1px solid #2a2a3a;border-radius:10px;padding:16px;text-align:center;}
 .card-val{font-size:28px;font-weight:700;color:#c9a84c;}
 .card-lbl{font-size:10px;color:#6b6b7a;text-transform:uppercase;letter-spacing:.1em;margin-top:4px;}
 h2{font-size:14px;color:#c9a84c;margin:22px 0 10px;letter-spacing:.08em;text-transform:uppercase;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
-th{text-align:left;padding:8px 10px;background:#111118;color:#6b6b7a;font-weight:500;border-bottom:1px solid #2a2a3a;}
+th{text-align:left;padding:8px 10px;background:#1b4f7f;color:#6b6b7a;font-weight:500;border-bottom:1px solid #2a2a3a;}
 td{padding:7px 10px;border-bottom:1px solid rgba(42,42,58,.4);color:#e8e4d8;}
 .ok{color:#4ade80;font-weight:700;} .bad{color:#f87171;font-weight:700;} .unk{color:#fbbf24;}
 .grade{display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.07);}
@@ -6037,7 +6037,7 @@ function drawCompass() {
   const ctx = cv.getContext('2d');
   const W = cv.width, H = cv.height, cx=W/2, cy=H/2, r=110;
   ctx.clearRect(0,0,W,H);
-  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#111118'; ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#1b4f7f'; ctx.fill();
   ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=2; ctx.stroke();
   for (let d=0; d<360; d+=15) {
     const rr = toRad(d-90);
