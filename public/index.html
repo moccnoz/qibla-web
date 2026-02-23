@@ -13,7 +13,7 @@
 
 <header>
   <div class="brand-home" role="button" tabindex="0" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome();}">
-    <div><div class="logo-arabic">قِبْلَة</div></div>
+    <div class="logo-q">Q</div>
     <div>
       <div class="logo-title">Kıble Dedektörü</div>
       <div class="logo-sub">Bina Yönü Analizi</div>
@@ -27,33 +27,46 @@
     <div class="city-smart-dd" id="city-smart-dd"></div>
   </div>
   <div class="header-actions">
-    <div class="header-row">
-      <div class="map-switch">
-        <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita"> Koyu</button>
-        <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü"> Uydu</button>
-        <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita"> Harita</button>
+    <div class="header-row header-row-groups">
+      <div class="nav-group">
+        <div class="nav-group-title">Harita</div>
+        <div class="map-switch">
+          <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita"> Koyu</button>
+          <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü"> Uydu</button>
+          <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita"> Harita</button>
+        </div>
+        <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)"> İlçe</button>
       </div>
-      <button id="btn-heat"    class="btn btn-sm" onclick="toggleHeatmap()"     data-tip="Isı haritası [H]"> Isı</button>
-      <button id="btn-score"   class="btn btn-sm" onclick="toggleScoreCard()"   data-tip="Skor kartı [S]"> Skor</button>
-      <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]"> Karşılaştır</button>
-      <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]"> Tarih</button>
-      <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]"> Sıralama</button>
-      <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)"> İlçe</button>
-      <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]"> Konum</button>
-      <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş"> Export</button>
-    </div>
-    <div class="header-row">
-      <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]"> Gelir</button>
-      <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü"> Lab</button>
-      <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula"> Pusula</button>
-      <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi"> Takip</button>
-      <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri"> Yakın</button>
-      <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan"> Outdoor</button>
-      <div class="lang-switch">
-        <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
-        <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Analiz</div>
+        <button id="btn-heat" class="btn btn-sm" onclick="toggleHeatmap()" data-tip="Isı haritası [H]"> Isı</button>
+        <button id="btn-score" class="btn btn-sm" onclick="toggleScoreCard()" data-tip="Skor kartı [S]"> Skor</button>
+        <button id="btn-compare" class="btn btn-sm" onclick="openCompare()" data-tip="Şehir karşılaştır [C]"> Karşılaştır</button>
+        <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]"> Tarih</button>
+        <button id="btn-lb" class="btn btn-sm" onclick="openLeaderboard()" data-tip="Küresel sıralama [L]"> Sıralama</button>
       </div>
-      <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨</button>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Eylemler</div>
+        <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]"> Konum</button>
+        <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula"> Pusula</button>
+        <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi"> Takip</button>
+        <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri"> Yakın</button>
+        <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş"> Export</button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-group-title">Sistem</div>
+        <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]"> Gelir</button>
+        <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü"> Lab</button>
+        <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan"> Outdoor</button>
+        <div class="lang-switch">
+          <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
+          <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
+        </div>
+        <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨</button>
+      </div>
     </div>
   </div>
   <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()"></button>
