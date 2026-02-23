@@ -464,16 +464,18 @@
 
 <div class="main">
   <div id="map">
-    <div class="search-box floating-search">
-      <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()">Q</button>
-      <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
-      <datalist id="city-suggest-list"></datalist>
-      <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
-      <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
-      <div class="city-smart-dd" id="city-smart-dd"></div>
+    <div class="floating-search">
+      <div class="search-box">
+        <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()">Q</button>
+        <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
+        <datalist id="city-suggest-list"></datalist>
+        <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+        <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
+        <div class="city-smart-dd" id="city-smart-dd"></div>
+      </div>
     </div>
     <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
-    <button class="live-vp-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
+    <button class="live-vp-badge live-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
       <span class="live-vp-icon-wrap">
         <span class="vp-dot" id="vp-dot"></span>
       </span>
@@ -482,6 +484,10 @@
         <span id="vp-meta">Cache: 0 tile</span>
       </span>
     </button>
+    <div class="map-fab">
+      <button class="map-fab-btn" onclick="document.getElementById('loc-btn').click()" title="Konumum" aria-label="Konumum">⌖</button>
+      <button class="map-fab-btn secondary" onclick="document.getElementById('btn-compass').click()" title="Pusula" aria-label="Pusula">◎</button>
+    </div>
     <div class="mob-layer-stack" id="mob-layer-stack">
       <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita"> Koyu</button>
       <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita"> Uydu</button>
