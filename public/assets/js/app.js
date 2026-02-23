@@ -19,6 +19,8 @@ let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
 let vpNeedsReload = false;
 let isVpLoading = false;
+let searchAreaAnchor = null;
+let searchAreaArmed = false;
 let heatLayer = null;
 let heatVisible = false;
 let scoreCardVisible = false;
@@ -533,9 +535,10 @@ function initMap() {
   // ── VIEWPORT EVENTS — debounced auto-load
   map.on('moveend zoomend', () => {
     // Zoom < 11 → too wide, skip auto-load
-    if (map.getZoom() < 11) { setVpStatus('idle'); return; }
+    if (map.getZoom() < 11) { setVpStatus('idle'); hideSearchAreaButton(); return; }
     // Repaint immediately for already-cached data in current view.
     if (mosqueDB.size) renderAll();
+    maybeArmSearchAreaButton();
     scheduleViewportLoad(420);
   });
   map.on('moveend zoomend', updateHashFromMap);
@@ -597,6 +600,8 @@ function initMap() {
   if (mq) mq.value = '';
   updateDistrictUi();
   setOv(false);
+  searchAreaAnchor = map.getCenter();
+  hideSearchAreaButton();
   if (map.getZoom() >= 11) {
     scheduleViewportLoad(260);
   }
@@ -760,6 +765,38 @@ function getUncachedCells(bounds) {
   return boundsToGridCells(bounds).filter(c => !tileCache.has(c.key));
 }
 
+function hideSearchAreaButton() {
+  const btn = document.getElementById('search-area-btn');
+  if (!btn) return;
+  btn.classList.remove('show');
+  searchAreaArmed = false;
+}
+
+function maybeArmSearchAreaButton() {
+  const btn = document.getElementById('search-area-btn');
+  if (!btn || !map || map.getZoom() < 11) return;
+  const c = map.getCenter();
+  if (!searchAreaAnchor) return;
+  const km = greatCircleKm(c.lat, c.lng, searchAreaAnchor.lat, searchAreaAnchor.lng);
+  if (!Number.isFinite(km)) return;
+  if (km >= 0.5) {
+    btn.classList.add('show');
+    searchAreaArmed = true;
+  }
+}
+
+function refreshSearchArea() {
+  if (!map) return;
+  const bounds = map.getBounds();
+  const cells = boundsToGridCells(bounds);
+  for (const c of cells) {
+    tileCache.delete(c.key);
+  }
+  updateCacheUI();
+  hideSearchAreaButton();
+  scheduleViewportLoad(60);
+}
+
 function scheduleViewportLoad(delayMs = 420, opts = {}) {
   clearTimeout(vpDebounceTimer);
   if (!map || map.getZoom() < 11) {
@@ -861,6 +898,8 @@ async function loadViewport(opts = {}) {
     updateCacheUI();
     renderAll();
     setVpStatus('done');
+    searchAreaAnchor = map?.getCenter?.() || searchAreaAnchor;
+    hideSearchAreaButton();
     if (newCells.length > batch.length) {
       clearTimeout(vpDebounceTimer);
       vpDebounceTimer = setTimeout(loadViewport, 120);

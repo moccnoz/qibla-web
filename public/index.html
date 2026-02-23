@@ -20,12 +20,6 @@
     </div>
   </div>
   <div class="divider"></div>
-  <div class="search-box">
-    <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir adı..." value=""/>
-    <datalist id="city-suggest-list"></datalist>
-    <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
-    <div class="city-smart-dd" id="city-smart-dd"></div>
-  </div>
   <div class="header-actions">
     <div class="header-row header-row-groups">
       <div class="nav-group">
@@ -359,6 +353,13 @@
 
 <div class="main">
   <div id="map">
+    <div class="search-box floating-search">
+      <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
+      <datalist id="city-suggest-list"></datalist>
+      <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+      <div class="city-smart-dd" id="city-smart-dd"></div>
+    </div>
+    <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
     <button class="live-vp-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
       <span class="live-vp-icon-wrap">
         <span class="vp-dot" id="vp-dot"></span>
