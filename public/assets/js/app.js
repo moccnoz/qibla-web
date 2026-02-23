@@ -577,6 +577,7 @@ function initMap() {
       return;
     }
     if (dd?.classList.contains('show') && cityDropdownIdx >= 0) return;
+    if (dd?.classList.contains('show')) return;
     doSearch();
   };
   document.getElementById('tol').oninput = e => { tol=+e.target.value; document.getElementById('tol-val').textContent=tol+'°'; recompute(); };
@@ -3149,6 +3150,14 @@ function initTopSmartSearch() {
         items[0]?.click();
         return;
       }
+      if (cityDropdownIdx < 0) {
+        const best = pickBestCitySuggestionFromDropdown(q);
+        if (best) {
+          e.preventDefault();
+          best.click();
+          return;
+        }
+      }
       if (cityDropdownIdx >= 0) {
         e.preventDefault();
         items[cityDropdownIdx]?.click();
@@ -3158,6 +3167,41 @@ function initTopSmartSearch() {
   document.addEventListener('click', e => {
     if (!e.target.closest('.search-box')) closeCitySmartDropdown();
   });
+}
+
+function pickBestCitySuggestionFromDropdown(q) {
+  const dd = document.getElementById('city-smart-dd');
+  if (!dd) return null;
+  const items = [...dd.querySelectorAll('.ms-item')];
+  if (!items.length) return null;
+  if (items.length === 1) return items[0];
+  const qLow = trLower(String(q || '').trim());
+  const qNorm = normalize(qLow);
+  const words = qNorm.split(/\s+/).filter(Boolean);
+  let best = null;
+  let bestScore = -1;
+  for (const it of items) {
+    const nameEl = it.querySelector('.ms-item-name');
+    const name = trLower((nameEl?.textContent || '').trim());
+    const norm = normalize(name);
+    let s = 0;
+    if (name === qLow) s += 220;
+    else if (norm === qNorm) s += 200;
+    else if (name.startsWith(qLow)) s += 160;
+    else if (norm.startsWith(qNorm)) s += 145;
+    else if (name.includes(qLow)) s += 120;
+    else if (norm.includes(qNorm)) s += 95;
+    const matchedWords = words.filter(w => norm.includes(w)).length;
+    s += matchedWords * 20;
+    if (it.dataset.kind === 'mosque') s += 16;
+    if (it.dataset.group === 'history') s += 10;
+    if (it.dataset.group === 'nearby') s += 6;
+    if (s > bestScore) {
+      bestScore = s;
+      best = it;
+    }
+  }
+  return bestScore >= 110 ? best : null;
 }
 
 // Scoring function for a single mosque against query
@@ -4003,6 +4047,19 @@ function selectPlaceSuggestion(item) {
   }
 }
 
+function citySuggestionGroupId(title = '') {
+  const t = trLower(title);
+  if (t.includes('geçmiş')) return 'history';
+  if (t.includes('yakın')) return 'nearby';
+  return 'global';
+}
+
+function citySuggestionIcon(kind = '', groupId = 'global') {
+  if (groupId === 'history') return 'H';
+  if (kind === 'mosque') return 'M';
+  return 'P';
+}
+
 async function showCitySmartDropdown(q) {
   const dd = document.getElementById('city-smart-dd');
   if (!dd) return;
@@ -4049,24 +4106,28 @@ async function showCitySmartDropdown(q) {
       else global.push(rec);
     }
     const groups = [
-      { title:'Geçmiş Aramalar ve Analizler', icon:'🕒', items:recents.slice(0,4) },
-      { title:'Yakınınızdakiler', icon:'🕌', items:nearby.slice(0,4) },
-      { title:'Küresel Sonuçlar', icon:'📍', items:global.slice(0,8) }
+      { title:'Geçmiş Aramalar ve Analizler', items:recents.slice(0,4) },
+      { title:'Yakınınızdakiler', items:nearby.slice(0,4) },
+      { title:'Küresel Sonuçlar', items:global.slice(0,8) }
     ].filter(g => g.items.length);
     groups.forEach((g) => {
+      const groupId = citySuggestionGroupId(g.title);
       const hdr = document.createElement('div');
       hdr.className = 'ms-group-hdr';
-      hdr.textContent = `${g.icon} ${g.title}`;
+      hdr.innerHTML = `<span class="ms-group-ic">${groupId === 'history' ? 'H' : groupId === 'nearby' ? 'N' : 'G'}</span>${escHtml(g.title)}`;
       frag.appendChild(hdr);
       g.items.forEach((it) => {
         const rightBadge = Number.isFinite(it.dist) ? `${getUserDistanceLabel(it)} yakınınızda` : '—';
         const dotCol = it.kind === 'mosque' ? '#4ade80' : '#60a5fa';
+        const icon = citySuggestionIcon(it.kind, groupId);
         const div = document.createElement('div');
         div.className = 'ms-item';
+        div.dataset.kind = it.kind || 'place';
+        div.dataset.group = groupId;
         div.innerHTML = `
           <div class="ms-item-dot" style="background:${dotCol};box-shadow:0 0 4px ${dotCol}"></div>
           <div class="ms-item-info">
-            <div class="ms-item-name">${highlightMatch(it.title, q)}</div>
+            <div class="ms-item-name"><span class="ms-item-ic">${icon}</span>${highlightMatch(it.title, q)}</div>
             <div class="ms-item-sub">${escHtml(it.subtitle || '')}</div>
           </div>
           <div class="ms-item-diff" style="color:var(--gold)">${escHtml(rightBadge)}</div>`;
@@ -4097,9 +4158,10 @@ async function showCitySmartDropdown(q) {
   const frag = document.createDocumentFragment();
   const groups = buildSearchResultGroups(ranked, q);
   for (const group of groups) {
+    const groupId = citySuggestionGroupId(group.title);
     const hdr = document.createElement('div');
     hdr.className = 'ms-group-hdr';
-    hdr.textContent = group.title;
+    hdr.innerHTML = `<span class="ms-group-ic">${groupId === 'history' ? 'H' : groupId === 'nearby' ? 'N' : 'G'}</span>${escHtml(group.title)}`;
     frag.appendChild(hdr);
     group.items.sort((a,b) => b.rank - a.rank || b.p - a.p || b.s - a.s);
     group.items.forEach(({m, p, d, inView}) => {
@@ -4114,10 +4176,12 @@ async function showCitySmartDropdown(q) {
       if (group.title === 'Geçmiş Aramalar ve Analizler') badges.push('<span class="ms-badge near">Geçmiş</span>');
       const div = document.createElement('div');
       div.className = 'ms-item';
+      div.dataset.kind = 'mosque';
+      div.dataset.group = groupId;
       div.innerHTML = `
         <div class="ms-item-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
         <div class="ms-item-info">
-          <div class="ms-item-name">${highlightMatch(m.name, q)}</div>
+          <div class="ms-item-name"><span class="ms-item-ic">M</span>${highlightMatch(m.name, q)}</div>
           <div class="ms-item-sub">${escHtml(addressLine)}</div>
           ${badges.length ? `<div class="ms-badges">${badges.join('')}</div>` : ''}
         </div>
