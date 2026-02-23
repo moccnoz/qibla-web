@@ -2920,12 +2920,24 @@ function updateSidebarSnapPanels() {
   if (window.innerWidth > 768) return;
   const stats = getLoadedStats();
   const city = currentCity || '—';
+  const selected = window._lastClickedMosque || null;
   const miniCity = document.getElementById('sb-mini-city');
   const miniScore = document.getElementById('sb-mini-score');
   const miniSub = document.getElementById('sb-mini-sub');
-  if (miniCity) miniCity.textContent = city;
-  if (miniScore) miniScore.textContent = stats.pct != null ? `${stats.pct}%` : '—';
-  if (miniSub) miniSub.textContent = stats.total ? `${stats.total} cami · tolerans ${tol}°` : 'Veri bekleniyor';
+  if (selected) {
+    if (miniCity) miniCity.textContent = selected.name || city;
+    if (miniScore) miniScore.textContent = selected.diff != null ? `${selected.diff.toFixed(1)}°` : (stats.pct != null ? `${stats.pct}%` : '—');
+    if (miniSub) {
+      const state =
+        selected.status === 'correct' ? 'Doğru yön' :
+        selected.status === 'wrong' ? 'Sapma var' : 'Veri yok';
+      miniSub.textContent = `${state} · Kıble ${selected.qibla.toFixed(1)}°`;
+    }
+  } else {
+    if (miniCity) miniCity.textContent = city;
+    if (miniScore) miniScore.textContent = stats.pct != null ? `${stats.pct}%` : '—';
+    if (miniSub) miniSub.textContent = stats.total ? `${stats.total} cami · tolerans ${tol}°` : 'Veri bekleniyor';
+  }
   const st = (id,v) => { const el=document.getElementById(id); if (el) el.textContent = v; };
   st('sb-m-total', stats.total ? stats.total.toLocaleString() : '—');
   st('sb-m-pct', stats.pct != null ? `${stats.pct}%` : '—');

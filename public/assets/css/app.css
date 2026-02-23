@@ -1891,7 +1891,42 @@ body:not(.outdoor-mode) .sidebar{
 /* ══ V10 SOFA PHASE 2: LAYOUT & SPATIAL COMFORT ═══════════════════════════ */
 @media (min-width:769px){
   body:not(.outdoor-mode) header{
+    display:flex !important;
+    position:absolute;
+    top:84px;
+    left:16px;
+    right:16px;
+    z-index:1506;
+    margin:0 !important;
+    padding:8px 10px;
+    border-radius:24px;
+    background:var(--glass) !important;
+    border:1px solid var(--border) !important;
+    box-shadow:0 10px 30px rgba(0,0,0,.14);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+  }
+  body:not(.outdoor-mode) header .search-box,
+  body:not(.outdoor-mode) header .divider{
     display:none !important;
+  }
+  body:not(.outdoor-mode) header .brand-home{
+    margin-right:10px;
+    flex-shrink:0;
+  }
+  body:not(.outdoor-mode) header .header-actions{
+    flex:1;
+    min-width:0;
+    margin-left:0;
+  }
+  body:not(.outdoor-mode) header .header-row-groups{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  body:not(.outdoor-mode) header .nav-group{
+    max-width:100%;
   }
 
   body:not(.outdoor-mode) .main{
@@ -1967,10 +2002,10 @@ body:not(.outdoor-mode) .sidebar{
 
   body:not(.outdoor-mode) .stats-bar{
     position:absolute;
-    top:92px;
+    top:170px;
     left:16px;
     z-index:1500;
-    width:min(500px, calc(100% - 32px));
+    width:min(560px, calc(100% - 32px));
     padding:10px;
     border-radius:24px !important;
     background:var(--glass) !important;
@@ -1983,10 +2018,11 @@ body:not(.outdoor-mode) .sidebar{
   body:not(.outdoor-mode) .sidebar{
     position:absolute;
     left:16px;
-    top:192px;
+    top:258px;
     bottom:16px;
     width:min(360px, calc(100% - 32px));
-    max-height:calc(100% - 208px);
+    max-height:calc(100% - 274px);
+    height:auto;
     z-index:1490;
     border:none !important;
     border-radius:24px !important;
@@ -2004,6 +2040,15 @@ body:not(.outdoor-mode) .sidebar{
   }
   body:not(.outdoor-mode) .mosque-list{
     overflow:auto;
+  }
+  body:not(.outdoor-mode) .live-vp-badge{
+    left:auto;
+    right:16px;
+    top:170px;
+    z-index:1501;
+  }
+  body:not(.outdoor-mode) .search-area-btn{
+    top:74px;
   }
 }
 
@@ -2026,5 +2071,25 @@ body:not(.outdoor-mode) .sidebar{
     border-radius:99px;
     background:rgba(148,163,184,.55);
     top:8px;
+  }
+}
+
+@media (min-width:769px) and (max-width:1320px){
+  body:not(.outdoor-mode) header{
+    top:76px;
+  }
+  body:not(.outdoor-mode) header .brand-home{
+    display:none;
+  }
+  body:not(.outdoor-mode) .stats-bar{
+    top:154px;
+    width:min(520px, calc(100% - 32px));
+  }
+  body:not(.outdoor-mode) .sidebar{
+    top:236px;
+    max-height:calc(100% - 252px);
+  }
+  body:not(.outdoor-mode) .live-vp-badge{
+    top:154px;
   }
 }
