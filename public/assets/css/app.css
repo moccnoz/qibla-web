@@ -3859,12 +3859,12 @@ textarea:focus-visible {
 }
 
 .leaflet-marker-icon {
-  transition: transform 0.15s ease-out;
+  transition: opacity 0.15s ease-out, filter 0.15s ease-out;
   animation: markerBounce 0.35s ease-out;
 }
 
 .leaflet-marker-icon:hover {
-  transform: scale(1.2) !important;
+  filter: brightness(1.06);
   z-index: 10000 !important;
 }
 
@@ -5039,7 +5039,7 @@ body:not(.outdoor-mode) #map::after {
 
 .leaflet-marker-icon:hover {
   opacity: 1;
-  transform: scale(1.15);
+  filter: brightness(1.06);
   z-index: 10000 !important;
 }
 
@@ -5411,12 +5411,6 @@ body:not(.outdoor-mode) #map::after {
   }
 }
 
-/* Fix: marker cluster hover should never override leaflet translate transform */
-.leaflet-marker-icon:hover,
-.leaflet-marker-icon.marker-cluster:hover {
-  transform: none !important;
-}
-
 /* ═══════════════════════════════════════════════════════════
    DETAIL PANEL HOTFIX — single scroll container + modern title
    ═══════════════════════════════════════════════════════════ */
@@ -5678,4 +5672,107 @@ body:not(.outdoor-mode) #map::after {
 
 .live-vp-icon-wrap::after {
   border-color: rgba(13, 255, 186, 0.5) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP TOP HUD LAYOUT — centered stack and clean spacing
+   ═══════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  body {
+    --hud-search-w: clamp(760px, 72vw, 1320px);
+  }
+
+  .floating-search {
+    left: 50% !important;
+    top: 14px !important;
+    transform: translateX(-50%) !important;
+    width: var(--hud-search-w) !important;
+    max-width: var(--hud-search-w) !important;
+    z-index: 820 !important;
+  }
+
+  .floating-search .search-box,
+  .search-box {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .floating-search .search-box:focus-within,
+  .search-box:focus-within {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .stats-bar {
+    top: 94px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    width: var(--hud-search-w) !important;
+    max-width: var(--hud-search-w) !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    z-index: 760 !important;
+  }
+
+  body.search-expanded .stats-bar {
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .search-area-btn {
+    top: 146px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 770 !important;
+    background: #0D40FF !important;
+    border: 1px solid rgba(191, 219, 254, 0.42) !important;
+    color: #eff5ff !important;
+    box-shadow: 0 10px 22px rgba(13, 64, 255, 0.34) !important;
+  }
+
+  .search-area-btn:hover {
+    background: #0c74e8 !important;
+  }
+
+  .mode-pills {
+    top: 146px !important;
+    left: auto !important;
+    right: max(14px, calc(50% - (var(--hud-search-w) / 2))) !important;
+    transform: none !important;
+    z-index: 780 !important;
+  }
+
+  .tolerance-pill {
+    display: none !important;
+  }
+
+  .sidebar .tolerance-pill {
+    position: sticky !important;
+    top: 44px !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    display: block !important;
+    width: auto !important;
+    margin: 8px 12px 8px !important;
+    padding: 8px 12px !important;
+    z-index: 20 !important;
+    border-radius: 14px !important;
+    background: rgba(7, 19, 45, 0.82) !important;
+    border: 1px solid rgba(148, 163, 184, 0.30) !important;
+    box-shadow: 0 8px 18px rgba(4, 12, 30, 0.35) !important;
+  }
+
+  .sidebar .tolerance-pill .tol {
+    width: 100% !important;
+    justify-content: space-between !important;
+    font-size: 12px !important;
+    color: #dbeafe !important;
+  }
+
+  .sidebar .tolerance-pill .tol input[type=range] {
+    width: 120px !important;
+  }
 }

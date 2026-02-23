@@ -8615,3 +8615,24 @@ document.addEventListener('keydown', (e) => {
     dpBackdrop.classList.remove('show');
   }
 });
+
+/* ═══ TOLERANCE PILL PLACEMENT (desktop: sidebar, mobile: main) ═══ */
+function syncTolerancePillPlacement() {
+  const pill = document.querySelector('.tolerance-pill');
+  if (!pill) return;
+  const isDesktop = window.matchMedia('(min-width: 769px)').matches;
+  const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  const sidebarAnchor = document.querySelector('.sidebar .sb-head');
+  const mainAnchor = document.querySelector('.mode-pills');
+  if (isDesktop && sidebar && sidebarAnchor && pill.parentElement !== sidebar) {
+    sidebar.insertBefore(pill, sidebarAnchor.nextSibling);
+    return;
+  }
+  if (!isDesktop && main && mainAnchor && pill.parentElement !== main) {
+    main.insertBefore(pill, mainAnchor.nextSibling);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', syncTolerancePillPlacement);
+window.addEventListener('resize', syncTolerancePillPlacement);
