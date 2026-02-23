@@ -15,6 +15,8 @@ let map = null;
 let tileLayer = null;
 let renderLayers = [];
 let animLayers = [];
+let focusPulseLayer = null;
+let focusPulseRaf = 0;
 let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
 let vpNeedsReload = false;
@@ -1422,6 +1424,58 @@ function animateQibla(m) {
   phase1();
 }
 
+function clearFocusPulse() {
+  if (focusPulseRaf) {
+    try { cancelAnimationFrame(focusPulseRaf); } catch {}
+    focusPulseRaf = 0;
+  }
+  if (focusPulseLayer && map) {
+    try { map.removeLayer(focusPulseLayer); } catch {}
+  }
+  focusPulseLayer = null;
+}
+
+function pulseMosqueFocus(m, opts = {}) {
+  if (!map || !m || !Number.isFinite(m.lat) || !Number.isFinite(m.lng)) return;
+  clearFocusPulse();
+  const baseCol = m.status==='correct' ? '#4ade80' : m.status==='wrong' ? '#f87171' : '#fbbf24';
+  const waveMs = Number.isFinite(opts.waveMs) ? Math.max(500, opts.waveMs) : 1200;
+  const totalMs = Number.isFinite(opts.totalMs) ? Math.max(waveMs, opts.totalMs) : 1800;
+  const start = performance.now();
+  focusPulseLayer = L.circleMarker([m.lat, m.lng], {
+    radius: 8,
+    color: baseCol,
+    weight: 2,
+    opacity: 0.9,
+    fillColor: baseCol,
+    fillOpacity: 0.08
+  }).addTo(map);
+
+  const tick = (now) => {
+    if (!focusPulseLayer) return;
+    const elapsed = now - start;
+    const local = elapsed % waveMs;
+    const t = local / waveMs;
+    const ease = 1 - Math.pow(1 - t, 3);
+    const radius = 8 + ease * 28;
+    const opacity = Math.max(0, 0.9 - ease * 0.9);
+    try {
+      focusPulseLayer.setRadius(radius);
+      focusPulseLayer.setStyle({
+        opacity,
+        fillOpacity: Math.max(0, 0.22 - ease * 0.22)
+      });
+    } catch {}
+
+    if (elapsed >= totalMs) {
+      clearFocusPulse();
+      return;
+    }
+    focusPulseRaf = requestAnimationFrame(tick);
+  };
+  focusPulseRaf = requestAnimationFrame(tick);
+}
+
 // Düz çizgi boyunca ara noktalar (bina yönü için)
 function linearPoints(lat1,lng1,lat2,lng2,n=60){
   const pts=[];
@@ -2464,6 +2518,7 @@ function handleMosqueClick(m) {
   const el=document.getElementById('mi-'+m.id);
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
   if (m.status === 'wrong') haptic(20);
+  pulseMosqueFocus(m);
   animateQibla(m);
   openDetailPanel(m);
   hydrateMosqueDetailOnDemand(m);
