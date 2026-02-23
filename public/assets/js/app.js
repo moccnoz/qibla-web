@@ -141,7 +141,65 @@ function safeStorageSet(key, value) {
   }
 }
 
+let activeSearchController = null;
+
+function makeAbortError(msg = 'Arama iptal edildi') {
+  const err = new Error(msg);
+  err.name = 'AbortError';
+  return err;
+}
+
+function throwIfAborted(signal) {
+  if (signal?.aborted) throw makeAbortError();
+}
+
+function waitWithAbort(ms, signal) {
+  if (!ms || ms <= 0) {
+    throwIfAborted(signal);
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(makeAbortError());
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve();
+    }, ms);
+    const onAbort = () => {
+      cleanup();
+      reject(makeAbortError());
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    };
+    signal?.addEventListener('abort', onAbort, { once:true });
+  });
+}
+
+function isOverlayVisible() {
+  return document.getElementById('overlay')?.style.display === 'flex';
+}
+
+function syncSearchCancelUi() {
+  const btn = document.getElementById('ov-cancel');
+  if (!btn) return;
+  btn.style.display = activeSearchController ? 'inline-flex' : 'none';
+}
+
+function cancelActiveSearch(opts = {}) {
+  if (!activeSearchController) return false;
+  try { activeSearchController.abort(); } catch {}
+  activeSearchController = null;
+  syncSearchCancelUi();
+  setVpStatus('idle');
+  hideMini();
+  setOv(false);
+  if (!opts.silent) toast('Arama iptal edildi', 1800);
+  return true;
+}
+
 async function limitedFetch(url, opts = {}, policy = {}) {
+  const signal = policy.signal;
   const hostKey = policy.hostKey || (String(url).includes('nominatim') ? 'nominatim' : 'overpass');
   const st = API_RATE[hostKey] || { nextAt:0, cooldown:0, minInterval:650 };
   const retries = Number.isFinite(policy.retries) ? policy.retries : 2;
@@ -151,13 +209,18 @@ async function limitedFetch(url, opts = {}, policy = {}) {
   API_RATE[hostKey] = st;
 
   for (let i = 0; i <= retries; i++) {
+    throwIfAborted(signal);
     const wait = Math.max(0, (st.nextAt || 0) - Date.now());
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    if (wait > 0) await waitWithAbort(wait, signal);
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    const onAbort = () => ctrl.abort();
+    signal?.addEventListener('abort', onAbort, { once:true });
     try {
+      throwIfAborted(signal);
       const r = await fetch(url, { ...opts, signal: ctrl.signal });
       clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
       if (r.status === 429 || r.status === 503) {
         st.cooldown = Math.min(12000, Math.max(1100, st.cooldown ? st.cooldown * 1.65 : 1200));
         st.nextAt = Date.now() + st.cooldown + Math.round(Math.random() * 350);
@@ -169,17 +232,19 @@ async function limitedFetch(url, opts = {}, policy = {}) {
       return r;
     } catch (e) {
       clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      if (signal?.aborted) throw makeAbortError();
       if (i >= retries) throw e;
       const pause = baseBackoff * Math.pow(1.6, i) + Math.round(Math.random()*220);
       st.nextAt = Date.now() + pause;
-      await new Promise(r => setTimeout(r, pause));
+      await waitWithAbort(pause, signal);
     }
   }
   throw new Error('Ağ isteği sınır nedeniyle başarısız');
 }
 
-async function nominatimFetchJson(url, headers = {}) {
-  const r = await limitedFetch(url, { headers:{'User-Agent':'QiblaChecker/1.0', ...headers} }, { hostKey:'nominatim', minInterval:1100, retries:2, timeoutMs:22000, backoffMs:1100 });
+async function nominatimFetchJson(url, headers = {}, policy = {}) {
+  const r = await limitedFetch(url, { headers:{'User-Agent':'QiblaChecker/1.0', ...headers} }, { hostKey:'nominatim', minInterval:1100, retries:2, timeoutMs:22000, backoffMs:1100, signal:policy.signal });
   if (!r.ok) throw new Error(`Nominatim HTTP ${r.status}`);
   return r.json();
 }
@@ -619,6 +684,8 @@ function getUncachedCells(bounds) {
 //  VIEWPORT AUTO-LOAD
 // ══════════════════════════════════════════════════════════════
 async function loadViewport(opts = {}) {
+  const signal = opts.signal;
+  throwIfAborted(signal);
   if (isVpLoading) {
     vpNeedsReload = true;
     return;
@@ -654,6 +721,7 @@ async function loadViewport(opts = {}) {
     let cursor = 0;
     const workers = Array.from({ length: Math.min(concurrency, batch.length) }, async () => {
       while (cursor < batch.length) {
+        throwIfAborted(signal);
         const c = batch[cursor++];
         const half = GRID / 2;
         const pad = GRID * 0.05;
@@ -662,16 +730,19 @@ async function loadViewport(opts = {}) {
         const w = c.lng - half - pad;
         const e = c.lng + half + pad;
         try {
-          const elements = await fetchBbox(s, w, n, e, opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 });
+          const fetchPolicy = { ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }), signal };
+          const elements = await fetchBbox(s, w, n, e, fetchPolicy);
           processElements(elements);
           tileCache.add(c.key);
         } catch (err) {
+          if (err?.name === 'AbortError') throw err;
           // Keep cell uncached so it can retry on next viewport load.
           console.warn('cell fetch failed', c.key, err?.message || err);
         }
       }
     });
     await Promise.all(workers);
+    throwIfAborted(signal);
     updateCacheUI();
     renderAll();
     setVpStatus('done');
@@ -680,6 +751,10 @@ async function loadViewport(opts = {}) {
       vpDebounceTimer = setTimeout(loadViewport, 120);
     }
   } catch(err) {
+    if (err?.name === 'AbortError') {
+      setVpStatus('idle');
+      return;
+    }
     setVpStatus('idle');
     toast('Veri yüklenirken hata: '+err.message, 5000);
     console.error(err);
@@ -739,9 +814,11 @@ out body geom qt 3000;`;
 }
 
 async function fetchOverpassQuery(query, policy = {}) {
+  throwIfAborted(policy.signal);
   let lastErr = null;
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
+      throwIfAborted(policy.signal);
       const r = await limitedFetch(endpoint, {
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
@@ -751,12 +828,14 @@ async function fetchOverpassQuery(query, policy = {}) {
         minInterval: Number.isFinite(policy.minInterval) ? policy.minInterval : 500,
         retries: Number.isFinite(policy.retries) ? policy.retries : 2,
         timeoutMs: Number.isFinite(policy.timeoutMs) ? policy.timeoutMs : 46000,
-        backoffMs: Number.isFinite(policy.backoffMs) ? policy.backoffMs : 900
+        backoffMs: Number.isFinite(policy.backoffMs) ? policy.backoffMs : 900,
+        signal: policy.signal
       });
       if(!r.ok) throw new Error(`HTTP ${r.status} @ ${endpoint}`);
       const d = await r.json();
       return d.elements || [];
     } catch (e) {
+      if (e?.name === 'AbortError') throw e;
       lastErr = e;
     }
   }
@@ -790,7 +869,9 @@ function pickBestGeocodeResult(items, name) {
   return ranked[0]?.it || items[0];
 }
 
-async function geocode(name) {
+async function geocode(name, opts = {}) {
+  const signal = opts.signal;
+  throwIfAborted(signal);
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=8&addressdetails=1`;
   const headerVariants = [
     {'Accept-Language':'tr,en','User-Agent':'QiblaChecker/1.0'},
@@ -801,7 +882,8 @@ async function geocode(name) {
   let lastErr = null;
   for (const headers of headerVariants) {
     try {
-      const d = await nominatimFetchJson(url, headers);
+      throwIfAborted(signal);
+      const d = await nominatimFetchJson(url, headers, { signal });
       const best = pickBestGeocodeResult(d, name);
       if (!best) continue;
       return {
@@ -813,19 +895,23 @@ async function geocode(name) {
         displayName: best.display_name || ''
       };
     } catch (e) {
+      if (e?.name === 'AbortError') throw e;
       lastErr = e;
     }
   }
   throw new Error('Şehir bulunamadı: ' + name + (lastErr ? ` (${lastErr.message})` : ''));
 }
 
-async function fetchCityFallback(lat, lng) {
+async function fetchCityFallback(lat, lng, opts = {}) {
+  const signal = opts.signal;
+  throwIfAborted(signal);
   // Kademeli arama: küçük şehir merkezinden başlayıp daha geniş kutuya çıkar.
   const radii = [0.06, 0.12, 0.22, 0.35]; // ~6km, 13km, 24km, 39km (enleme göre değişir)
   const unique = new Map();
 
   for (const r of radii) {
-    const elements = await fetchBbox(lat-r, lng-r, lat+r, lng+r);
+    throwIfAborted(signal);
+    const elements = await fetchBbox(lat-r, lng-r, lat+r, lng+r, { signal });
     for (const el of elements) {
       unique.set(`${el.type}:${el.id}`, el);
     }
@@ -843,19 +929,19 @@ function parseDirectMosqueQuery(q) {
   return null;
 }
 
-async function fetchByOsmId(osmType, id) {
+async function fetchByOsmId(osmType, id, opts = {}) {
   const q = `[out:json][timeout:35];${osmType}(${id});out body geom tags center;`;
-  return fetchOverpassQuery(q);
+  return fetchOverpassQuery(q, { signal: opts.signal });
 }
 
-async function fetchByWikidataQid(qid) {
+async function fetchByWikidataQid(qid, opts = {}) {
   const q = `[out:json][timeout:40];
 (
   node["wikidata"="${qid}"];
   way["wikidata"="${qid}"];
   relation["wikidata"="${qid}"];
 );out body geom tags center;`;
-  return fetchOverpassQuery(q);
+  return fetchOverpassQuery(q, { signal: opts.signal });
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3216,7 +3302,11 @@ function hideMini(){ document.getElementById('mini-loader').classList.remove('sh
 
 function setOv(show,text='',sub=''){
   document.getElementById('overlay').style.display=show?'flex':'none';
-  if(show){document.getElementById('ov-text').textContent=text;document.getElementById('ov-sub').textContent=sub;}
+  if(show){
+    document.getElementById('ov-text').textContent=text;
+    document.getElementById('ov-sub').textContent=sub;
+  }
+  syncSearchCancelUi();
 }
 function toast(msg,ms=5000){
   const t=document.getElementById('toast');
@@ -3233,6 +3323,11 @@ async function doSearch(){
   if(!map) return;
   const v=document.getElementById('city-input').value.trim();
   if(!v) return;
+  if (activeSearchController) cancelActiveSearch({ silent:true });
+  const searchCtrl = new AbortController();
+  activeSearchController = searchCtrl;
+  const searchSignal = searchCtrl.signal;
+  syncSearchCancelUi();
   closeCitySmartDropdown();
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = v;
@@ -3245,6 +3340,7 @@ async function doSearch(){
   const mosqueMode = isLikelyMosqueQuery(v);
   const direct = parseDirectMosqueQuery(v);
   try{
+    throwIfAborted(searchSignal);
     clearDistrictSelection(true);
     updateDistrictUi();
     if (direct) {
@@ -3253,8 +3349,9 @@ async function doSearch(){
       mosqueDB.clear();
       renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
       const items = direct.type === 'osm'
-        ? await fetchByOsmId(direct.osmType, direct.id)
-        : await fetchByWikidataQid(direct.qid);
+        ? await fetchByOsmId(direct.osmType, direct.id, { signal:searchSignal })
+        : await fetchByWikidataQid(direct.qid, { signal:searchSignal });
+      throwIfAborted(searchSignal);
       processElements(items || []);
       if (mosqueDB.size) {
         const first = [...mosqueDB.values()][0];
@@ -3271,7 +3368,8 @@ async function doSearch(){
     }
 
     setOv(true,`"${v}" aranıyor...`,'Koordinatlar alınıyor');
-    const loc=await geocode(v);
+    const loc=await geocode(v, { signal:searchSignal });
+    throwIfAborted(searchSignal);
     currentCity = v;
     if (mosqueMode) {
       map.setView([loc.lat,loc.lng], 17);
@@ -3290,14 +3388,17 @@ async function doSearch(){
     // İlk viewport yüklemesi
     setOv(true,`"${v}" yükleniyor...`,'Harita görünümündeki camiler alınıyor');
     await loadViewport({
+      signal: searchSignal,
       batchSize: 12,
       concurrency: 3,
-      fetchPolicy: { retries:1, timeoutMs:18000, backoffMs:650, minInterval:320 }
+      fetchPolicy: { retries:1, timeoutMs:18000, backoffMs:650, minInterval:320, signal: searchSignal }
     });
+    throwIfAborted(searchSignal);
 
     if (mosqueMode && !mosqueDB.size) {
       // Spesifik cami adı aramasında dar çevrede yoğun dene
-      const near = await fetchCityFallback(loc.lat, loc.lng);
+      const near = await fetchCityFallback(loc.lat, loc.lng, { signal:searchSignal });
+      throwIfAborted(searchSignal);
       if (near.length) {
         processElements(near);
         renderAll();
@@ -3307,7 +3408,8 @@ async function doSearch(){
     // Fallback: görünümde hiç veri gelmezse şehir merkezi etrafında genişleyerek dene.
     if (!mosqueDB.size) {
       setOv(true,`"${v}" için geniş arama...`,'Farklı etiketler ve daha geniş alan taranıyor');
-      const fallback = await fetchCityFallback(loc.lat, loc.lng);
+      const fallback = await fetchCityFallback(loc.lat, loc.lng, { signal:searchSignal });
+      throwIfAborted(searchSignal);
       if (fallback.length) {
         processElements(fallback);
         renderAll();
@@ -3334,9 +3436,18 @@ async function doSearch(){
     }
     updateHashFromMap();
   } catch(e){
+    if (e?.name === 'AbortError') {
+      setOv(false);
+      return;
+    }
     setOv(false);
     toast('Hata: '+e.message,7000);
     console.error(e);
+  } finally {
+    if (activeSearchController === searchCtrl) {
+      activeSearchController = null;
+      syncSearchCancelUi();
+    }
   }
 }
 
@@ -5151,6 +5262,11 @@ function mosqueNavStep(dir) {
 document.addEventListener('keydown', e => {
   // Always: Esc closes everything
   if (e.key === 'Escape') {
+    if (isOverlayVisible() && activeSearchController) {
+      e.preventDefault();
+      cancelActiveSearch();
+      return;
+    }
     if (document.getElementById('ks-overlay').classList.contains('show')) { closeShortcuts(); return; }
     if (document.getElementById('lab-overlay').classList.contains('show')) { closeLab(); return; }
     if (document.getElementById('cmps-overlay').classList.contains('show')) { closeCompass(); return; }
