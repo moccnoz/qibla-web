@@ -355,9 +355,11 @@
 <div class="main">
   <div id="map">
     <div class="search-box floating-search">
+      <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()">Q</button>
       <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
       <datalist id="city-suggest-list"></datalist>
       <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+      <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
       <div class="city-smart-dd" id="city-smart-dd"></div>
     </div>
     <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
