@@ -16,6 +16,7 @@ let tileLayer = null;
 let renderLayers = [];
 let animLayers = [];
 let vpDebounceTimer = null;
+let vpWatchdogTimer = null;
 let vpNeedsReload = false;
 let isVpLoading = false;
 let heatLayer = null;
@@ -468,12 +469,11 @@ function initMap() {
 
   // ── VIEWPORT EVENTS — debounced auto-load
   map.on('moveend zoomend', () => {
-    clearTimeout(vpDebounceTimer);
     // Zoom < 11 → too wide, skip auto-load
     if (map.getZoom() < 11) { setVpStatus('idle'); return; }
     // Repaint immediately for already-cached data in current view.
     if (mosqueDB.size) renderAll();
-    vpDebounceTimer = setTimeout(loadViewport, 3000);
+    scheduleViewportLoad(420);
   });
   map.on('moveend zoomend', updateHashFromMap);
   map.on('dragstart', () => {
@@ -535,8 +535,9 @@ function initMap() {
   updateDistrictUi();
   setOv(false);
   if (map.getZoom() >= 11) {
-    vpDebounceTimer = setTimeout(loadViewport, 3000);
+    scheduleViewportLoad(260);
   }
+  startViewportWatchdog();
 }
 
 async function autoLocateOnStartup() {
@@ -694,6 +695,30 @@ function boundsToGridCells(bounds) {
 
 function getUncachedCells(bounds) {
   return boundsToGridCells(bounds).filter(c => !tileCache.has(c.key));
+}
+
+function scheduleViewportLoad(delayMs = 420, opts = {}) {
+  clearTimeout(vpDebounceTimer);
+  if (!map || map.getZoom() < 11) {
+    setVpStatus('idle');
+    return;
+  }
+  vpDebounceTimer = setTimeout(() => {
+    if (!map || map.getZoom() < 11) {
+      setVpStatus('idle');
+      return;
+    }
+    loadViewport(opts);
+  }, Math.max(0, delayMs | 0));
+}
+
+function startViewportWatchdog() {
+  clearInterval(vpWatchdogTimer);
+  vpWatchdogTimer = setInterval(() => {
+    if (!map || document.hidden || isVpLoading || map.getZoom() < 11) return;
+    const uncached = getUncachedCells(map.getBounds());
+    if (uncached.length) scheduleViewportLoad(120);
+  }, 2500);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3931,7 +3956,7 @@ async function resetToHome() {
     map.setView([41.015, 28.979], 13, { animate:true });
     _hashUpdating = false;
     clearTimeout(vpDebounceTimer);
-    vpDebounceTimer = setTimeout(loadViewport, 3000);
+    scheduleViewportLoad(280);
     toast('Ana sayfa sıfırlandı', 1800);
   } catch {}
 }
