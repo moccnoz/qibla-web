@@ -455,15 +455,16 @@ async function initGeoCacheDb() {
   });
 }
 
-async function geoCacheGet(cellKey) {
+async function geoCacheGet(cellKey, mode = 'full') {
   if (!cellKey) return null;
   await initGeoCacheDb();
   if (!geoCacheDb) return null;
+  const cacheKey = `${cellKey}:${mode}`;
   return new Promise((resolve) => {
     try {
       const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readonly');
       const st = tx.objectStore(GEO_CACHE_STORE);
-      const req = st.get(cellKey);
+      const req = st.get(cacheKey);
       req.onsuccess = () => {
         const row = req.result;
         if (!row || !Array.isArray(row.elements)) return resolve(null);
@@ -477,13 +478,14 @@ async function geoCacheGet(cellKey) {
   });
 }
 
-async function geoCacheSet(cellKey, elements) {
+async function geoCacheSet(cellKey, elements, mode = 'full') {
   if (!cellKey || !Array.isArray(elements)) return;
   await initGeoCacheDb();
   if (!geoCacheDb) return;
+  const cacheKey = `${cellKey}:${mode}`;
   try {
     const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readwrite');
-    tx.objectStore(GEO_CACHE_STORE).put({ k:cellKey, ts:Date.now(), elements });
+    tx.objectStore(GEO_CACHE_STORE).put({ k:cacheKey, ts:Date.now(), elements });
   } catch {}
 }
 
@@ -832,17 +834,18 @@ async function loadViewport(opts = {}) {
         const w = c.lng - half - pad;
         const e = c.lng + half + pad;
         try {
-          let elements = await geoCacheGet(c.key);
+          const zoom = map?.getZoom?.() || 13;
+          // Restore full geometry from zoom 12+ so axis arrows remain visible.
+          const queryMode = zoom <= 11 ? 'lite' : 'full';
+          let elements = await geoCacheGet(c.key, queryMode);
           if (!elements) {
-            const zoom = map?.getZoom?.() || 13;
-            const queryMode = zoom < 16 ? 'lite' : 'full';
             const fetchPolicy = {
               ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }),
               signal,
               queryMode
             };
             elements = await fetchBbox(s, w, n, e, fetchPolicy);
-            geoCacheSet(c.key, elements);
+            geoCacheSet(c.key, elements, queryMode);
           }
           processElements(elements);
           tileCache.add(c.key);
@@ -1099,6 +1102,8 @@ function processElements(elements) {
       lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length;
       lng0=pts.reduce((s,p)=>s+p.lon,0)/pts.length;
       polyCoords=pts.map(p=>[p.lat,p.lon]);
+    } else if (el.type==='way' && el.center) {
+      lat0 = el.center.lat; lng0 = el.center.lon;
     } else if (el.type==='relation' && el.geometry && el.geometry.length) {
       const pts=el.geometry;
       lat0=pts.reduce((s,p)=>s+p.lat,0)/pts.length;
