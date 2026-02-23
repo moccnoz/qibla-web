@@ -29,39 +29,39 @@
   <div class="header-actions">
     <div class="header-row">
       <div class="map-switch">
-        <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita">🌑 Koyu</button>
-        <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü">🛰 Uydu</button>
-        <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita">🗺 Harita</button>
+        <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita"> Koyu</button>
+        <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü"> Uydu</button>
+        <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita"> Harita</button>
       </div>
-      <button id="btn-heat"    class="btn btn-sm" onclick="toggleHeatmap()"     data-tip="Isı haritası [H]">🌡 Isı</button>
-      <button id="btn-score"   class="btn btn-sm" onclick="toggleScoreCard()"   data-tip="Skor kartı [S]">📊 Skor</button>
-      <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]">⚖️ Karşılaştır</button>
-      <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]">📅 Tarih</button>
-      <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]">🌍 Sıralama</button>
-      <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)">🧩 İlçe</button>
-      <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]">📍 Konum</button>
-      <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş">📤 Export</button>
+      <button id="btn-heat"    class="btn btn-sm" onclick="toggleHeatmap()"     data-tip="Isı haritası [H]"> Isı</button>
+      <button id="btn-score"   class="btn btn-sm" onclick="toggleScoreCard()"   data-tip="Skor kartı [S]"> Skor</button>
+      <button id="btn-compare" class="btn btn-sm" onclick="openCompare()"       data-tip="Şehir karşılaştır [C]"> Karşılaştır</button>
+      <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]"> Tarih</button>
+      <button id="btn-lb"      class="btn btn-sm" onclick="openLeaderboard()"   data-tip="Küresel sıralama [L]"> Sıralama</button>
+      <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)"> İlçe</button>
+      <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]"> Konum</button>
+      <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş"> Export</button>
     </div>
     <div class="header-row">
-      <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]">💼 Gelir</button>
-      <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü">🧪 Lab</button>
-      <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula">🧭 Pusula</button>
-      <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi">📍 Takip</button>
-      <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri">🧭 Yakın</button>
-      <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan">☀️ Outdoor</button>
+      <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]"> Gelir</button>
+      <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü"> Lab</button>
+      <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula"> Pusula</button>
+      <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi"> Takip</button>
+      <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri"> Yakın</button>
+      <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan"> Outdoor</button>
       <div class="lang-switch">
         <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
         <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
       </div>
-      <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨️</button>
+      <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨</button>
     </div>
   </div>
-  <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()">☰</button>
+  <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()"></button>
 </header>
 <div class="mob-bottom-bar" id="mob-bottom-bar">
   <input id="mob-quick-city" type="text" placeholder="Şehir ara..." autocomplete="off"/>
   <button class="primary" onclick="mobQuickSearch()">Ara</button>
-  <button onclick="useMyLocation()">📍</button>
+  <button onclick="useMyLocation()"></button>
 </div>
 
 <!-- Mobile drawer -->
@@ -74,25 +74,25 @@
   </div>
   <div class="mob-drawer-section">
     <div class="mob-drawer-section-lbl">Harita</div>
-    <button class="mob-drawer-btn active" id="mob-btn-dark"  onclick="switchLayer('dark');closeMobDrawer()">🌑 Koyu Harita</button>
-    <button class="mob-drawer-btn"        id="mob-btn-sat"   onclick="switchLayer('satellite');closeMobDrawer()">🛰 Uydu</button>
-    <button class="mob-drawer-btn"        id="mob-btn-osm"   onclick="switchLayer('osm');closeMobDrawer()">🗺 Standart</button>
+    <button class="mob-drawer-btn active" id="mob-btn-dark"  onclick="switchLayer('dark');closeMobDrawer()"> Koyu Harita</button>
+    <button class="mob-drawer-btn"        id="mob-btn-sat"   onclick="switchLayer('satellite');closeMobDrawer()"> Uydu</button>
+    <button class="mob-drawer-btn"        id="mob-btn-osm"   onclick="switchLayer('osm');closeMobDrawer()"> Standart</button>
   </div>
   <div class="mob-drawer-section">
     <div class="mob-drawer-section-lbl">Araçlar</div>
-    <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()">🌡 Isı Haritası</button>
-    <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()">📊 Skor Kartı</button>
-    <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()">⚖️ Karşılaştır</button>
-    <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()">📅 Tarihsel Analiz</button>
-    <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()">🌍 Küresel Sıralama</button>
-    <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()">📍 Konumum</button>
-    <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()">📤 Export & Paylaş</button>
-    <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()">💼 Gelir & Paketler</button>
-    <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()">🧪 QA & Lab</button>
-    <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()">🧭 Canlı Pusula</button>
-    <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()">📍 Beni Takip Et</button>
-    <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()">🧭 Yakınımdaki Şehirler</button>
-    <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()">☀️ Outdoor Mod</button>
+    <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()"> Isı Haritası</button>
+    <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()"> Skor Kartı</button>
+    <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"> Karşılaştır</button>
+    <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"> Tarihsel Analiz</button>
+    <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"> Küresel Sıralama</button>
+    <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()"> Konumum</button>
+    <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"> Export & Paylaş</button>
+    <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"> Gelir & Paketler</button>
+    <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"> QA & Lab</button>
+    <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"> Canlı Pusula</button>
+    <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()"> Beni Takip Et</button>
+    <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()"> Yakınımdaki Şehirler</button>
+    <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"> Outdoor Mod</button>
     <div class="mob-search-row">
       <button onclick="setLang('tr')">TR</button>
       <button onclick="setLang('en')">EN</button>
@@ -105,13 +105,13 @@
   <div class="exp-modal">
 
     <div class="exp-header">
-      <div class="exp-title">📤 Export & Paylaşım</div>
-      <button class="exp-close" onclick="closeExport()">✕</button>
+      <div class="exp-title"> Export & Paylaşım</div>
+      <button class="exp-close" onclick="closeExport()"></button>
     </div>
 
     <!-- Share URL -->
     <div class="exp-section">
-      <div class="exp-section-title">🔗 Paylaşılabilir URL</div>
+      <div class="exp-section-title"> Paylaşılabilir URL</div>
       <div class="exp-url-row">
         <input class="exp-url-input" id="exp-url-input" type="text" readonly/>
         <button class="exp-copy-btn" id="exp-copy-url" onclick="copyShareUrl()">Kopyala</button>
@@ -121,13 +121,13 @@
 
     <!-- Summary -->
     <div class="exp-section">
-      <div class="exp-section-title">📊 Mevcut Veri Özeti</div>
+      <div class="exp-section-title"> Mevcut Veri Özeti</div>
       <div class="exp-summary" id="exp-summary"></div>
     </div>
 
     <!-- Download buttons -->
     <div class="exp-section">
-      <div class="exp-section-title">💾 İndir</div>
+      <div class="exp-section-title"> İndir</div>
       <div class="exp-dl-grid">
         <button class="exp-dl-btn" onclick="exportJSON()">
           <span class="exp-dl-icon">{ }</span>
@@ -140,17 +140,17 @@
           <span class="exp-dl-desc">Excel uyumlu</span>
         </button>
         <button class="exp-dl-btn" onclick="exportGeoJSON()">
-          <span class="exp-dl-icon">🗺</span>
+          <span class="exp-dl-icon"></span>
           <span class="exp-dl-label">GeoJSON</span>
           <span class="exp-dl-desc">QGIS / Mapbox</span>
         </button>
         <button class="exp-dl-btn" onclick="exportReport()">
-          <span class="exp-dl-icon">📋</span>
+          <span class="exp-dl-icon"></span>
           <span class="exp-dl-label">HTML Rapor</span>
           <span class="exp-dl-desc">Yeni sekmede aç</span>
         </button>
         <button class="exp-dl-btn" onclick="shareScoreCard()">
-          <span class="exp-dl-icon">🖼</span>
+          <span class="exp-dl-icon"></span>
           <span class="exp-dl-label">Skor Kartı</span>
           <span class="exp-dl-desc">Görsel üret & paylaş</span>
         </button>
@@ -167,8 +167,8 @@
 <div class="biz-overlay" id="biz-overlay" onclick="bizOverlayClick(event)">
   <div class="biz-modal">
     <div class="biz-header">
-      <div class="biz-title">💼 Gelir Kanalları (Üyeliksiz)</div>
-      <button class="biz-close" onclick="closeBiz()">✕</button>
+      <div class="biz-title"> Gelir Kanalları (Üyeliksiz)</div>
+      <button class="biz-close" onclick="closeBiz()"></button>
     </div>
 
     <div class="biz-section">
@@ -229,8 +229,8 @@
 <div class="lab-overlay" id="lab-overlay" onclick="labOverlayClick(event)">
   <div class="lab-modal">
     <div class="lab-header">
-      <div class="lab-title">🧪 QA & İçgörü Laboratuvarı</div>
-      <button class="lab-close" onclick="closeLab()">✕</button>
+      <div class="lab-title"> QA & İçgörü Laboratuvarı</div>
+      <button class="lab-close" onclick="closeLab()"></button>
     </div>
     <div class="lab-grid">
       <div class="lab-card">
@@ -253,8 +253,8 @@
 <div class="cmps-overlay" id="cmps-overlay" onclick="compassOverlayClick(event)">
   <div class="cmps-modal">
     <div class="cmps-header">
-      <div class="cmps-title">🧭 Canlı Pusula</div>
-      <button class="cmps-close" onclick="closeCompass()">✕</button>
+      <div class="cmps-title"> Canlı Pusula</div>
+      <button class="cmps-close" onclick="closeCompass()"></button>
     </div>
     <div class="cmps-body">
       <canvas id="cmps-canvas" width="260" height="260"></canvas>
@@ -272,8 +272,8 @@
 <div class="m3d-overlay" id="m3d-overlay" onclick="m3dOverlayClick(event)">
   <div class="m3d-modal">
     <div class="m3d-header">
-      <div class="m3d-title">🏗 3D Yön Analizi (Deneysel)</div>
-      <button class="m3d-close" onclick="close3D()">✕</button>
+      <div class="m3d-title"> 3D Yön Analizi (Deneysel)</div>
+      <button class="m3d-close" onclick="close3D()"></button>
     </div>
     <div class="m3d-wrap">
       <canvas id="m3d-canvas"></canvas>
@@ -286,8 +286,8 @@
 <div class="ks-overlay" id="ks-overlay" onclick="ksOverlayClick(event)">
   <div class="ks-modal">
     <div class="ks-title">
-      ⌨️ Klavye Kısayolları
-      <button class="ks-close-btn" onclick="closeShortcuts()">✕</button>
+      ⌨ Klavye Kısayolları
+      <button class="ks-close-btn" onclick="closeShortcuts()"></button>
     </div>
     <div class="ks-grid">
       <div class="ks-row"><span class="ks-key">/</span><span class="ks-desc">Şehir arama</span></div>
@@ -328,7 +328,7 @@
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
   <div class="district-pill" id="district-pill">
     <span id="district-pill-text">—</span>
-    <button id="district-pill-clear" title="İlçe filtresini temizle">✕</button>
+    <button id="district-pill-clear" title="İlçe filtresini temizle"></button>
   </div>
   <div class="tol">Tolerans:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
 </div>
@@ -336,11 +336,11 @@
 <div class="main">
   <div id="map">
     <div class="mob-layer-stack" id="mob-layer-stack">
-      <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita">🌑 Koyu</button>
-      <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita">🛰 Uydu</button>
-      <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standart harita">🗺 Harita</button>
+      <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita"> Koyu</button>
+      <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita"> Uydu</button>
+      <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standart harita"> Harita</button>
     </div>
-    <button class="compass-fab" id="compass-fab" onclick="toggleLiveMapCompass()" aria-label="Canlı pusula modu">🧭</button>
+    <button class="compass-fab" id="compass-fab" onclick="toggleLiveMapCompass()" aria-label="Canlı pusula modu"></button>
     <!-- Mini non-blocking loader -->
     <div class="mini-loader" id="mini-loader">
       <div class="mini-spin"></div>
@@ -358,7 +358,7 @@
 
     <!-- Score Card Panel -->
     <div class="score-card" id="score-card">
-      <div class="sc-close" onclick="toggleScoreCard()">✕</div>
+      <div class="sc-close" onclick="toggleScoreCard()"></div>
       <div class="sc-city" id="sc-city">—</div>
       <div class="sc-score-wrap">
         <canvas id="sc-donut" width="110" height="110"></canvas>
@@ -433,9 +433,9 @@
     </div>
     <div class="ms-wrap" id="ms-wrap">
       <div class="ms-box">
-        <span class="ms-icon">🔍</span>
+        <span class="ms-icon"></span>
         <input id="mosque-search" type="text" placeholder="Cami adı ara..." autocomplete="off" spellcheck="false"/>
-        <button id="ms-clear" onclick="clearMosqueSearch()">✕</button>
+        <button id="ms-clear" onclick="clearMosqueSearch()"></button>
       </div>
       <div class="ms-scope">
         <span class="ms-scope-lbl"><b>Bu alanda ara</b> (harita görünümü)</span>
@@ -448,11 +448,11 @@
     </div>
     <div class="ms-filter-banner" id="ms-banner">
       <span id="ms-banner-text"></span>
-      <button onclick="clearMosqueSearch()">✕ Filtreyi Kaldır</button>
+      <button onclick="clearMosqueSearch()"> Filtreyi Kaldır</button>
     </div>
     <div class="pull-refresh" id="sb-pull-indicator">Bırakınca yenilenecek</div>
     <div class="mosque-list" id="mosque-list">
-      <div class="empty"><div class="empty-icon">🕌</div><div>Bir şehir arayın</div></div>
+      <div class="empty"><div class="empty-icon"></div><div>Bir şehir arayın</div></div>
     </div>
     <div class="legend">
       <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Açıklama</div>
@@ -488,7 +488,7 @@
       <div class="dp-place" id="dp-place"></div>
       <div class="dp-coords" id="dp-coords"></div>
     </div>
-    <button class="dp-close" onclick="closeDetailPanel()">✕</button>
+    <button class="dp-close" onclick="closeDetailPanel()"></button>
   </div>
 
   <!-- Status ribbon -->
@@ -582,10 +582,10 @@
   <div class="lb-modal" id="lb-modal">
 
     <div class="lb-header">
-      <div class="lb-title">🌍 Küresel Kıble Sıralaması</div>
+      <div class="lb-title"> Küresel Kıble Sıralaması</div>
       <div class="lb-header-right">
         <span class="lb-updated" id="lb-updated"></span>
-        <button class="lb-close" onclick="closeLeaderboard()">✕</button>
+        <button class="lb-close" onclick="closeLeaderboard()"></button>
       </div>
     </div>
 
@@ -597,21 +597,21 @@
       </div>
       <div class="lb-mode-row">
         <span class="lb-sort-label">Mod:</span>
-        <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')">🧭 Şehir Analizi</button>
-        <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')">📊 İl/State Sayımı</button>
+        <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')"> Şehir Analizi</button>
+        <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')"> İl/State Sayımı</button>
       </div>
       <div class="lb-progress-wrap" id="lb-progress-wrap" style="display:none">
         <div class="lb-progress-bar" id="lb-progress-bar"></div>
         <span class="lb-progress-label" id="lb-progress-label">Analiz ediliyor...</span>
       </div>
       <div class="lb-filters">
-        <button class="lb-filter active" data-region="all"   onclick="lbSetRegion('all')">🌐 Tümü</button>
-        <button class="lb-filter"        data-region="turkey" onclick="lbSetRegion('turkey')">🇹🇷 Türkiye</button>
-        <button class="lb-filter"        data-region="mideast" onclick="lbSetRegion('mideast')">🌙 Orta Doğu</button>
-        <button class="lb-filter"        data-region="asia"    onclick="lbSetRegion('asia')">🌏 Güney Asya</button>
-        <button class="lb-filter"        data-region="africa"  onclick="lbSetRegion('africa')">🌍 Afrika</button>
-        <button class="lb-filter"        data-region="europe"  onclick="lbSetRegion('europe')">🇪🇺 Avrupa</button>
-        <button class="lb-filter"        data-region="other"   onclick="lbSetRegion('other')">🗺 Diğer</button>
+        <button class="lb-filter active" data-region="all"   onclick="lbSetRegion('all')"> Tümü</button>
+        <button class="lb-filter"        data-region="turkey" onclick="lbSetRegion('turkey')"> Türkiye</button>
+        <button class="lb-filter"        data-region="mideast" onclick="lbSetRegion('mideast')"> Orta Doğu</button>
+        <button class="lb-filter"        data-region="asia"    onclick="lbSetRegion('asia')"> Güney Asya</button>
+        <button class="lb-filter"        data-region="africa"  onclick="lbSetRegion('africa')"> Afrika</button>
+        <button class="lb-filter"        data-region="europe"  onclick="lbSetRegion('europe')"> Avrupa</button>
+        <button class="lb-filter"        data-region="other"   onclick="lbSetRegion('other')"> Diğer</button>
       </div>
       <div class="lb-sort-row">
         <span class="lb-sort-label">Sırala:</span>
@@ -643,7 +643,7 @@
 
     <div class="lb-footer">
       Veriler <strong>OpenStreetMap</strong> · Şehir merkezi 8km yarıçapı · localStorage'da saklanır
-      <button class="lb-clear-btn" onclick="lbClearAll()">🗑 Tümünü Temizle</button>
+      <button class="lb-clear-btn" onclick="lbClearAll()"> Tümünü Temizle</button>
     </div>
   </div>
 </div>
@@ -652,18 +652,18 @@
 <div class="hist-overlay" id="hist-overlay" onclick="histOverlayClick(event)">
   <div class="hist-modal" id="hist-modal">
     <div class="hist-header">
-      <div class="hist-title">📅 Tarihsel Dönem Analizi</div>
-      <button class="hist-close" onclick="closeHistoryMode()">✕</button>
+      <div class="hist-title"> Tarihsel Dönem Analizi</div>
+      <button class="hist-close" onclick="closeHistoryMode()"></button>
     </div>
 
     <!-- Period filter chips -->
     <div class="hist-chips" id="hist-chips">
       <button class="hist-chip all active" onclick="filterPeriod('all')" data-period="all">Tümü</button>
-      <button class="hist-chip ottoman" onclick="filterPeriod('ottoman')" data-period="ottoman">🕌 Osmanlı <span class="hist-chip-sub">—1922</span></button>
-      <button class="hist-chip early" onclick="filterPeriod('early')" data-period="early">🇹🇷 Erken Cum. <span class="hist-chip-sub">1923–50</span></button>
-      <button class="hist-chip mid" onclick="filterPeriod('mid')" data-period="mid">🏗 Orta <span class="hist-chip-sub">1951–2000</span></button>
-      <button class="hist-chip modern" onclick="filterPeriod('modern')" data-period="modern">🏙 Modern <span class="hist-chip-sub">2001+</span></button>
-      <button class="hist-chip unknown" onclick="filterPeriod('unknown')" data-period="unknown">❓ Tarihi Bilinmiyor</button>
+      <button class="hist-chip ottoman" onclick="filterPeriod('ottoman')" data-period="ottoman"> Osmanlı <span class="hist-chip-sub">—1922</span></button>
+      <button class="hist-chip early" onclick="filterPeriod('early')" data-period="early"> Erken Cum. <span class="hist-chip-sub">1923–50</span></button>
+      <button class="hist-chip mid" onclick="filterPeriod('mid')" data-period="mid"> Orta <span class="hist-chip-sub">1951–2000</span></button>
+      <button class="hist-chip modern" onclick="filterPeriod('modern')" data-period="modern"> Modern <span class="hist-chip-sub">2001+</span></button>
+      <button class="hist-chip unknown" onclick="filterPeriod('unknown')" data-period="unknown"> Tarihi Bilinmiyor</button>
     </div>
 
     <!-- Summary cards row -->
@@ -709,8 +709,8 @@
 <div class="cmp-overlay" id="cmp-overlay" onclick="cmpOverlayClick(event)">
   <div class="cmp-modal" id="cmp-modal">
     <div class="cmp-header">
-      <div class="cmp-title">⚖️ Şehir Karşılaştırması</div>
-      <button class="cmp-close" onclick="closeCompare()">✕</button>
+      <div class="cmp-title"> Şehir Karşılaştırması</div>
+      <button class="cmp-close" onclick="closeCompare()"></button>
     </div>
     <div class="cmp-inputs">
       <div class="cmp-city-col">

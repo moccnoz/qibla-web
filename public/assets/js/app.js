@@ -373,14 +373,14 @@ async function bootstrap() {
   setOv(true,'Harita yükleniyor...','Leaflet.js başlatılıyor');
   if (!window.L || !window.L.map) {
     setOv(false);
-    toast('❌ Harita kütüphanesi bulunamadı (lokal dosya eksik)', 9000);
+    toast(' Harita kütüphanesi bulunamadı (lokal dosya eksik)', 9000);
     return;
   }
   try {
     initMap();
   } catch (e) {
     setOv(false);
-    toast('❌ Başlatma hatası: ' + (e?.message || 'bilinmeyen'), 9000);
+    toast(' Başlatma hatası: ' + (e?.message || 'bilinmeyen'), 9000);
     console.error(e);
   }
 }
@@ -391,7 +391,7 @@ function initMap() {
 
   // Kaaba marker (permanent)
   L.circleMarker([KAABA.lat,KAABA.lng],{ radius:9,fillColor:'#c9a84c',color:'#e8c97a',weight:2,fillOpacity:1 })
-    .addTo(map).bindPopup('<div style="font-family:monospace;color:#c9a84c;font-weight:700">🕋 Kâbe<br><small style="color:#888">21.4225°N 39.8262°E</small></div>');
+    .addTo(map).bindPopup('<div style="font-family:monospace;color:#c9a84c;font-weight:700"> Kâbe<br><small style="color:#888">21.4225°N 39.8262°E</small></div>');
 
   // ── VIEWPORT EVENTS — debounced auto-load
   map.on('moveend zoomend', () => {
@@ -1118,7 +1118,7 @@ function animateQibla(m) {
         L.polygon([[last[0],last[1]],[aL.lat,aL.lng],[aR.lat,aR.lng]],
           {color:'#7c6ad8',fillColor:'#7c6ad8',weight:0,fillOpacity:.95}).addTo(map)
       );
-      document.getElementById('qp-anim-status').textContent = '🟣 Gerçek yön — şimdi kıble...';
+      document.getElementById('qp-anim-status').textContent = ' Gerçek yön — şimdi kıble...';
       _animTimer = setTimeout(phase2, 250);
     });
   }
@@ -1138,7 +1138,7 @@ function animateQibla(m) {
           {color:'#c9a84c',fillColor:'#c9a84c',weight:0,fillOpacity:.95}).addTo(map)
       );
       const diffStr = m.diff!==null ? `${m.diff.toFixed(1)}° sapma` : 'veri yok';
-      document.getElementById('qp-anim-status').textContent = `✓ Tamamlandı — ${diffStr}`;
+      document.getElementById('qp-anim-status').textContent = ` Tamamlandı — ${diffStr}`;
       if (hasAxis) drawDiffArc(m);
     });
   }
@@ -1660,17 +1660,17 @@ function setAxisMode(mode) {
 const I18N = {
   tr: {
     title:'Kıble Dedektörü', searchPlaceholder:'Şehir adı...', searchBtn:'Ara',
-    toolsHeat:'🌡 Isı', toolsScore:'📊 Skor', toolsCompare:'⚖️ Karşılaştır',
-    toolsHistory:'📅 Tarih', toolsRank:'🌍 Sıralama', toolsLoc:'📍 Konum',
-    toolsExport:'📤 Export', toolsBiz:'💼 Gelir', toolsLab:'🧪 Lab', toolsCompass:'🧭 Pusula',
-    toolsFollow:'📍 Takip', toolsNearby:'🧭 Yakın', toolsOutdoor:'☀️ Outdoor'
+    toolsHeat:' Isı', toolsScore:' Skor', toolsCompare:' Karşılaştır',
+    toolsHistory:' Tarih', toolsRank:' Sıralama', toolsLoc:' Konum',
+    toolsExport:' Export', toolsBiz:' Gelir', toolsLab:' Lab', toolsCompass:' Pusula',
+    toolsFollow:' Takip', toolsNearby:' Yakın', toolsOutdoor:' Outdoor'
   },
   en: {
     title:'Qibla Detector', searchPlaceholder:'City name...', searchBtn:'Search',
-    toolsHeat:'🌡 Heat', toolsScore:'📊 Score', toolsCompare:'⚖️ Compare',
-    toolsHistory:'📅 History', toolsRank:'🌍 Ranking', toolsLoc:'📍 My Location',
-    toolsExport:'📤 Export', toolsBiz:'💼 Revenue', toolsLab:'🧪 Lab', toolsCompass:'🧭 Compass',
-    toolsFollow:'📍 Follow', toolsNearby:'🧭 Nearby', toolsOutdoor:'☀️ Outdoor'
+    toolsHeat:' Heat', toolsScore:' Score', toolsCompare:' Compare',
+    toolsHistory:' History', toolsRank:' Ranking', toolsLoc:' My Location',
+    toolsExport:' Export', toolsBiz:' Revenue', toolsLab:' Lab', toolsCompass:' Compass',
+    toolsFollow:' Follow', toolsNearby:' Nearby', toolsOutdoor:' Outdoor'
   }
 };
 
@@ -2067,9 +2067,9 @@ function pickLocalizedMosqueNames(m, tags = {}) {
 function makePopup(m){
   const tags = m.tags || {};
   const names = pickLocalizedMosqueNames(m, tags);
-  const s=m.status==='correct'?'<span style="color:#4ade80">✅ Doğru yön</span>':
-          m.status==='wrong'?'<span style="color:#f87171">❌ Sapma var</span>':
-          '<span style="color:#fbbf24">⚠️ Veri yok</span>';
+  const s=m.status==='correct'?'<span style="color:#4ade80"> Doğru yön</span>':
+          m.status==='wrong'?'<span style="color:#f87171"> Sapma var</span>':
+          '<span style="color:#fbbf24"> Veri yok</span>';
   const meth=
     m.method==='edge-analysis'?'Kenar analizi':
     m.method==='osm-tag'?'OSM etiketi':
@@ -2090,7 +2090,7 @@ function makePopup(m){
     ${m.convertedFrom?.converted?`<div class="p-row"><span class="p-k">Yapı geçmişi</span><span class="p-v" style="color:#fbbf24">Dönüştürülmüş olabilir</span></div>`:''}
     <div class="p-row"><span class="p-k">Kabe mesafesi</span><span class="p-v">${dist} km</span></div>
     <div class="p-method">Yöntem: ${meth}</div>
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})">🌍 Büyük Daire Animasyonu</button>`;
+    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
 }
 
 // Store last clicked for popup button
@@ -2214,7 +2214,7 @@ function updateSidebarSnapPanels() {
 
 function updateList(visible){
   const el=document.getElementById('mosque-list');
-  if(!visible.length){el.innerHTML='<div class="empty"><div class="empty-icon">🕌</div><div>Cami bulunamadı</div></div>';document.getElementById('sb-count').textContent='';return;}
+  if(!visible.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div>Cami bulunamadı</div></div>';document.getElementById('sb-count').textContent='';return;}
   document.getElementById('sb-count').textContent=visible.length;
   const sorted=[...visible].sort((a,b)=>({wrong:0,unknown:1,correct:2}[a.status]-{wrong:0,unknown:1,correct:2}[b.status]));
   const frag=document.createDocumentFragment();
@@ -2223,7 +2223,7 @@ function updateList(visible){
     const div=document.createElement('div');
     div.className='m-item';div.id='mi-'+m.id;
     div.style.animationDelay = Math.min(i*18, 300)+'ms';
-    const convMark = m.convertedFrom?.converted ? ' ⛪→🕌' : '';
+    const convMark = m.convertedFrom?.converted ? ' →' : '';
     div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
       <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
       <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
@@ -3204,7 +3204,7 @@ function toast(msg,ms=5000){
   const t=document.getElementById('toast');
   t.textContent=msg;
   t.classList.add('show');
-  if (/(hata|error|❌|başarısız|failed)/i.test(String(msg || ''))) haptic(10);
+  if (/(hata|error||başarısız|failed)/i.test(String(msg || ''))) haptic(10);
   setTimeout(()=>t.classList.remove('show'),ms);
 }
 
@@ -3902,7 +3902,7 @@ async function fetchCompareSide(side) {
     processElementsToCompareMap(elements, mapRef);
     compareAreaTotals[side] = await totalPromise;
     compareLoaded[side] = true;
-    statusEl.textContent = `✓ ${compareLevelLabel(level)} yüklendi · analiz:${mapRef.size} · toplam:${compareAreaTotals[side] ?? '—'}`;
+    statusEl.textContent = ` ${compareLevelLabel(level)} yüklendi · analiz:${mapRef.size} · toplam:${compareAreaTotals[side] ?? '—'}`;
 
     document.getElementById('cmp-progress-bar').style.width = '100%';
     await new Promise(r => setTimeout(r, 280));
@@ -3910,7 +3910,7 @@ async function fetchCompareSide(side) {
     renderCompare();
   } catch (err) {
     document.getElementById('cmp-progress-wrap').style.display = 'none';
-    statusEl.textContent = '❌ Hata: ' + err.message;
+    statusEl.textContent = ' Hata: ' + err.message;
     toast('Karşılaştırma yüklenirken hata: ' + err.message, 5000);
   }
   btn.disabled = false;
@@ -4040,7 +4040,7 @@ function drawRadar(stA, stB) {
     ctx.strokeStyle='#2a2a3a'; ctx.lineWidth=1; ctx.stroke();
     // Labels
     const lx = cx+Math.cos(angle)*(r+14), ly = cy+Math.sin(angle)*(r+14);
-    ctx.fillStyle='#6b6b7a'; ctx.font='9px DM Mono,monospace';
+    ctx.fillStyle='#6b6b7a'; ctx.font='9px Manrope,monospace';
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(axes[i], lx, ly);
   }
@@ -4110,9 +4110,9 @@ function renderCompare() {
   const badge = document.getElementById('cmp-winner-badge');
   if (stB && stA.pct !== null && stB.pct !== null) {
     const diff = stA.pct - stB.pct;
-    if (Math.abs(diff) <= 2)     { badge.textContent = '🤝 Beraberlik';    badge.className = 'cmp-winner-badge tie'; }
-    else if (diff > 0)           { badge.textContent = `🏆 ${nameA} önde`; badge.className = 'cmp-winner-badge a'; }
-    else                         { badge.textContent = `🏆 ${nameB} önde`; badge.className = 'cmp-winner-badge b'; }
+    if (Math.abs(diff) <= 2)     { badge.textContent = ' Beraberlik';    badge.className = 'cmp-winner-badge tie'; }
+    else if (diff > 0)           { badge.textContent = ` ${nameA} önde`; badge.className = 'cmp-winner-badge a'; }
+    else                         { badge.textContent = ` ${nameB} önde`; badge.className = 'cmp-winner-badge b'; }
   } else {
     badge.textContent = compareLoaded.a && !compareLoaded.b ? 'B bekleniyor →' : (!compareLoaded.a && compareLoaded.b ? 'A bekleniyor →' : '');
     badge.className = 'cmp-winner-badge tie';
@@ -4322,14 +4322,14 @@ function makeHistoryPopup(m) {
   const col = getPeriodColor(m.period);
   const period = PERIODS[m.period];
   const yearStr = m.year ? m.year + ' yılı' : 'Tarih bilinmiyor';
-  const statusStr = m.status==='correct'?'✅ Doğru':m.status==='wrong'?'❌ Sapma':'⚠️ Veri yok';
+  const statusStr = m.status==='correct'?' Doğru':m.status==='wrong'?' Sapma':' Veri yok';
   return `<div class="p-name">${escHtml(m.name)}</div>
     <div class="p-row"><span class="p-k">Dönem</span><span style="color:${col};font-weight:700">${period.label}</span></div>
     <div class="p-row"><span class="p-k">İnşaat</span><span class="p-v">${yearStr}</span></div>
     <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${statusStr}</span></div>
     <div class="p-row"><span class="p-k">Kıble</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
     ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})">🌍 Büyük Daire Animasyonu</button>`;
+    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
 }
 
 // Compute per-period stats
@@ -4429,7 +4429,7 @@ function drawHistBarChart(stats) {
     const y = pad.t + chartH - (pct/100)*chartH;
     ctx.strokeStyle = '#1e1e2e'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '9px DM Mono,monospace';
+    ctx.fillStyle = '#6b6b7a'; ctx.font = '9px Manrope,monospace';
     ctx.textAlign = 'right';
     ctx.fillText(pct+'%', pad.l-6, y+3);
   }
@@ -4462,23 +4462,23 @@ function drawHistBarChart(stats) {
     }
 
     // Label
-    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 11px DM Mono,monospace';
+    ctx.fillStyle = '#e8e4d8'; ctx.font = 'bold 11px Manrope,monospace';
     ctx.textAlign = 'center';
     if (pct > 0) ctx.fillText(pct+'%', x + barW/2, y - 5);
 
     // Period name
-    ctx.fillStyle = p.color; ctx.font = '9px DM Mono,monospace';
+    ctx.fillStyle = p.color; ctx.font = '9px Manrope,monospace';
     ctx.fillText(p.label, x + barW/2, H - 6);
 
     // Count
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '8px DM Mono,monospace';
+    ctx.fillStyle = '#6b6b7a'; ctx.font = '8px Manrope,monospace';
     ctx.fillText('n='+s.count, x + barW/2, H - 18);
   });
 
   // Legend: red bar = avg deviation
   ctx.fillStyle = 'rgba(248,113,113,0.5)';
   ctx.fillRect(pad.l, pad.t + 2, 8, 8);
-  ctx.fillStyle = '#6b6b7a'; ctx.font = '8px DM Mono,monospace'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#6b6b7a'; ctx.font = '8px Manrope,monospace'; ctx.textAlign = 'left';
   ctx.fillText('■ ort. sapma (yardımcı)', pad.l + 12, pad.t + 10);
 }
 
@@ -4494,7 +4494,7 @@ function drawHistScatter() {
     if (m.year && m.diff !== null) points.push({year:m.year, diff:m.diff, period:m.period});
   });
   if (!points.length) {
-    ctx.fillStyle = '#6b6b7a'; ctx.font = '11px DM Mono,monospace'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#6b6b7a'; ctx.font = '11px Manrope,monospace'; ctx.textAlign = 'center';
     ctx.fillText('Tarih + sapma verisi olan cami bulunamadı', canvas.width/2, canvas.height/2);
     return;
   }
@@ -4512,7 +4512,7 @@ function drawHistScatter() {
     const y = pad.t + chartH - (d/maxDiff)*chartH;
     ctx.strokeStyle='#1e1e2e'; ctx.lineWidth=1;
     ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();
-    ctx.fillStyle='#6b6b7a'; ctx.font='8px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillStyle='#6b6b7a'; ctx.font='8px Manrope,monospace'; ctx.textAlign='right';
     ctx.fillText(d+'°', pad.l-4, y+3);
   }
 
@@ -4521,14 +4521,14 @@ function drawHistScatter() {
   ctx.strokeStyle='rgba(201,168,76,.35)'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
   ctx.beginPath(); ctx.moveTo(pad.l,tolY); ctx.lineTo(W-pad.r,tolY); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle='rgba(201,168,76,.5)'; ctx.font='8px DM Mono,monospace'; ctx.textAlign='left';
+  ctx.fillStyle='rgba(201,168,76,.5)'; ctx.font='8px Manrope,monospace'; ctx.textAlign='left';
   ctx.fillText('tolerans '+tol+'°', pad.l+4, tolY-3);
 
   // X axis years
   const yearStep = Math.ceil((maxY-minY)/5 / 50)*50 || 50;
   for (let y=Math.ceil(minY/yearStep)*yearStep; y<=maxY; y+=yearStep) {
     const x = pad.l + ((y-minY)/(maxY-minY))*chartW;
-    ctx.fillStyle='#6b6b7a'; ctx.font='8px DM Mono,monospace'; ctx.textAlign='center';
+    ctx.fillStyle='#6b6b7a'; ctx.font='8px Manrope,monospace'; ctx.textAlign='center';
     ctx.fillText(y, x, H-6);
   }
 
@@ -4558,7 +4558,7 @@ function drawHistScatter() {
     ctx.setLineDash([]);
     // Trend direction label
     const trendDir = slope > 0.01 ? '↑ Sapma artıyor' : slope < -0.01 ? '↓ Sapma azalıyor' : '→ Sabit';
-    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='9px DM Mono,monospace'; ctx.textAlign='right';
+    ctx.fillStyle='rgba(255,255,255,.3)'; ctx.font='9px Manrope,monospace'; ctx.textAlign='right';
     ctx.fillText(trendDir, W-pad.r-4, pad.t+10);
   }
 }
@@ -4761,7 +4761,7 @@ function renderLab() {
     .sort((a,b) => (a.confidence || 0) - (b.confidence || 0))
     .slice(0, 20);
   const qEl = document.getElementById('lab-queue');
-  if (!queue.length) qEl.innerHTML = '<div class="lab-row"><span class="lab-k">Kuyruk boş</span><span class="lab-v">✓</span></div>';
+  if (!queue.length) qEl.innerHTML = '<div class="lab-row"><span class="lab-k">Kuyruk boş</span><span class="lab-v"></span></div>';
   else qEl.innerHTML = queue.map(m => `<div class="lab-row"><span class="lab-k">${escHtml(m.name)}</span><span class="lab-v">${m.confidence || 0}/100</span></div>`).join('');
 
   const sEl = document.getElementById('lab-snapshots');
@@ -4812,7 +4812,7 @@ function copyShareUrl() {
   const url = buildShareUrl();
   navigator.clipboard?.writeText(url).then(() => {
     const btn = document.getElementById('exp-copy-url');
-    btn.textContent = '✓ Kopyalandı';
+    btn.textContent = ' Kopyalandı';
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Kopyala'; btn.classList.remove('copied'); }, 2200);
   }).catch(() => {
@@ -4854,7 +4854,7 @@ function exportJSON() {
     `qibla-${slugify(currentCity)}-${dateStr()}.json`,
     'application/json'
   );
-  toast('✓ JSON indirildi', 3000);
+  toast(' JSON indirildi', 3000);
 }
 
 // ── CSV export
@@ -4881,7 +4881,7 @@ function exportCSV() {
     `qibla-${slugify(currentCity)}-${dateStr()}.csv`,
     'text/csv;charset=utf-8'
   );
-  toast('✓ CSV indirildi — Excel\'de açabilirsiniz', 3000);
+  toast(' CSV indirildi — Excel\'de açabilirsiniz', 3000);
 }
 
 // ── GeoJSON export
@@ -4917,7 +4917,7 @@ function exportGeoJSON() {
     `qibla-${slugify(currentCity)}-${dateStr()}.geojson`,
     'application/geo+json'
   );
-  toast('✓ GeoJSON indirildi', 3000);
+  toast(' GeoJSON indirildi', 3000);
 }
 
 // ── HTML Report (opens in new tab)
@@ -4956,7 +4956,7 @@ td{padding:7px 10px;border-bottom:1px solid rgba(42,42,58,.4);color:#e8e4d8;}
 .grade{display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.07);}
 footer{margin-top:32px;padding-top:12px;border-top:1px solid #2a2a3a;font-size:10px;color:#4a4a5a;}
 </style></head><body>
-<h1>🕌 Kıble Analiz Raporu</h1>
+<h1> Kıble Analiz Raporu</h1>
 <div class="subtitle">${currentCity} · ${new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} · Tolerans: ${tol}°</div>
 
 <div class="cards">
@@ -4975,7 +4975,7 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid #2a2a3a;font-size:1
     <td>${m.qibla.toFixed(1)}°</td>
     <td>${m.axis!==null?m.axis.toFixed(1)+'°':'—'}</td>
     <td class="bad">${m.diff.toFixed(1)}°</td>
-    <td class="bad">❌ Sapma</td>
+    <td class="bad"> Sapma</td>
   </tr>`).join('')}</tbody>
 </table>
 
@@ -4988,7 +4988,7 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid #2a2a3a;font-size:1
     <td>${m.qibla.toFixed(1)}°</td>
     <td>${m.axis!==null?m.axis.toFixed(1)+'°':'—'}</td>
     <td class="ok">${m.diff.toFixed(1)}°</td>
-    <td class="ok">✅ Doğru</td>
+    <td class="ok"> Doğru</td>
   </tr>`).join('')}</tbody>
 </table>
 
@@ -4999,7 +4999,7 @@ footer{margin-top:32px;padding-top:12px;border-top:1px solid #2a2a3a;font-size:1
   const url  = URL.createObjectURL(blob);
   window.open(url, '_blank');
   setTimeout(()=>URL.revokeObjectURL(url), 60000);
-  toast('✓ Rapor yeni sekmede açıldı', 3000);
+  toast(' Rapor yeni sekmede açıldı', 3000);
 }
 
 function buildScoreCardCanvas() {
@@ -5017,22 +5017,22 @@ function buildScoreCardCanvas() {
   ctx.fillStyle = bg;
   ctx.fillRect(0,0,1080,1080);
   ctx.fillStyle = '#c9a84c';
-  ctx.font = '700 64px "DM Mono", monospace';
+  ctx.font = '700 64px "Manrope", monospace';
   ctx.fillText('Qibla Checker Score', 80, 120);
   ctx.fillStyle = '#e8e4d8';
-  ctx.font = '700 120px "DM Mono", monospace';
+  ctx.font = '700 120px "Manrope", monospace';
   ctx.fillText(`${pct}%`, 80, 300);
-  ctx.font = '500 44px "DM Mono", monospace';
+  ctx.font = '500 44px "Manrope", monospace';
   ctx.fillStyle = '#9ca3af';
   ctx.fillText(currentCity || 'City', 80, 365);
   ctx.fillStyle = '#d1d5db';
-  ctx.font = '500 34px "DM Mono", monospace';
+  ctx.font = '500 34px "Manrope", monospace';
   ctx.fillText(`Total mosques: ${all.length}`, 80, 460);
   ctx.fillText(`With axis data: ${withData.length}`, 80, 518);
   ctx.fillText(`Tolerance: ${tol}°`, 80, 576);
   ctx.fillText(`Average deviation: ${avg != null ? avg.toFixed(1)+'°' : '—'}`, 80, 634);
   ctx.fillStyle = '#6b7280';
-  ctx.font = '400 26px "DM Mono", monospace';
+  ctx.font = '400 26px "Manrope", monospace';
   ctx.fillText(new Date().toLocaleString('tr-TR'), 80, 990);
   return cv;
 }
@@ -5303,7 +5303,7 @@ window.renderAll = function() {
 (function(){
   const KEY='qibla-ks-hint-shown';
   if(!safeStorageGet(KEY, null)){
-    setTimeout(()=>toast('💡 Klavye kısayolları için ? tuşuna basın',5000),3000);
+    setTimeout(()=>toast(' Klavye kısayolları için ? tuşuna basın',5000),3000);
     safeStorageSet(KEY,'1');
   }
 })();
@@ -5402,7 +5402,7 @@ function populateDetailPanel(m) {
 
   // ── Status ribbon
   const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
-  const statusLabel = m.status==='correct'?'✅ Doğru Yön':m.status==='wrong'?'❌ Sapma Var':'⚠️ Veri Yok';
+  const statusLabel = m.status==='correct'?' Doğru Yön':m.status==='wrong'?' Sapma Var':' Veri Yok';
   document.getElementById('dp-status-badge').innerHTML =
     `<span class="dp-status-badge ${m.status}">${statusLabel}</span>`;
   document.getElementById('dp-qibla-val').textContent = m.qibla.toFixed(1)+'°';
@@ -5581,7 +5581,7 @@ function drawDetailCompass(m) {
 
   // Cardinal labels
   const cardinals = [['K',0],['D',90],['G',180],['B',270]];
-  ctx.font = '8px DM Mono,monospace'; ctx.fillStyle = '#4a4a5a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '8px Manrope,monospace'; ctx.fillStyle = '#4a4a5a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   cardinals.forEach(([lbl, deg]) => {
     const rad = (deg - 90) * Math.PI / 180;
     ctx.fillText(lbl, cx + (r-8)*Math.cos(rad), cy + (r-8)*Math.sin(rad));
@@ -5626,7 +5626,7 @@ function drawDetailCompass(m) {
   ctx.fillStyle = '#e8e4d8'; ctx.fill();
 
   // Legend
-  ctx.font = '7px DM Mono,monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = '7px Manrope,monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillStyle = '#c9a84c'; ctx.fillRect(4,108,12,2);
   ctx.fillStyle = '#c9a84c'; ctx.fillText('Kıble', 19, 109);
   if (m.axis !== null) {
@@ -5849,19 +5849,19 @@ function renderActions(m, tags) {
     const lang = /^[a-z-]{2,12}$/i.test(rawLang) ? rawLang.toLowerCase() : 'tr';
     const title = rest.join(':').trim();
     if (title) {
-      wikiAction = `<a class="dp-action-btn" href="https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}" target="_blank" rel="noopener">📖 Wikipedia</a>`;
+      wikiAction = `<a class="dp-action-btn" href="https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}" target="_blank" rel="noopener"> Wikipedia</a>`;
     }
   }
 
   el.innerHTML = `
-    <button class="dp-action-btn" onclick="focusMosqueOnMap()">🧭 Haritada Göster</button>
-    <button class="dp-action-btn anim" onclick="closeDetailPanel();if(window._lastClickedMosque)animateQibla(window._lastClickedMosque)">🌍 Büyük Daire</button>
-    <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)">🧠 İsmi Bul</button>
-    <button class="dp-action-btn" onclick="open3D()">🏗 3D Analiz</button>
-    <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener">🗺 OSM'de Gör</a>
-    <a class="dp-action-btn" href="${editUrl}" target="_blank" rel="noopener">✏️ OSM'de Düzenle</a>
-    <a class="dp-action-btn" href="${gmUrl}" target="_blank" rel="noopener">📍 Google Maps</a>
-    <button class="dp-action-btn" onclick="navigator.clipboard?.writeText('${coordStr}').then(()=>toast('Koordinat kopyalandı'))">📋 Koordinat Kopyala</button>
+    <button class="dp-action-btn" onclick="focusMosqueOnMap()"> Haritada Göster</button>
+    <button class="dp-action-btn anim" onclick="closeDetailPanel();if(window._lastClickedMosque)animateQibla(window._lastClickedMosque)"> Büyük Daire</button>
+    <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)"> İsmi Bul</button>
+    <button class="dp-action-btn" onclick="open3D()"> 3D Analiz</button>
+    <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener"> OSM'de Gör</a>
+    <a class="dp-action-btn" href="${editUrl}" target="_blank" rel="noopener"> OSM'de Düzenle</a>
+    <a class="dp-action-btn" href="${gmUrl}" target="_blank" rel="noopener"> Google Maps</a>
+    <button class="dp-action-btn" onclick="navigator.clipboard?.writeText('${coordStr}').then(()=>toast('Koordinat kopyalandı'))"> Koordinat Kopyala</button>
     ${wikiAction}
   `;
 }
@@ -6439,14 +6439,14 @@ async function lbCountAdminArea(queryText) {
     };
     lbUpsert(entry);
     pb.style.width = '100%';
-    pl.textContent = `✓ ${name}: ${total.toLocaleString()} kayıt`;
+    pl.textContent = ` ${name}: ${total.toLocaleString()} kayıt`;
     await new Promise(res => setTimeout(res, 550));
     pw.style.display = 'none';
     renderLeaderboard();
-    toast(`✓ ${name} sayımı tamamlandı: ${total.toLocaleString()}`, 3600);
+    toast(` ${name} sayımı tamamlandı: ${total.toLocaleString()}`, 3600);
   } catch (err) {
     pw.style.display = 'none';
-    toast('❌ İl sayımı hatası: ' + (err?.message || 'bilinmeyen hata'), 5200);
+    toast(' İl sayımı hatası: ' + (err?.message || 'bilinmeyen hata'), 5200);
   }
   btn.disabled = false;
 }
@@ -6543,7 +6543,7 @@ function renderLeaderboard() {
   const container = document.getElementById('lb-rows');
   if (!filtered.length) {
     container.innerHTML = `<div class="lb-empty">
-      <div class="lb-empty-icon">🕌</div>
+      <div class="lb-empty-icon"></div>
       <div>${lbData.length===0
         ? 'Henüz şehir yok — yukarıdan bir şehir ekleyin!'
         : 'Bu bölgede şehir bulunamadı'}</div>
@@ -6559,7 +6559,7 @@ function renderLeaderboard() {
   container.innerHTML = filtered.map((e, i) => {
     const rank = i + 1;
     const rankClass = rank===1?'lb-rank-1':rank===2?'lb-rank-2':rank===3?'lb-rank-3':'lb-rank-n';
-    const rankIcon = rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':rank;
+    const rankIcon = rank===1?'':rank===2?'':rank===3?'':rank;
     const col = lbDataset === 'admin' ? '#60a5fa' : pctColor(e.pct);
     const barW = lbDataset === 'admin'
       ? Math.round(((e.count||0) / bestVal) * 100)
@@ -6592,7 +6592,7 @@ function renderLeaderboard() {
         ${needsAnalysis
           ? `<button class="lb-act-btn" onclick="event.stopPropagation();${lbDataset==='admin'?'lbCountAdminArea':'lbAnalyseCity'}(decodeURIComponent('${cityEnc}'))">▶ Analiz</button>`
           : `<button class="lb-act-btn" onclick="event.stopPropagation();${lbDataset==='admin'?'lbCountAdminArea':'lbAnalyseCity'}(decodeURIComponent('${cityEnc}'))">↺</button>`}
-        <button class="lb-act-btn danger" onclick="event.stopPropagation();lbRemove(decodeURIComponent('${cityEnc}'))">✕</button>
+        <button class="lb-act-btn danger" onclick="event.stopPropagation();lbRemove(decodeURIComponent('${cityEnc}'))"></button>
       </span>
     </div>`;
   }).join('');
@@ -6702,15 +6702,15 @@ async function lbAnalyseCity(city) {
     };
 
     lbUpsert(entry);
-    pb.style.width = '100%'; pl.textContent = `✓ ${city} eklendi`;
+    pb.style.width = '100%'; pl.textContent = ` ${city} eklendi`;
     await new Promise(res => setTimeout(res, 600));
     pw.style.display = 'none';
     renderLeaderboard();
-    toast(`✓ ${city} sıralamaya eklendi — ${st.pct!==null?st.pct+'% doğru':'veri yetersiz'}`, 4000);
+    toast(` ${city} sıralamaya eklendi — ${st.pct!==null?st.pct+'% doğru':'veri yetersiz'}`, 4000);
 
   } catch(err) {
     pw.style.display = 'none';
-    toast('❌ ' + err.message, 6000);
+    toast(' ' + err.message, 6000);
     console.error(err);
   }
 
