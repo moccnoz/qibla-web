@@ -5776,3 +5776,179 @@ body:not(.outdoor-mode) #map::after {
     width: 120px !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE STABILIZER — mobile + iPad cleanup
+   ═══════════════════════════════════════════════════════════ */
+
+/* Keep "Bu alanı tara" color consistent */
+.search-area-btn {
+  background: #0C74E8 !important;
+  border: 1px solid rgba(147, 197, 253, 0.50) !important;
+  color: #eef6ff !important;
+}
+
+@media (min-width: 769px) and (max-width: 1180px) {
+  body {
+    --hud-search-w: min(900px, calc(100vw - 380px));
+  }
+
+  .floating-search,
+  .stats-bar {
+    width: var(--hud-search-w) !important;
+    max-width: var(--hud-search-w) !important;
+  }
+
+  .floating-search {
+    top: 12px !important;
+  }
+
+  .stats-bar {
+    top: 86px !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    overflow-x: auto !important;
+  }
+
+  .search-area-btn {
+    top: 138px !important;
+    left: calc(50% - (var(--hud-search-w) / 2) + 128px) !important;
+    transform: none !important;
+    z-index: 775 !important;
+  }
+
+  .mode-pills {
+    top: 138px !important;
+    right: calc(50% - (var(--hud-search-w) / 2)) !important;
+    left: auto !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .mob-bottom-bar { display: none !important; }
+
+  #map {
+    border: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  header {
+    display: none !important;
+  }
+
+  .floating-search {
+    position: absolute !important;
+    top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    z-index: 2300 !important;
+  }
+
+  .floating-search .search-box,
+  .search-box {
+    width: 100% !important;
+    min-width: 0 !important;
+    border-radius: 18px !important;
+    padding: 5px 6px 5px 10px !important;
+  }
+
+  .floating-search .search-box input,
+  .search-box input[type="text"] {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    padding: 10px 4px !important;
+  }
+
+  .floating-search #search-btn {
+    min-width: 74px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+    font-size: 15px !important;
+  }
+
+  .floating-search .mob-pill-logo,
+  .floating-search .mob-pill-menu {
+    display: inline-flex !important;
+    width: 38px !important;
+    height: 38px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+  }
+
+  .stats-bar {
+    position: absolute !important;
+    top: calc(70px + env(safe-area-inset-top, 0px)) !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    margin: 0 !important;
+    border-radius: 14px !important;
+    padding: 7px 10px !important;
+    gap: 6px !important;
+    justify-content: center !important;
+    overflow-x: auto !important;
+    z-index: 2200 !important;
+  }
+
+  .mode-pills {
+    position: absolute !important;
+    top: calc(126px + env(safe-area-inset-top, 0px)) !important;
+    right: 10px !important;
+    left: auto !important;
+    transform: none !important;
+    z-index: 2205 !important;
+  }
+
+  .search-area-btn {
+    top: calc(126px + env(safe-area-inset-top, 0px)) !important;
+    left: 10px !important;
+    transform: none !important;
+    padding: 8px 16px !important;
+    border-radius: 999px !important;
+    font-size: 13px !important;
+    z-index: 2205 !important;
+  }
+
+  .tolerance-pill {
+    display: none !important;
+  }
+
+  .mob-drawer {
+    width: min(360px, 94vw) !important;
+    border-radius: 0 22px 22px 0 !important;
+    background: linear-gradient(180deg, rgba(8, 23, 54, 0.98), rgba(9, 29, 68, 0.98)) !important;
+    border: 1px solid rgba(13, 64, 255, 0.34) !important;
+    box-shadow: 0 20px 48px rgba(2, 8, 24, 0.62) !important;
+  }
+
+  .mob-drawer-section-lbl {
+    color: #93c5fd !important;
+    letter-spacing: .08em !important;
+  }
+
+  .mob-drawer-btn {
+    background: rgba(13, 64, 255, 0.14) !important;
+    border: 1px solid rgba(13, 64, 255, 0.30) !important;
+    color: #e8f1ff !important;
+    border-radius: 12px !important;
+  }
+
+  .mob-drawer-btn.active {
+    background: #0c74e8 !important;
+    border-color: #0c74e8 !important;
+    color: #fff !important;
+  }
+
+  .mob-drawer-foot .mob-lang-btn {
+    background: rgba(13, 64, 255, 0.30) !important;
+    border: 1px solid rgba(13, 64, 255, 0.54) !important;
+    color: #eef4ff !important;
+  }
+}

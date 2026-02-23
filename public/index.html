@@ -210,19 +210,27 @@
       </div>
 
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Araçlar</div>
+        <div class="mob-drawer-section-lbl">Analiz</div>
         <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Isı Haritası</span></button>
         <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Skor Kartı</span></button>
         <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"><span class="mob-nav-ico">⇄</span><span>Karşılaştır</span></button>
         <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"><span class="mob-nav-ico">◷</span><span>Tarihsel Analiz</span></button>
         <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"><span class="mob-nav-ico">☰</span><span>Küresel Sıralama</span></button>
+      </div>
+
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Eylemler</div>
         <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()"><span class="mob-nav-ico">⌖</span><span>Konumum</span></button>
-        <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"><span class="mob-nav-ico">↗</span><span>Export ve Paylaş</span></button>
-        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir ve Paketler</span></button>
-        <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>QA ve Lab</span></button>
-        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Canlı Pusula</span></button>
         <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()"><span class="mob-nav-ico">⟳</span><span>Beni Takip Et</span></button>
         <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()"><span class="mob-nav-ico">◉</span><span>Yakınımdaki Şehirler</span></button>
+        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Canlı Pusula</span></button>
+        <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"><span class="mob-nav-ico">↗</span><span>Export ve Paylaş</span></button>
+      </div>
+
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Sistem</div>
+        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir ve Paketler</span></button>
+        <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>QA ve Lab</span></button>
         <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor Mod</span></button>
       </div>
     </div>

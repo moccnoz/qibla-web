@@ -1598,7 +1598,14 @@ const escHtml = s => String(s ?? '')
 
 function isLikelyMosqueQuery(q) {
   const t = trLower(q || '');
-  return /\b(cami|camii|mescid|mescit|mosque|masjid)\b/.test(t);
+  const n = normalize(t);
+  if (/\b(cami|camii|mescid|mescit|mosque|masjid)\b/.test(t)) return true;
+  // Landmark-only queries (e.g. "suleymaniye") should still trigger mosque search mode.
+  if (/(suleymaniye|sultanahmet|ayasofya|fatih|eyup|eyup_sultan|camlica|selimiye|kocatepe|ulu\s*cami)/.test(n)) return true;
+  try {
+    if (typeof findAliasGroupsForQuery === 'function' && findAliasGroupsForQuery(n).length) return true;
+  } catch {}
+  return false;
 }
 
 function pickNameFromTags(tags = {}) {
@@ -3996,8 +4003,17 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds, opts = {}) {
     boundedRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
 
     if (!refsMap.size || !msScopeViewportOnly || opts.preferGlobal) {
-      const globalRefs = await fetchNominatimMosqueRefs(`${query} mosque`, null, false, 14).catch(() => []);
-      globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+      const globalQueries = [...new Set([
+        query,
+        `${query} camii`,
+        `${query} cami`,
+        `${query} mosque`,
+        `${query} masjid`
+      ])];
+      for (const gq of globalQueries) {
+        const globalRefs = await fetchNominatimMosqueRefs(gq, null, false, 14).catch(() => []);
+        globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+      }
     }
 
     if (!refsMap.size) {
