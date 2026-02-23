@@ -824,6 +824,34 @@ body:not(.outdoor-mode) #map::after{
 .dp-action-btn:hover{border-color:#c9a84c;color:#c9a84c;background:rgba(201,168,76,.06);}
 .dp-action-btn.anim{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.35);color:#c9a84c;}
 .dp-action-btn.anim:hover{background:rgba(201,168,76,.2);}
+body:not(.outdoor-mode) .dp-panel :is(
+  .dp-place,
+  .dp-coords,
+  .dp-ribbon-lbl,
+  .dp-section-title,
+  .dp-int-meta,
+  .dp-int-form label,
+  .dp-int-ev-sub,
+  .dp-qs-k,
+  .dp-wiki-body,
+  .dp-tag-k
+){
+  color:rgba(255,255,255,.82) !important;
+}
+body:not(.outdoor-mode) .dp-panel :is(
+  .dp-name,
+  .dp-name-ar,
+  .dp-ribbon-val,
+  .dp-int-ev-main,
+  .dp-qs-v,
+  .dp-tag-v,
+  .dp-tag-v a
+){
+  color:rgba(255,255,255,.92) !important;
+}
+body:not(.outdoor-mode) .dp-panel .dp-int-form input::placeholder{
+  color:rgba(255,255,255,.68) !important;
+}
 
 /* ══ EXPORT MODAL CSS ═════════════════════════════════════════ */
 .exp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:5200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
