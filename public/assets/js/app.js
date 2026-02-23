@@ -2229,6 +2229,230 @@ const I18N = {
   }
 };
 
+const I18N_STATIC = {
+  tr: {
+    pageTitle: 'Kıble Dedektörü',
+    logoTitle: 'Kıble Dedektörü',
+    logoSub: 'Bina Yönü Analizi',
+    cityOrMosquePlaceholder: 'Şehir / cami ara...',
+    cityOnlyPlaceholder: 'Şehir adı...',
+    mosqueSearchPlaceholder: 'Cami adı ara...',
+    scopeSearch: 'Bu alanda ara',
+    searchArea: 'Bu alanı tara',
+    liveReady: 'Canlı hazır',
+    cancel: 'İptal',
+    loading: 'Yükleniyor...',
+    mosqueList: 'Cami Listesi',
+    legend: 'Açıklama'
+  },
+  en: {
+    pageTitle: 'Qibla Detector',
+    logoTitle: 'Qibla Detector',
+    logoSub: 'Building Orientation Analysis',
+    cityOrMosquePlaceholder: 'Search city / mosque...',
+    cityOnlyPlaceholder: 'City name...',
+    mosqueSearchPlaceholder: 'Search mosque name...',
+    scopeSearch: 'Search in this area',
+    searchArea: 'Search this area',
+    liveReady: 'Live ready',
+    cancel: 'Cancel',
+    loading: 'Loading...',
+    mosqueList: 'Mosque List',
+    legend: 'Legend'
+  }
+};
+
+const TR_EN_REPLACERS = [
+  [/Kıble Dedektörü/g, 'Qibla Detector'],
+  [/\bAra\b/g, 'Search'],
+  [/Bina Yönü Analizi/g, 'Building Orientation Analysis'],
+  [/Şehir \/ cami ara\.\.\./g, 'Search city / mosque...'],
+  [/Şehir veya cami ara/g, 'Search city or mosque'],
+  [/Şehir adı\.\.\./g, 'City name...'],
+  [/Şehir ara\.\.\./g, 'Search city...'],
+  [/Cami adı ara\.\.\./g, 'Search mosque name...'],
+  [/Bu alanda ara/g, 'Search in this area'],
+  [/Bu alanı tara/g, 'Search this area'],
+  [/Canlı yükleniyor/g, 'Live loading'],
+  [/Canlı güncel/g, 'Live updated'],
+  [/Canlı hazır/g, 'Live ready'],
+  [/Tolerans/g, 'Tolerance'],
+  [/Cami Listesi/g, 'Mosque List'],
+  [/Açıklama/g, 'Legend'],
+  [/Kıble yönünde/g, 'Aligned with Qibla'],
+  [/Sapma var/g, 'Deviation present'],
+  [/Gerçek kıble yönü/g, 'True Qibla direction'],
+  [/Bina kıble duvarı/g, 'Building Qibla wall'],
+  [/Binanın gerçek baktığı yön/g, 'Building true facing axis'],
+  [/Kabe'ye büyük daire \(doğru\)/g, 'Great-circle to Kaaba (true)'],
+  [/Yükleniyor\.\.\./g, 'Loading...'],
+  [/İptal/g, 'Cancel'],
+  [/Harita yükleniyor\.\.\./g, 'Loading map...'],
+  [/Leaflet\.js başlatılıyor/g, 'Initializing Leaflet.js'],
+  [/Klavye kısayolları/g, 'Keyboard shortcuts'],
+  [/Şehir karşılaştır/g, 'Compare cities'],
+  [/Küresel sıralama/g, 'Global ranking'],
+  [/Küresel Kıble Sıralaması/g, 'Global Qibla Ranking'],
+  [/Harita/g, 'Map'],
+  [/Analiz/g, 'Analysis'],
+  [/Eylemler/g, 'Actions'],
+  [/Sistem/g, 'System'],
+  [/Araçlar/g, 'Tools'],
+  [/Tümünü Temizle/g, 'Clear All'],
+  [/Tümü/g, 'All'],
+  [/Türkiye/g, 'Turkey'],
+  [/Orta Doğu/g, 'Middle East'],
+  [/Güney Asya/g, 'South Asia'],
+  [/Diğer/g, 'Other'],
+  [/Doğruluk %/g, 'Accuracy %'],
+  [/Cami Sayısı/g, 'Mosque Count'],
+  [/Ort\. Sapma/g, 'Avg. Deviation'],
+  [/Şehir Adı/g, 'City Name'],
+  [/Tarihsel Dönem Analizi/g, 'Historical Period Analysis'],
+  [/Osmanlı/g, 'Ottoman'],
+  [/Şehir A/g, 'City A'],
+  [/Şehir B/g, 'City B'],
+  [/Şehir\/ilçe adı girin\.\.\./g, 'Enter city/district name...'],
+  [/Yükle/g, 'Load'],
+  [/Kaldır/g, 'Remove'],
+  [/İlçe modu/g, 'District mode'],
+  [/Isı haritası/g, 'Heatmap'],
+  [/Skor kartı/g, 'Score card'],
+  [/Şehir Analizi/g, 'City Analysis'],
+  [/İl\/State Sayımı/g, 'Province/State Count'],
+  [/Sırala/g, 'Sort'],
+  [/Doğruluk/g, 'Accuracy'],
+  [/Karşılaştır/g, 'Compare'],
+  [/Sıralama/g, 'Ranking'],
+  [/Konum/g, 'Location'],
+  [/Pusula/g, 'Compass'],
+  [/Takip/g, 'Follow'],
+  [/Yakın/g, 'Nearby'],
+  [/Gelir/g, 'Revenue'],
+  [/Kopyalandı/g, 'Copied'],
+  [/Filtreyi Kaldır/g, 'Clear Filter'],
+  [/Bir şehir arayın/g, 'Search for a city'],
+  [/Bırakınca yenilenecek/g, 'Release to refresh'],
+  [/Koordinat Kopyala/g, 'Copy Coordinates'],
+  [/Haritada Göster/g, 'Show on Map'],
+  [/İsmi Bul/g, 'Find Name'],
+  [/OSM'de Gör/g, 'View on OSM'],
+  [/OSM'de Düzenle/g, 'Edit on OSM'],
+  [/İç Mekan Kanıtı/g, 'Interior Evidence'],
+  [/İç Mekan Yönünü Kaydet/g, 'Save Interior Direction'],
+  [/Manuel Aks Düzeltme/g, 'Manual Axis Correction'],
+  [/Haritada Aks Çiz/g, 'Draw Axis on Map'],
+  [/Hazır/g, 'Ready'],
+  [/Doğru/g, 'Correct'],
+  [/Sapma/g, 'Deviation'],
+  [/Veri Yok/g, 'No Data'],
+  [/Kabe/g, 'Kaaba'],
+  [/Kıble/g, 'Qibla'],
+  [/Şehir/g, 'City'],
+  [/İlçe/g, 'District'],
+  [/Camii/g, 'Mosque'],
+  [/Cami/g, 'Mosque'],
+  [/bulunamadı/g, 'not found'],
+  [/aranıyor/g, 'searching'],
+  [/yükleniyor/g, 'loading'],
+  [/yakınınızda/g, 'near you'],
+  [/Küresel Sonuçlar/g, 'Global Results'],
+  [/Geçmiş Aramalar ve Analizler/g, 'Recent Searches and Analyses'],
+  [/Yakınınızdakiler/g, 'Nearby'],
+  [/Henüz veri yüklenmedi/g, 'No data loaded yet'],
+  [/için sonuç bulunamadı/g, 'no results found for'],
+  [/Dış kaynakta aranıyor/g, 'Searching external sources'],
+  [/Önce haritadan veri yüklenmeli/g, 'Load map data first'],
+  [/öneri yok/g, 'no suggestions'],
+  [/Önce bir cami seçin/g, 'Select a mosque first'],
+  [/Konum alınamadı/g, 'Location unavailable'],
+  [/Konum desteği yok/g, 'Location is not supported'],
+  [/Ana sayfa sıfırlandı/g, 'Home reset'],
+  [/Outdoor mod aktif/g, 'Outdoor mode enabled'],
+  [/Outdoor mod kapatıldı/g, 'Outdoor mode disabled']
+];
+
+function i18nTranslateText(input) {
+  if (currentLang !== 'en') return String(input ?? '');
+  let out = String(input ?? '');
+  TR_EN_REPLACERS.forEach(([rx, rep]) => {
+    out = out.replace(rx, rep);
+  });
+  return out;
+}
+
+function i18nProcessNodeTree(root) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const p = node.parentElement;
+      if (!p) return NodeFilter.FILTER_REJECT;
+      if (p.closest('script,style,noscript,code,pre')) return NodeFilter.FILTER_REJECT;
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let n = walker.nextNode();
+  while (n) {
+    if (typeof n.__i18nBaseText === 'undefined') n.__i18nBaseText = n.nodeValue;
+    n.nodeValue = currentLang === 'en' ? i18nTranslateText(n.__i18nBaseText) : n.__i18nBaseText;
+    n = walker.nextNode();
+  }
+  root.querySelectorAll?.('[placeholder],[title],[data-tip],[aria-label]').forEach((el) => {
+    ['placeholder', 'title', 'data-tip', 'aria-label'].forEach((attr) => {
+      if (!el.hasAttribute(attr)) return;
+      const baseKey = '__i18nBaseAttr_' + attr.replace(/-/g, '_');
+      if (typeof el[baseKey] === 'undefined') el[baseKey] = el.getAttribute(attr);
+      const base = el[baseKey];
+      el.setAttribute(attr, currentLang === 'en' ? i18nTranslateText(base) : base);
+    });
+  });
+}
+
+let i18nObserver = null;
+let i18nMutationTimer = 0;
+function ensureI18nObserver() {
+  if (i18nObserver) return;
+  i18nObserver = new MutationObserver((mutations) => {
+    if (currentLang !== 'en') return;
+    if (i18nMutationTimer) clearTimeout(i18nMutationTimer);
+    i18nMutationTimer = setTimeout(() => {
+      mutations.forEach((m) => {
+        m.addedNodes?.forEach((node) => {
+          if (node.nodeType === 1) i18nProcessNodeTree(node);
+          else if (node.nodeType === 3 && node.parentElement) i18nProcessNodeTree(node.parentElement);
+        });
+      });
+      i18nProcessNodeTree(document.body);
+    }, 40);
+  });
+  i18nObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function applyI18nStaticUi() {
+  const t = I18N_STATIC[currentLang] || I18N_STATIC.tr;
+  document.title = t.pageTitle;
+  const setText = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val; };
+  const setPh = (sel, val) => { const el = document.querySelector(sel); if (el) el.placeholder = val; };
+  setText('.logo-title', t.logoTitle);
+  setText('.logo-sub', t.logoSub);
+  setPh('#city-input', t.cityOrMosquePlaceholder);
+  setPh('#mob-quick-city', t.cityOnlyPlaceholder);
+  setPh('#mob-city-input', t.cityOrMosquePlaceholder);
+  setPh('#mosque-search', t.mosqueSearchPlaceholder);
+  setText('#search-btn', currentLang === 'en' ? 'Search' : 'Ara');
+  setText('#search-area-btn', t.searchArea);
+  setText('#ov-cancel', t.cancel);
+  setText('#ov-text', t.loading);
+  setText('#vp-label', t.liveReady);
+  const scopeLabel = document.querySelector('.ms-scope-lbl b');
+  if (scopeLabel) scopeLabel.textContent = t.scopeSearch;
+  const mosqueListEl = document.querySelector('.sb-head-left span');
+  if (mosqueListEl) mosqueListEl.textContent = t.mosqueList;
+  const legendTitle = Array.from(document.querySelectorAll('.legend > div')).find((el) => (el.textContent || '').trim().match(/Açıklama|Legend/i));
+  if (legendTitle) legendTitle.textContent = t.legend;
+}
+
 function setLang(lang, silent=false) {
   currentLang = lang === 'en' ? 'en' : 'tr';
   safeStorageSet(LANG_KEY, currentLang);
@@ -2253,8 +2477,12 @@ function setLang(lang, silent=false) {
   if (cityInput) cityInput.placeholder = t.searchPlaceholder;
   const logo = document.querySelector('.logo-title');
   if (logo) logo.textContent = t.title;
+  applyI18nStaticUi();
+  i18nProcessNodeTree(document.body);
+  ensureI18nObserver();
   document.getElementById('lang-tr')?.classList.toggle('active', currentLang==='tr');
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
+  if (typeof syncNavProxyStates === 'function') syncNavProxyStates();
   if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);
 }
@@ -4590,7 +4818,9 @@ function setVpStatus(s){
   const box=document.getElementById('live-vp-badge') || document.querySelector('.vp-status');
   dot.className='vp-dot'+(s==='loading'?' loading':s==='done'?' done':'');
   if (box) box.className=`live-vp-badge ${s==='loading'?'loading':s==='done'?'done':'idle'}`;
-  lbl.textContent=s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır';
+  lbl.textContent = currentLang === 'en'
+    ? (s==='loading'?'Live loading':s==='done'?'Live updated':'Live ready')
+    : (s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır');
 }
 function updateCacheUI(){
   const count = tileCache.size;
@@ -4599,20 +4829,20 @@ function updateCacheUI(){
   const metaEl = document.getElementById('vp-meta');
   if (metaEl) metaEl.textContent = `Cache: ${count} tile`;
 }
-function showMini(t){ document.getElementById('mini-text').textContent=t; document.getElementById('mini-loader').classList.add('show'); }
+function showMini(t){ document.getElementById('mini-text').textContent=i18nTranslateText(t); document.getElementById('mini-loader').classList.add('show'); }
 function hideMini(){ document.getElementById('mini-loader').classList.remove('show'); }
 
 function setOv(show,text='',sub=''){
   document.getElementById('overlay').style.display=show?'flex':'none';
   if(show){
-    document.getElementById('ov-text').textContent=text;
-    document.getElementById('ov-sub').textContent=sub;
+    document.getElementById('ov-text').textContent=i18nTranslateText(text);
+    document.getElementById('ov-sub').textContent=i18nTranslateText(sub);
   }
   syncSearchCancelUi();
 }
 function toast(msg,ms=5000){
   const t=document.getElementById('toast');
-  t.textContent=msg;
+  t.textContent=i18nTranslateText(msg);
   t.classList.add('show');
   if (/(hata|error||başarısız|failed)/i.test(String(msg || ''))) haptic(10);
   setTimeout(()=>t.classList.remove('show'),ms);
