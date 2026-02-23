@@ -70,6 +70,11 @@ const API_RATE = {
   nominatim: { nextAt:0, cooldown:0, minInterval:1100 },
   overpass: { nextAt:0, cooldown:0, minInterval:500 }
 };
+const GEO_CACHE_DB = 'qibla-geo-cache-v1';
+const GEO_CACHE_STORE = 'bbox';
+const GEO_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 5;
+let geoCacheDb = null;
+let geoCacheReady = false;
 
 function haptic(ms = 10) {
   try {
@@ -427,7 +432,63 @@ function loadScript(src) {
   });
 }
 
+async function initGeoCacheDb() {
+  if (geoCacheReady || !window.indexedDB) return;
+  await new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(GEO_CACHE_DB, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(GEO_CACHE_STORE)) {
+          db.createObjectStore(GEO_CACHE_STORE, { keyPath:'k' });
+        }
+      };
+      req.onsuccess = () => {
+        geoCacheDb = req.result;
+        geoCacheReady = true;
+        resolve();
+      };
+      req.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
+async function geoCacheGet(cellKey) {
+  if (!cellKey) return null;
+  await initGeoCacheDb();
+  if (!geoCacheDb) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readonly');
+      const st = tx.objectStore(GEO_CACHE_STORE);
+      const req = st.get(cellKey);
+      req.onsuccess = () => {
+        const row = req.result;
+        if (!row || !Array.isArray(row.elements)) return resolve(null);
+        if (!Number.isFinite(row.ts) || (Date.now() - row.ts) > GEO_CACHE_TTL_MS) return resolve(null);
+        resolve(row.elements);
+      };
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function geoCacheSet(cellKey, elements) {
+  if (!cellKey || !Array.isArray(elements)) return;
+  await initGeoCacheDb();
+  if (!geoCacheDb) return;
+  try {
+    const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readwrite');
+    tx.objectStore(GEO_CACHE_STORE).put({ k:cellKey, ts:Date.now(), elements });
+  } catch {}
+}
+
 async function bootstrap() {
+  initGeoCacheDb();
   loadNameEnrichCache();
   loadPopularityCache();
   loadVisitTrafficCache();
@@ -771,8 +832,18 @@ async function loadViewport(opts = {}) {
         const w = c.lng - half - pad;
         const e = c.lng + half + pad;
         try {
-          const fetchPolicy = { ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }), signal };
-          const elements = await fetchBbox(s, w, n, e, fetchPolicy);
+          let elements = await geoCacheGet(c.key);
+          if (!elements) {
+            const zoom = map?.getZoom?.() || 13;
+            const queryMode = zoom < 16 ? 'lite' : 'full';
+            const fetchPolicy = {
+              ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }),
+              signal,
+              queryMode
+            };
+            elements = await fetchBbox(s, w, n, e, fetchPolicy);
+            geoCacheSet(c.key, elements);
+          }
           processElements(elements);
           tileCache.add(c.key);
         } catch (err) {
@@ -827,7 +898,10 @@ const OVERPASS_ENDPOINTS = [
   'https://lz4.overpass-api.de/api/interpreter'
 ];
 
-function buildMosqueQuery(s,w,n,e) {
+function buildMosqueQuery(s,w,n,e, mode = 'full') {
+  const outLine = mode === 'lite'
+    ? 'out center tags qt 3000;'
+    : 'out body geom qt 3000;';
   return `[out:json][timeout:60];
 (
   way["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
@@ -849,7 +923,7 @@ function buildMosqueQuery(s,w,n,e) {
   node["mosque"](${s},${w},${n},${e});
   relation["mosque"](${s},${w},${n},${e});
 );
-out body geom qt 3000;`;
+${outLine}`;
 }
 
 async function fetchOverpassQuery(query, policy = {}) {
@@ -882,7 +956,8 @@ async function fetchOverpassQuery(query, policy = {}) {
 }
 
 async function fetchBbox(s,w,n,e,policy={}) {
-  return fetchOverpassQuery(buildMosqueQuery(s,w,n,e), policy);
+  const mode = policy.queryMode === 'lite' ? 'lite' : 'full';
+  return fetchOverpassQuery(buildMosqueQuery(s,w,n,e, mode), policy);
 }
 
 function pickBestGeocodeResult(items, name) {
@@ -971,6 +1046,33 @@ function parseDirectMosqueQuery(q) {
 async function fetchByOsmId(osmType, id, opts = {}) {
   const q = `[out:json][timeout:35];${osmType}(${id});out body geom tags center;`;
   return fetchOverpassQuery(q, { signal: opts.signal });
+}
+
+const detailHydrationInFlight = new Set();
+async function hydrateMosqueDetailOnDemand(m) {
+  if (!m || !m.id || !m.osmType) return;
+  if (m.polyCoords && m.polyCoords.length >= 4) return;
+  const key = `${m.osmType}:${m.id}`;
+  if (detailHydrationInFlight.has(key)) return;
+  detailHydrationInFlight.add(key);
+  try {
+    const items = await fetchByOsmId(m.osmType, m.id);
+    if (!Array.isArray(items) || !items.length) return;
+    const before = mosqueDB.get(m.id);
+    processElements(items);
+    const after = mosqueDB.get(m.id);
+    if (!after || !before) return;
+    const gotGeometry = !!(after.polyCoords && after.polyCoords.length >= 4);
+    if (!gotGeometry) return;
+    renderAll();
+    if (window._lastClickedMosque && String(window._lastClickedMosque.id) === String(after.id)) {
+      window._lastClickedMosque = after;
+      populateDetailPanel(after);
+    }
+  } catch {}
+  finally {
+    detailHydrationInFlight.delete(key);
+  }
 }
 
 async function fetchByWikidataQid(qid, opts = {}) {
@@ -2320,6 +2422,7 @@ function handleMosqueClick(m) {
   if (m.status === 'wrong') haptic(20);
   animateQibla(m);
   openDetailPanel(m);
+  hydrateMosqueDetailOnDemand(m);
 }
 
 function animateCounter(el, target) {
