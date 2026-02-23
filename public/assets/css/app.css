@@ -2496,3 +2496,556 @@ input[type="range"]::-moz-range-thumb {
     background: var(--surface);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PHASE 4 - MODAL / PANEL SYSTEM MODERNIZATION
+   ═══════════════════════════════════════════════════════════ */
+
+/* Backdrop */
+.exp-overlay,
+.biz-overlay,
+.lab-overlay,
+.cmps-overlay,
+.m3d-overlay,
+.lb-overlay,
+.hist-overlay,
+.cmp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: modalBackdropIn 0.2s ease-out;
+}
+
+.exp-overlay.show,
+.biz-overlay.show,
+.lab-overlay.show,
+.cmps-overlay.show,
+.m3d-overlay.show,
+.lb-overlay.show,
+.hist-overlay.show,
+.cmp-overlay.show {
+  display: flex;
+}
+
+@keyframes modalBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal Card */
+.exp-modal,
+.biz-modal,
+.lab-modal,
+.cmps-modal,
+.m3d-modal,
+.lb-modal,
+.hist-modal,
+.cmp-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  animation: modalCardIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+}
+
+.exp-modal::-webkit-scrollbar,
+.biz-modal::-webkit-scrollbar,
+.lab-modal::-webkit-scrollbar,
+.cmps-modal::-webkit-scrollbar,
+.m3d-modal::-webkit-scrollbar,
+.lb-modal::-webkit-scrollbar,
+.hist-modal::-webkit-scrollbar,
+.cmp-modal::-webkit-scrollbar {
+  width: 4px;
+}
+
+.exp-modal::-webkit-scrollbar-thumb,
+.biz-modal::-webkit-scrollbar-thumb,
+.lab-modal::-webkit-scrollbar-thumb,
+.cmps-modal::-webkit-scrollbar-thumb,
+.m3d-modal::-webkit-scrollbar-thumb,
+.lb-modal::-webkit-scrollbar-thumb,
+.hist-modal::-webkit-scrollbar-thumb,
+.cmp-modal::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+}
+
+@keyframes modalCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.exp-header,
+.biz-header,
+.lab-header,
+.cmps-header,
+.m3d-header,
+.lb-header,
+.hist-header,
+.cmp-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 3;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+}
+
+/* Modal Close Buttons */
+.exp-close,
+.biz-close,
+.lab-close,
+.cmps-close,
+.m3d-close,
+.lb-close,
+.hist-close,
+.cmp-close,
+.ks-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.exp-close:hover,
+.biz-close:hover,
+.lab-close:hover,
+.cmps-close:hover,
+.m3d-close:hover,
+.lb-close:hover,
+.hist-close:hover,
+.cmp-close:hover,
+.ks-close-btn:hover {
+  background: var(--red);
+  color: #fff;
+  border-color: var(--red);
+  transform: rotate(90deg);
+}
+
+/* Modal Content Area */
+.exp-modal > div:not(:first-child),
+.biz-modal > div:not(:first-child),
+.lab-modal > div:not(:first-child) {
+  padding: 20px 24px;
+}
+
+/* Modal Tables */
+.lb-overlay table,
+.hist-overlay table,
+.cmp-overlay table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.lb-overlay th,
+.hist-overlay th,
+.cmp-overlay th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+}
+
+.lb-overlay td,
+.hist-overlay td,
+.cmp-overlay td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+  color: var(--text);
+  transition: background var(--transition-fast);
+}
+
+.lb-overlay tr:hover td,
+.hist-overlay tr:hover td,
+.cmp-overlay tr:hover td {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.lb-overlay td:first-child,
+.hist-overlay td:first-child,
+.cmp-overlay td:first-child {
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+/* Modal Action Buttons */
+.lb-overlay button:not(.lb-close),
+.hist-overlay button:not(.hist-close),
+.cmp-overlay button:not(.cmp-close) {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.lb-overlay button:not(.lb-close):hover,
+.hist-overlay button:not(.hist-close):hover,
+.cmp-overlay button:not(.cmp-close):hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--text);
+}
+
+.lb-overlay button.active,
+.hist-overlay button.active,
+.cmp-overlay button.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Modal Form Elements */
+.lb-overlay input[type="text"],
+.hist-overlay input[type="text"],
+.cmp-overlay input[type="text"],
+.lb-overlay select,
+.cmp-overlay select {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.lb-overlay input[type="text"]:focus,
+.hist-overlay input[type="text"]:focus,
+.cmp-overlay input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.lb-overlay input::placeholder,
+.hist-overlay input::placeholder,
+.cmp-overlay input::placeholder {
+  color: var(--muted);
+}
+
+.lb-overlay select,
+.cmp-overlay select {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='rgba(255,255,255,0.5)' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* Detail Panel */
+.dp-panel {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 380px;
+  max-height: 70vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-lg);
+  z-index: 4900;
+  overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform var(--transition-smooth);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+}
+
+.dp-panel.open {
+  transform: translateY(0);
+}
+
+.dp-panel::-webkit-scrollbar { width: 4px; }
+.dp-panel::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 4px;
+}
+
+.dp-head {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  z-index: 2;
+}
+
+@media (max-width: 768px) {
+  .dp-panel {
+    width: 100%;
+    left: 0;
+    right: 0;
+    max-height: 55vh;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+}
+
+/* Export Modal Download Cards */
+.exp-modal .exp-dl-btn,
+.exp-modal button[onclick*="download"],
+.exp-modal button[onclick*="export"] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.exp-modal .exp-dl-btn:hover,
+.exp-modal button[onclick*="download"]:hover,
+.exp-modal button[onclick*="export"]:hover {
+  background: var(--accent-glow);
+  border-color: rgba(124, 58, 237, 0.3);
+  transform: translateX(4px);
+}
+
+/* Score Card Modal Family */
+.sc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 5000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.sc-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 28px;
+  min-width: 340px;
+  max-width: 420px;
+  animation: modalCardIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.sc-score-center {
+  font-size: 48px;
+  font-weight: 800;
+  color: var(--text-bright);
+  text-align: center;
+  line-height: 1;
+}
+
+.sc-city {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-bright);
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.sc-stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Leaflet Popup */
+.leaflet-popup-content-wrapper {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow-md) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  font-family: inherit !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--muted) !important;
+  font-size: 20px !important;
+  width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  top: 6px !important;
+  right: 6px !important;
+  border-radius: 50%;
+  transition: all 0.15s !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: var(--red) !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+}
+
+/* Keyboard Shortcuts */
+.ks-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 6000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ks-overlay.show {
+  display: flex;
+}
+
+.ks-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: 24px 28px;
+  max-width: 480px;
+  width: 100%;
+  animation: modalCardIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ks-overlay kbd,
+.ks-overlay code,
+.ks-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text);
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  z-index: 9999;
+  padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0;
+  transition: all var(--transition-smooth);
+  pointer-events: none;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Loading Overlay */
+.loading-overlay,
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.loading-overlay .spinner,
+.overlay .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(148, 163, 184, 0.15);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
