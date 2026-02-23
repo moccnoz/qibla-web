@@ -8533,3 +8533,27 @@ document.addEventListener('DOMContentLoaded', () => {
     mo.observe(target, { childList: true, subtree: true });
   });
 });
+
+/* ═══ DETAIL PANEL CLOSE GUARANTEE ═══ */
+document.addEventListener('click', (e) => {
+  const dpPanel = document.querySelector('.dp-panel');
+  const dpBackdrop = document.querySelector('.dp-backdrop');
+  if (!dpPanel || !dpBackdrop) return;
+  if (e.target === dpBackdrop) {
+    closeDetailPanel();
+    dpBackdrop.classList.remove('show');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const dpPanel = document.querySelector('.dp-panel');
+  const dpBackdrop = document.querySelector('.dp-backdrop');
+  if (!dpPanel || !dpBackdrop) return;
+  const openByClass = dpPanel.classList.contains('open');
+  const openByStyle = dpPanel.style.display && dpPanel.style.display !== 'none';
+  if (openByClass || openByStyle) {
+    closeDetailPanel();
+    dpBackdrop.classList.remove('show');
+  }
+});

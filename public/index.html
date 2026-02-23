@@ -449,16 +449,20 @@
   <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Doğru</div></div>
   <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Sapma</div></div>
   <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">Veri Yok</div></div>
-  <div class="map-switch" id="axis-switch">
-    <button id="axis-final" class="active" onclick="setAxisMode('final')">Final</button>
-    <button id="axis-raw" onclick="setAxisMode('raw')">Raw</button>
-    <button id="axis-interior" onclick="setAxisMode('interior')">Inside</button>
-  </div>
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
   <div class="district-pill" id="district-pill">
     <span id="district-pill-text">—</span>
     <button id="district-pill-clear" title="İlçe filtresini temizle"></button>
   </div>
+</div>
+<div class="mode-pills">
+  <div class="map-switch" id="axis-switch">
+    <button id="axis-final" class="active" onclick="setAxisMode('final')">Final</button>
+    <button id="axis-raw" onclick="setAxisMode('raw')">Raw</button>
+    <button id="axis-interior" onclick="setAxisMode('interior')">Inside</button>
+  </div>
+</div>
+<div class="tolerance-pill">
   <div class="tol">Tolerans:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
 </div>
 
