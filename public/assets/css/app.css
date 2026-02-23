@@ -1877,3 +1877,245 @@ body:not(.outdoor-mode) .dp-panel .dp-int-form input::placeholder{
 
 .hist-footer{padding:12px 22px;border-top:1px solid rgba(170,214,241,.28);font-size:10px;color:rgba(255,255,255,.50);flex-shrink:0;}
 .hist-footer code{background:#225786;padding:1px 5px;border-radius:3px;font-family:inherit;}
+
+/* ── Desktop'ta header-actions gizle (sidebar'a taşındı) ── */
+@media (min-width: 769px) {
+  .header-actions {
+    display: none !important;
+  }
+  header {
+    padding: 8px 20px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP NAV SIDEBAR
+   ═══════════════════════════════════════════════════════════ */
+.nav-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 1100;
+  transition: width var(--transition-smooth);
+  overflow: hidden;
+}
+
+/* Daraltılmış mod */
+.nav-sidebar.collapsed {
+  width: 58px;
+}
+.nav-sidebar.collapsed .ns-label,
+.nav-sidebar.collapsed .ns-group-label,
+.nav-sidebar.collapsed .ns-lang {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+.nav-sidebar.collapsed .ns-btn {
+  justify-content: center;
+  padding: 10px;
+}
+.nav-sidebar.collapsed .ns-brand {
+  justify-content: center;
+}
+.nav-sidebar.collapsed .ns-toggle .ns-icon {
+  transform: rotate(180deg);
+}
+
+/* Üst bölüm (scroll) */
+.nav-sidebar-top {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148,163,184,0.15) transparent;
+}
+.nav-sidebar-top::-webkit-scrollbar { width: 3px; }
+.nav-sidebar-top::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.15); border-radius: 3px; }
+
+/* Alt bölüm (sabit) */
+.nav-sidebar-bottom {
+  padding: 8px 10px 14px;
+  flex-shrink: 0;
+}
+
+/* Brand */
+.ns-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+.ns-brand:hover { background: rgba(255,255,255,0.05); }
+
+/* Divider */
+.ns-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 4px;
+}
+
+/* Grup Başlığı */
+.ns-group { margin-bottom: 4px; }
+.ns-group-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 8px 10px 4px;
+  transition: opacity var(--transition-smooth);
+}
+
+/* Sidebar Butonları */
+.ns-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.ns-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.ns-btn.active {
+  background: var(--accent-glow);
+  color: var(--accent-light);
+}
+
+/* İkon */
+.ns-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* Label */
+.ns-label {
+  transition: opacity var(--transition-smooth), width var(--transition-smooth);
+}
+
+/* Dil Toggle */
+.ns-lang {
+  display: flex;
+  gap: 4px;
+  padding: 4px 6px;
+  transition: opacity var(--transition-smooth);
+}
+.ns-lang-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+.ns-lang-btn:hover { color: var(--text); }
+.ns-lang-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Toggle Butonu */
+.ns-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  margin-top: 4px;
+}
+.ns-toggle:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+.ns-toggle .ns-icon {
+  transition: transform var(--transition-smooth);
+}
+
+/* Tooltip (collapsed modda) */
+.nav-sidebar.collapsed .ns-btn[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 62px;
+  background: var(--panel);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  z-index: 9999;
+  pointer-events: none;
+}
+.nav-sidebar.collapsed .ns-btn {
+  position: relative;
+}
+
+/* Mobilde sidebar gizle */
+@media (max-width: 768px) {
+  .nav-sidebar {
+    display: none;
+  }
+}
+
+/* ── Sidebar varken layout offset ── */
+@media (min-width: 769px) {
+  header {
+    margin-left: 220px;
+    transition: margin-left var(--transition-smooth);
+  }
+  .main {
+    margin-left: 220px;
+    transition: margin-left var(--transition-smooth);
+  }
+  .stats-bar {
+    margin-left: 220px;
+    transition: margin-left var(--transition-smooth);
+  }
+
+  /* Sidebar collapsed durumda */
+  body.nav-collapsed header,
+  body.nav-collapsed .main,
+  body.nav-collapsed .stats-bar {
+    margin-left: 58px;
+  }
+}

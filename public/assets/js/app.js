@@ -6769,11 +6769,48 @@ window.addEventListener('resize', syncMobileQuickBarVisibility);
 window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
 setTimeout(syncMobileQuickBarVisibility, 0);
 
+/* ═══ NAV SIDEBAR TOGGLE ═══ */
+function toggleNavSidebar() {
+  const sidebar = document.getElementById('nav-sidebar');
+  const body = document.body;
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  body.classList.toggle('nav-collapsed');
+  // Haritayı yeniden boyutlandır
+  setTimeout(() => {
+    if (window.map) window.map.invalidateSize();
+  }, 300);
+}
+
+// Başlangıçta geniş modda (opsiyonel: localStorage'dan hatırla)
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('nav-collapsed');
+  if (saved === 'true') {
+    document.getElementById('nav-sidebar')?.classList.add('collapsed');
+    document.body.classList.add('nav-collapsed');
+  }
+});
+
+// Toggle durumunu kaydet
+const _origToggle = toggleNavSidebar;
+toggleNavSidebar = function() {
+  _origToggle();
+  const isCollapsed = document.body.classList.contains('nav-collapsed');
+  localStorage.setItem('nav-collapsed', isCollapsed);
+};
+
+function syncNavSidebarLayerState(layer) {
+  document.querySelectorAll('#ns-btn-dark,#ns-btn-sat,#ns-btn-osm').forEach(b => b.classList.remove('active'));
+  const map = {dark:'ns-btn-dark', satellite:'ns-btn-sat', osm:'ns-btn-osm'};
+  document.getElementById(map[layer])?.classList.add('active');
+}
+
 // Sync mobile layer buttons with desktop
 const _origSwitchLayer = switchLayer;
 window.switchLayer = function(type) {
   _origSwitchLayer(type);
   setLayerButtonActive(type);
+  syncNavSidebarLayerState(type);
 };
 
 // ── Touch swipe to close detail panel on mobile
