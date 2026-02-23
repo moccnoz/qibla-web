@@ -2655,11 +2655,19 @@ function animateFromPopup(id) {
   setTimeout(() => handleMosqueClick(m), 80);
 }
 
-function handleMosqueClick(m) {
+function handleMosqueClick(m, source = 'map') {
   window._lastClickedMosque = m;
   document.querySelectorAll('.m-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('mi-'+m.id);
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  if (source === 'list' && map && Number.isFinite(m?.lat) && Number.isFinite(m?.lng)) {
+    const targetZoom = Math.max(map.getZoom() || 15, 16);
+    if (typeof map.flyTo === 'function') {
+      map.flyTo([m.lat, m.lng], targetZoom, { duration: 0.75, easeLinearity: 0.2 });
+    } else {
+      map.setView([m.lat, m.lng], targetZoom, { animate: true });
+    }
+  }
   if (m.status === 'wrong') haptic(20);
   pulseMosqueFocus(m);
   ensureSelectedMosqueVisibleOnMobile(m, { animate:true });
@@ -2812,7 +2820,7 @@ function updateList(visible){
             <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
             <div class="m-sub">${escHtml(getMosqueHierarchyLine(m))}</div></div>
             <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
-          div.onclick=()=>handleMosqueClick(m);
+          div.onclick=()=>handleMosqueClick(m,'list');
           frag.appendChild(div);
         });
       });
@@ -2828,7 +2836,7 @@ function updateList(visible){
         <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
         <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
         <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
-      div.onclick=()=>handleMosqueClick(m);
+      div.onclick=()=>handleMosqueClick(m,'list');
       frag.appendChild(div);
     });
   }
