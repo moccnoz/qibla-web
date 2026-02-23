@@ -977,7 +977,40 @@ body:not(.outdoor-mode) #map::after{
   }
   .mob-bottom-bar button:active{transform:translateY(1px);}
   .mob-bottom-bar button:last-child{min-width:44px;}
+  #mob-city-smart-dd{
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:calc(100% + 8px);
+    top:auto;
+    max-height:46vh;
+    border-radius:12px;
+    border:1px solid rgba(170,214,241,.36);
+    background:rgba(21,62,101,.96);
+    box-shadow:0 14px 32px rgba(0,0,0,.48);
+    z-index:1210;
+  }
+  #mob-city-smart-dd .ms-item{padding:10px 12px;}
+  #mob-city-smart-dd .ms-item-name{font-size:13px;}
+  #mob-city-smart-dd .ms-item-sub{font-size:11px;}
+
   .mob-search-row input{font-size:16px;}
+  .mob-search-row{position:relative;}
+  #mob-drawer-city-smart-dd{
+    position:absolute;
+    left:0;
+    right:0;
+    top:calc(100% + 8px);
+    max-height:42vh;
+    border-radius:12px;
+    border:1px solid rgba(170,214,241,.36);
+    background:rgba(21,62,101,.97);
+    box-shadow:0 14px 28px rgba(0,0,0,.44);
+    z-index:8100;
+  }
+  #mob-drawer-city-smart-dd .ms-item{padding:9px 11px;}
+  #mob-drawer-city-smart-dd .ms-item-name{font-size:13px;}
+  #mob-drawer-city-smart-dd .ms-item-sub{font-size:11px;}
   .dp-int-form input,.dp-int-form select{font-size:16px;}
   .ms-box input{font-size:16px;}
   header,.stats-bar,.mob-bottom-bar{touch-action:manipulation;}

@@ -3219,12 +3219,12 @@ function initTopSmartSearch() {
     const q = input.value.trim();
     cityDropdownIdx = -1;
     clearTimeout(t);
-    if (!q) { showCityFocusDropdown(); return; }
-    t = setTimeout(() => showCitySmartDropdown(q), 300);
+    if (!q) { showCityFocusDropdown({ inputEl:input, dropdownEl:dd }); return; }
+    t = setTimeout(() => showCitySmartDropdown(q, { inputEl:input, dropdownEl:dd }), 300);
   });
   input.addEventListener('focus', () => {
     const q = input.value.trim();
-    if (!q) showCityFocusDropdown();
+    if (!q) showCityFocusDropdown({ inputEl:input, dropdownEl:dd });
   });
   input.addEventListener('keydown', e => {
     if (!dd.classList.contains('show')) return;
@@ -3259,7 +3259,7 @@ function initTopSmartSearch() {
         return;
       }
       if (cityDropdownIdx < 0) {
-        const best = pickBestCitySuggestionFromDropdown(q);
+        const best = pickBestCitySuggestionFromDropdown(q, dd);
         if (best) {
           e.preventDefault();
           best.click();
@@ -3273,8 +3273,79 @@ function initTopSmartSearch() {
     }
   });
   document.addEventListener('click', e => {
-    if (!e.target.closest('.search-box')) closeCitySmartDropdown();
+    if (!e.target.closest('.search-box') && !e.target.closest('.mob-bottom-bar') && !e.target.closest('.mob-search-row')) {
+      closeCitySmartDropdown();
+    }
   });
+}
+
+function initMobileSmartSearch() {
+  const bindInput = (input, dd, submitFn) => {
+    if (!input || !dd) return;
+    let t = null;
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      cityDropdownIdx = -1;
+      clearTimeout(t);
+      if (!q) { showCityFocusDropdown({ inputEl:input, dropdownEl:dd }); return; }
+      t = setTimeout(() => showCitySmartDropdown(q, { inputEl:input, dropdownEl:dd }), 300);
+    });
+    input.addEventListener('focus', () => {
+      const q = input.value.trim();
+      if (!q) showCityFocusDropdown({ inputEl:input, dropdownEl:dd });
+    });
+    input.addEventListener('keydown', e => {
+      const items = dd.querySelectorAll('.ms-item');
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!dd.classList.contains('show') || !items.length) return;
+        e.preventDefault();
+        if (e.key === 'ArrowDown') cityDropdownIdx = Math.min(cityDropdownIdx + 1, items.length - 1);
+        else cityDropdownIdx = Math.max(cityDropdownIdx - 1, 0);
+        items.forEach((el,i) => el.classList.toggle('focused', i === cityDropdownIdx));
+        items[cityDropdownIdx]?.scrollIntoView({ block:'nearest' });
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCitySmartDropdown();
+        input.blur();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!dd.classList.contains('show') || !items.length) {
+          if (q) {
+            setCitySearchValue(q);
+            submitFn();
+          }
+          return;
+        }
+        if (!q) {
+          if (cityDropdownIdx < 0) items[0]?.click();
+          else items[cityDropdownIdx]?.click();
+          return;
+        }
+        if (isLikelyMosqueQuery(q)) {
+          setCitySearchValue(q);
+          closeCitySmartDropdown();
+          submitFn();
+          return;
+        }
+        if (cityDropdownIdx < 0 && items.length === 1) {
+          items[0]?.click();
+          return;
+        }
+        if (cityDropdownIdx < 0) {
+          const best = pickBestCitySuggestionFromDropdown(q, dd);
+          if (best) {
+            best.click();
+            return;
+          }
+        }
+        if (cityDropdownIdx >= 0) items[cityDropdownIdx]?.click();
+      }
+    });
+  };
+
+  bindInput(document.getElementById('mob-quick-city'), document.getElementById('mob-city-smart-dd'), mobQuickSearch);
+  bindInput(document.getElementById('mob-city-input'), document.getElementById('mob-drawer-city-smart-dd'), mobSearch);
 }
 
 function findMosqueByRef(osmType, osmId) {
@@ -3288,10 +3359,19 @@ function findMosqueByRef(osmType, osmId) {
   return null;
 }
 
+function setCitySearchValue(v) {
+  const val = String(v || '');
+  const desktop = document.getElementById('city-input');
+  const quick = document.getElementById('mob-quick-city');
+  const drawer = document.getElementById('mob-city-input');
+  if (desktop) desktop.value = val;
+  if (quick) quick.value = val;
+  if (drawer) drawer.value = val;
+}
+
 function selectCityHistoryEntry(rec) {
   if (!rec || !map) return;
-  const input = document.getElementById('city-input');
-  if (input) input.value = rec.query || rec.title || '';
+  setCitySearchValue(rec.query || rec.title || '');
   closeCitySmartDropdown();
   if (rec.kind === 'mosque' && rec.osmId) {
     const m = findMosqueByRef(rec.osmType, rec.osmId);
@@ -3312,9 +3392,10 @@ function selectCityHistoryEntry(rec) {
   doSearch();
 }
 
-function showCityFocusDropdown() {
-  const dd = document.getElementById('city-smart-dd');
+function showCityFocusDropdown(opts = {}) {
+  const dd = opts.dropdownEl || document.getElementById('city-smart-dd');
   if (!dd) return;
+  closeCitySmartDropdown(dd);
   cityDropdownIdx = -1;
   const history = citySearchHistory.slice(0, 8);
   const nearbyMosques = getVisibleMosques(0.1)
@@ -3332,7 +3413,14 @@ function showCityFocusDropdown() {
     const hdr = document.createElement('div');
     hdr.className = 'ms-group-hdr';
     hdr.innerHTML = `<span class="ms-group-ic">H</span>Geçmiş Aramalar
-      <button class="ms-group-act" type="button" onclick="clearCitySearchHistory();showCityFocusDropdown()">Temizle</button>`;
+      <button class="ms-group-act" type="button">Temizle</button>`;
+    const clearBtn = hdr.querySelector('.ms-group-act');
+    clearBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      clearCitySearchHistory();
+      showCityFocusDropdown({ dropdownEl:dd });
+    });
     frag.appendChild(hdr);
     history.forEach(rec => {
       const recKey = citySearchHistoryKey(rec);
@@ -3353,7 +3441,7 @@ function showCityFocusDropdown() {
         e.preventDefault();
         e.stopPropagation();
         removeCitySearchHistoryEntry(recKey);
-        showCityFocusDropdown();
+        showCityFocusDropdown({ dropdownEl:dd });
       });
       div.onclick = () => selectCityHistoryEntry(rec);
       frag.appendChild(div);
@@ -3386,8 +3474,8 @@ function showCityFocusDropdown() {
   dd.classList.add('show');
 }
 
-function pickBestCitySuggestionFromDropdown(q) {
-  const dd = document.getElementById('city-smart-dd');
+function pickBestCitySuggestionFromDropdown(q, dd = null) {
+  dd = dd || document.getElementById('city-smart-dd');
   if (!dd) return null;
   const items = [...dd.querySelectorAll('.ms-item')];
   if (!items.length) return null;
@@ -4184,10 +4272,17 @@ function showMosqueDropdown(q) {
   dropdown.classList.add('show');
 }
 
-function closeCitySmartDropdown() {
-  const dd = document.getElementById('city-smart-dd');
-  if (!dd) return;
-  dd.classList.remove('show');
+function closeCitySmartDropdown(activeDropdown = null) {
+  const list = [
+    document.getElementById('city-smart-dd'),
+    document.getElementById('mob-city-smart-dd'),
+    document.getElementById('mob-drawer-city-smart-dd')
+  ].filter(Boolean);
+  if (!list.length) return;
+  list.forEach(dd => {
+    if (activeDropdown && dd === activeDropdown) return;
+    dd.classList.remove('show');
+  });
   cityDropdownIdx = -1;
   if (citySuggestController) {
     try { citySuggestController.abort(); } catch {}
@@ -4238,7 +4333,7 @@ async function highlightPlaceBoundary(item) {
 
 function selectPlaceSuggestion(item) {
   if (!item || !map) return;
-  document.getElementById('city-input').value = item.title || '';
+  setCitySearchValue(item.title || '');
   bumpCitySearchHistory({
     query: item.title || '',
     title: item.title || '',
@@ -4288,9 +4383,11 @@ function citySuggestionIcon(kind = '', groupId = 'global') {
   return 'P';
 }
 
-async function showCitySmartDropdown(q) {
-  const dd = document.getElementById('city-smart-dd');
+async function showCitySmartDropdown(q, opts = {}) {
+  const dd = opts.dropdownEl || document.getElementById('city-smart-dd');
+  const inputEl = opts.inputEl || document.getElementById('city-input');
   if (!dd) return;
+  closeCitySmartDropdown(dd);
   if (!q || q.length < 2) { closeCitySmartDropdown(); return; }
   if (isLikelyMosqueQuery(q) && !mosqueDB.size) {
     dd.innerHTML = `<div class="ms-no-result">Önce haritadan veri yüklenmeli</div>`;
@@ -4370,16 +4467,16 @@ async function showCitySmartDropdown(q) {
   }
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24, { scopeViewportOnly:false });
   queuePopularityHydration(ranked, () => {
-    const cur = document.getElementById('city-input')?.value?.trim();
-    if (cur === q) showCitySmartDropdown(q);
+    const cur = inputEl?.value?.trim();
+    if (cur === q) showCitySmartDropdown(q, { inputEl, dropdownEl:dd });
   });
   if (!ranked.length) {
     dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
     dd.classList.add('show');
     triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal:true }).then(added => {
-      const cur = document.getElementById('city-input')?.value?.trim();
+      const cur = inputEl?.value?.trim();
       if (cur !== q || added <= 0) return;
-      showCitySmartDropdown(q);
+      showCitySmartDropdown(q, { inputEl, dropdownEl:dd });
     });
     return;
   }
@@ -4415,7 +4512,7 @@ async function showCitySmartDropdown(q) {
         </div>
         <div class="ms-item-diff" style="color:${userDistance ? 'var(--gold)' : col}">${escHtml(rightBadge)}</div>`;
       div.onclick = () => {
-        document.getElementById('city-input').value = m.name;
+        setCitySearchValue(m.name);
         closeCitySmartDropdown();
         selectMosque(m);
       };
@@ -4442,7 +4539,7 @@ function selectMosque(m) {
   });
   const dropdown = document.getElementById('ms-dropdown');
   dropdown.classList.remove('show');
-  document.getElementById('city-input').value = m.name;
+  setCitySearchValue(m.name);
   closeCitySmartDropdown();
   const targetZoom = Math.max(map.getZoom(), 17);
   mosqueFilter = '';
@@ -6739,6 +6836,7 @@ function openMobDrawer() {
 function closeMobDrawer() {
   document.getElementById('mob-drawer').classList.remove('open');
   document.getElementById('mob-backdrop').classList.remove('show');
+  closeCitySmartDropdown();
 }
 function syncMobileQuickBarVisibility() {
   const bar = document.getElementById('mob-bottom-bar');
@@ -6749,22 +6847,18 @@ function syncMobileQuickBarVisibility() {
 function mobSearch() {
   const v = document.getElementById('mob-city-input').value.trim();
   if (!v) return;
-  document.getElementById('city-input').value = v;
+  setCitySearchValue(v);
   closeMobDrawer();
   doSearch();
 }
 function mobQuickSearch() {
   const v = document.getElementById('mob-quick-city')?.value.trim();
   if (!v) return;
-  document.getElementById('city-input').value = v;
+  setCitySearchValue(v);
+  closeCitySmartDropdown();
   doSearch();
 }
-document.getElementById('mob-city-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') mobSearch();
-});
-document.getElementById('mob-quick-city')?.addEventListener('keydown', e => {
-  if (e.key === 'Enter') mobQuickSearch();
-});
+initMobileSmartSearch();
 window.addEventListener('resize', syncMobileQuickBarVisibility);
 window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
 setTimeout(syncMobileQuickBarVisibility, 0);
