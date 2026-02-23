@@ -42,7 +42,6 @@ const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
 const POPULARITY_KEY = 'qibla-popularity-v1';
 const VISIT_TRAFFIC_KEY = 'qibla-visit-traffic-v1';
 const CITY_SEARCH_HISTORY_KEY = 'qibla-city-history-v1';
-const THEME_KEY = 'qibla-theme-v10';
 const nameEnrichCache = new Map();
 const nameEnrichQueue = [];
 const nameEnrichQueued = new Set();
@@ -60,10 +59,9 @@ let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
 let userGeoState = { lat:null, lng:null, enabled:false, ts:0 };
-let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:15, liveMapCompass:false };
+let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
 let m3dState = { renderer:null, scene:null, camera:null, raf:0, obj:null };
-let reverseTapState = { busy:false, lastAt:0, seq:0 };
-const MOBILE_SHEET_SNAP = Object.freeze({ min:15, half:50, full:95 });
+const MOBILE_SHEET_SNAP = Object.freeze({ min:20, half:50, full:95 });
 let mobileSheetSnapIdx = 1;
 let mobileSheetSyncTimer = 0;
 const districtBoundaryCache = new Map();
@@ -103,35 +101,6 @@ function setUserGeoState(lat, lng, enabled = true) {
   userGeoState.enabled = !!enabled;
   userGeoState.ts = Date.now();
 }
-
-function applyThemeMode(mode = 'dark', persist = true) {
-  const normalized = String(mode || 'dark').toLowerCase() === 'light' ? 'light' : 'dark';
-  document.documentElement.classList.toggle('light-theme', normalized === 'light');
-  document.documentElement.classList.toggle('dark-theme', normalized !== 'light');
-  document.body.classList.toggle('light-theme', normalized === 'light');
-  document.body.classList.toggle('dark-theme', normalized !== 'light');
-  // Backward compatibility for previous style hooks.
-  document.documentElement.classList.toggle('light-mode', normalized === 'light');
-  document.body.classList.toggle('light-mode', normalized === 'light');
-  if (persist) safeStorageSet(THEME_KEY, normalized);
-  const btn = document.getElementById('theme-toggle-btn');
-  if (btn) {
-    const next = normalized === 'light' ? 'dark' : 'light';
-    btn.textContent = normalized === 'light' ? '☾' : '☀';
-    btn.setAttribute('aria-label', next === 'light' ? 'Açık moda geç' : 'Koyu moda geç');
-    btn.setAttribute('title', next === 'light' ? 'Açık moda geç' : 'Koyu moda geç');
-  }
-}
-
-function toggleThemeMode() {
-  const isLight =
-    document.documentElement.classList.contains('light-theme') ||
-    document.body.classList.contains('light-theme') ||
-    document.body.classList.contains('light-mode');
-  applyThemeMode(isLight ? 'dark' : 'light', true);
-}
-
-window.toggleThemeMode = toggleThemeMode;
 
 function safeStorageGet(key, fallback = null) {
   try {
@@ -542,9 +511,7 @@ async function bootstrap() {
   loadManualAxisDB();
   loadSnapshots();
   const langSaved = safeStorageGet(LANG_KEY, 'tr') || 'tr';
-  const themeSaved = safeStorageGet(THEME_KEY, 'dark') || 'dark';
   const outdoorSaved = safeStorageGet(OUTDOOR_KEY, '0');
-  applyThemeMode(themeSaved, false);
   if (String(outdoorSaved) === '1') {
     uiState.outdoor = true;
     document.body.classList.add('outdoor-mode');
@@ -630,7 +597,6 @@ function initMap() {
   map.on('click', hideQiblaPanel);
   map.on('mousemove', onDistrictMouseMove);
   map.on('click', onDistrictMapClick);
-  map.on('click', onMapReverseLookupClick);
   map.on('mouseout', () => {
     if (!districtState.enabled) return;
     districtState.hoverName = '';
@@ -787,112 +753,6 @@ function setLayerButtonActive(type) {
     targets.forEach(id => document.getElementById(id)?.classList.remove('active'));
   });
   ids.forEach(id => document.getElementById(id)?.classList.add('active'));
-}
-
-function isMosqueLikeNominatimResult(d = {}) {
-  const cls = trLower(d.class || '');
-  const typ = trLower(d.type || '');
-  const addresstype = trLower(d.addresstype || '');
-  const cat = trLower(d.category || '');
-  const nameTxt = trLower([
-    d.name || '',
-    d.display_name || '',
-    d.namedetails?.name || '',
-    d.namedetails?.['name:tr'] || '',
-    d.namedetails?.['name:en'] || '',
-    d.namedetails?.['name:ar'] || ''
-  ].join(' '));
-  if (typ === 'mosque' || addresstype === 'mosque') return true;
-  if (cls === 'amenity' && (typ === 'place_of_worship' || typ === 'mosque')) return true;
-  if (cat === 'amenity' && (typ === 'place_of_worship' || typ === 'mosque')) return true;
-  return /\b(cami|camii|mescit|mescid|mosque|masjid|džamija|dzamija)\b/.test(nameTxt);
-}
-
-function findNearestLoadedMosque(lat, lng, maxMeters = 220) {
-  if (!mosqueDB.size || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  let best = null;
-  let bestDist = Infinity;
-  for (const m of mosqueDB.values()) {
-    const d = greatCircleM(lat, lng, m.lat, m.lng);
-    if (d < bestDist) { bestDist = d; best = m; }
-  }
-  return best && bestDist <= maxMeters ? best : null;
-}
-
-async function onMapReverseLookupClick(e) {
-  if (!map || !e?.latlng) return;
-  if (districtState.enabled || manualCapture.active) return;
-  const t = e?.originalEvent?.target;
-  if (t && t.classList && t.classList.contains('leaflet-interactive')) return;
-  const now = Date.now();
-  if (reverseTapState.busy || (now - reverseTapState.lastAt) < 550) return;
-
-  reverseTapState.busy = true;
-  reverseTapState.lastAt = now;
-  const seq = ++reverseTapState.seq;
-  const lat = e.latlng.lat;
-  const lng = e.latlng.lng;
-  showMini('Nokta analizi yapılıyor...');
-
-  try {
-    const revUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=jsonv2&zoom=18&addressdetails=1&namedetails=1`;
-    const rev = await nominatimFetchJson(revUrl, { 'Accept-Language':'tr,en,ar' });
-    if (seq !== reverseTapState.seq) return;
-
-    if (!isMosqueLikeNominatimResult(rev || {})) {
-      const nearKnown = findNearestLoadedMosque(lat, lng, 250);
-      if (nearKnown) {
-        focusMapLatLng(nearKnown.lat, nearKnown.lng, Math.max(map.getZoom() || 15, 16), { duration:0.55 });
-        setTimeout(() => handleMosqueClick(nearKnown), 120);
-        toast('Bu noktada cami etiketi yok, en yakın cami açıldı', 2200);
-      } else {
-        toast('Bu noktada cami kaydı bulunamadı', 2200);
-      }
-      return;
-    }
-
-    const osmType = normalizeOsmType(rev?.osm_type || '');
-    const osmId = String(rev?.osm_id || '').replace(/\D/g, '');
-    let target = null;
-
-    if (osmType && osmId) {
-      target = findMosqueByRef(osmType, osmId);
-      if (!target) {
-        const items = await fetchByOsmId(osmType, osmId);
-        if (seq !== reverseTapState.seq) return;
-        if (Array.isArray(items) && items.length) {
-          processElements(items);
-          renderAll();
-          target = findMosqueByRef(osmType, osmId);
-        }
-      }
-    }
-
-    if (!target) target = findNearestLoadedMosque(lat, lng, 220);
-
-    if (!target) {
-      const fallback = await fetchCityFallback(lat, lng);
-      if (seq !== reverseTapState.seq) return;
-      if (Array.isArray(fallback) && fallback.length) {
-        processElements(fallback);
-        renderAll();
-        target = findNearestLoadedMosque(lat, lng, 260);
-      }
-    }
-
-    if (target) {
-      focusMapLatLng(target.lat, target.lng, Math.max(map.getZoom() || 15, 16), { duration:0.62 });
-      setTimeout(() => handleMosqueClick(target), 140);
-      toast('Harita tıklaması: cami analizi açıldı', 1800);
-    } else {
-      toast('Cami tespit edildi fakat detay verisi alınamadı', 2600);
-    }
-  } catch {
-    toast('Nokta analizi alınamadı', 2400);
-  } finally {
-    hideMini();
-    reverseTapState.busy = false;
-  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2784,55 +2644,12 @@ function animateFromPopup(id) {
   setTimeout(() => handleMosqueClick(m), 80);
 }
 
-function popMarkerForMosque(m) {
-  if (!m || !Array.isArray(renderLayers)) return;
-  for (const layer of renderLayers) {
-    if (!layer || !layer.mosque || layer.mosque.id !== m.id) continue;
-    if (typeof layer.setRadius === 'function') {
-      try {
-        layer.setRadius(7);
-        setTimeout(() => { try { layer.setRadius(5); } catch {} }, 180);
-      } catch {}
-    }
-    if (layer._path && layer._path.classList) {
-      try {
-        layer._path.classList.remove('marker-pop');
-        void layer._path.offsetWidth;
-        layer._path.classList.add('marker-pop');
-      } catch {}
-    }
-    break;
-  }
-}
-
-function getMarkerLayerByMosqueId(id) {
-  for (const layer of renderLayers) {
-    if (!layer || !layer.mosque || String(layer.mosque.id) !== String(id)) continue;
-    if (typeof layer.setRadius === 'function') return layer;
-  }
-  return null;
-}
-
-function setMarkerHoverForMosque(m, active = true) {
-  if (!m) return;
-  const layer = getMarkerLayerByMosqueId(m.id);
-  if (!layer) return;
-  try {
-    layer.setRadius(active ? 8 : 5);
-  } catch {}
-  if (layer._path?.classList) {
-    if (active) layer._path.classList.add('marker-hover');
-    else layer._path.classList.remove('marker-hover');
-  }
-}
-
 function handleMosqueClick(m) {
   window._lastClickedMosque = m;
   document.querySelectorAll('.m-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('mi-'+m.id);
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
   if (m.status === 'wrong') haptic(20);
-  popMarkerForMosque(m);
   pulseMosqueFocus(m);
   ensureSelectedMosqueVisibleOnMobile(m, { animate:true });
   animateQibla(m);
@@ -2950,53 +2767,9 @@ function rankVisibleMosquesByQuery(list, q) {
     .map(x => x.m);
 }
 
-function getNearestSuggestionMosques(limit = 3) {
-  if (!mosqueDB.size) return [];
-  const center = map?.getCenter?.();
-  const refLat = Number.isFinite(center?.lat) ? center.lat : (Number.isFinite(userGeoState.lat) ? userGeoState.lat : null);
-  const refLng = Number.isFinite(center?.lng) ? center.lng : (Number.isFinite(userGeoState.lng) ? userGeoState.lng : null);
-  if (!Number.isFinite(refLat) || !Number.isFinite(refLng)) return [];
-  return [...mosqueDB.values()]
-    .map(m => ({ m, d: greatCircleM(refLat, refLng, m.lat, m.lng) }))
-    .sort((a,b) => a.d - b.d)
-    .slice(0, Math.max(1, limit))
-    .map(x => x.m);
-}
-
-function focusSuggestedMosque(id) {
-  const m = mosqueDB.get(id) || mosqueDB.get(Number(id)) || [...mosqueDB.values()].find(x => String(x.id) === String(id));
-  if (!m) return;
-  focusMapLatLng(m.lat, m.lng, Math.max(map?.getZoom?.() || 15, 16), { duration:0.58 });
-  setTimeout(() => handleMosqueClick(m), 120);
-}
-
-window.focusSuggestedMosque = focusSuggestedMosque;
-
-function renderEmptyMosqueState(el) {
-  const nearby = getNearestSuggestionMosques(3);
-  if (!nearby.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon"></div><div>Cami bulunamadı</div></div>';
-    return;
-  }
-  const c = map?.getCenter?.() || { lat:nearby[0].lat, lng:nearby[0].lng };
-  const list = nearby.map(m => {
-    const km = (greatCircleM(c.lat, c.lng, m.lat, m.lng) / 1000).toFixed(1);
-    return `<button class="empty-suggest-item" onclick="focusSuggestedMosque('${String(m.id).replace(/'/g, '&#39;')}')">
-      <span class="empty-suggest-name">${escHtml(m.name)}</span>
-      <span class="empty-suggest-meta">${escHtml(getMosqueHierarchyLine(m))} · ~${km} km</span>
-    </button>`;
-  }).join('');
-  el.innerHTML = `<div class="empty empty-rich">
-    <div class="empty-icon"></div>
-    <div class="empty-title">Bu alanda cami bulunamadı</div>
-    <div class="empty-sub">Yakındaki camiler:</div>
-    <div class="empty-suggest-list">${list}</div>
-  </div>`;
-}
-
 function updateList(visible){
   const el=document.getElementById('mosque-list');
-  if(!visible.length){renderEmptyMosqueState(el);document.getElementById('sb-count').textContent='';return;}
+  if(!visible.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div>Cami bulunamadı</div></div>';document.getElementById('sb-count').textContent='';return;}
   document.getElementById('sb-count').textContent=visible.length;
   const hasQuery = !!(mosqueFilter && mosqueFilter.trim().length > 1);
   const sorted = hasQuery
@@ -3028,10 +2801,6 @@ function updateList(visible){
             <div class="m-sub">${escHtml(getMosqueHierarchyLine(m))}</div></div>
             <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
           div.onclick=()=>handleMosqueClick(m);
-          div.onmouseenter=()=>setMarkerHoverForMosque(m,true);
-          div.onmouseleave=()=>setMarkerHoverForMosque(m,false);
-          div.onfocus=()=>setMarkerHoverForMosque(m,true);
-          div.onblur=()=>setMarkerHoverForMosque(m,false);
           frag.appendChild(div);
         });
       });
@@ -3047,10 +2816,6 @@ function updateList(visible){
         <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
         <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
       div.onclick=()=>handleMosqueClick(m);
-      div.onmouseenter=()=>setMarkerHoverForMosque(m,true);
-      div.onmouseleave=()=>setMarkerHoverForMosque(m,false);
-      div.onfocus=()=>setMarkerHoverForMosque(m,true);
-      div.onblur=()=>setMarkerHoverForMosque(m,false);
       frag.appendChild(div);
     });
   }
@@ -3523,101 +3288,6 @@ function findMosqueByRef(osmType, osmId) {
   return null;
 }
 
-function isElementVisibleOnLayout(el) {
-  if (!el) return false;
-  const cs = getComputedStyle(el);
-  if (cs.display === 'none' || cs.visibility === 'hidden') return false;
-  const r = el.getBoundingClientRect();
-  return r.width > 0 && r.height > 0;
-}
-
-function getMapFocusPadding(extra = {}) {
-  const pad = { top: 16, right: 16, bottom: 16, left: 16 };
-  if (!map) return { ...pad, ...extra };
-
-  const header = document.querySelector('header');
-  if (isElementVisibleOnLayout(header)) pad.top += Math.round(header.getBoundingClientRect().height);
-
-  const stats = document.querySelector('.stats-bar');
-  if (isElementVisibleOnLayout(stats)) pad.top += Math.round(stats.getBoundingClientRect().height);
-
-  const floatingSearch = document.querySelector('.floating-search');
-  if (isElementVisibleOnLayout(floatingSearch)) pad.top += Math.round(floatingSearch.getBoundingClientRect().height) + 8;
-
-  if (window.innerWidth <= 768) {
-    const mobBottom = document.getElementById('mob-bottom-bar');
-    if (isElementVisibleOnLayout(mobBottom)) pad.bottom += Math.round(mobBottom.getBoundingClientRect().height) + 8;
-
-    const sheetVisible = getMobileSheetVisiblePx();
-    if (sheetVisible > 0) pad.bottom += Math.min(Math.round(sheetVisible + 12), Math.round(window.innerHeight * 0.75));
-  } else {
-    const sidebar = document.querySelector('.sidebar');
-    if (isElementVisibleOnLayout(sidebar)) pad.right += Math.round(sidebar.getBoundingClientRect().width) + 12;
-
-    const dp = document.getElementById('dp-panel');
-    if (dp?.classList.contains('open') && isElementVisibleOnLayout(dp)) {
-      pad.right += Math.round(dp.getBoundingClientRect().width) + 8;
-    }
-  }
-
-  return {
-    top: Math.max(0, Math.round(pad.top + (extra.top || 0))),
-    right: Math.max(0, Math.round(pad.right + (extra.right || 0))),
-    bottom: Math.max(0, Math.round(pad.bottom + (extra.bottom || 0))),
-    left: Math.max(0, Math.round(pad.left + (extra.left || 0)))
-  };
-}
-
-function focusMapLatLng(lat, lng, zoom, opts = {}) {
-  if (!map || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-  const targetZoom = Number.isFinite(zoom) ? zoom : (map.getZoom() || 14);
-  const pad = getMapFocusPadding(opts.padding || {});
-  const size = map.getSize();
-  const safeW = Math.max(40, size.x - pad.left - pad.right);
-  const safeH = Math.max(40, size.y - pad.top - pad.bottom);
-  const safeCenterX = pad.left + safeW / 2;
-  const safeCenterY = pad.top + safeH / 2;
-  const targetPt = map.project([lat, lng], targetZoom);
-  const centerPt = L.point(
-    targetPt.x - (safeCenterX - size.x / 2),
-    targetPt.y - (safeCenterY - size.y / 2)
-  );
-  const adjustedCenter = map.unproject(centerPt, targetZoom);
-  const animate = opts.animate !== false;
-  const duration = Number.isFinite(opts.duration) ? opts.duration : 0.62;
-
-  if (opts.fly !== false && typeof map.flyTo === 'function') {
-    map.flyTo(adjustedCenter, targetZoom, { animate, duration });
-  } else {
-    map.setView(adjustedCenter, targetZoom, { animate });
-  }
-
-  if (opts.keepVisible !== false && typeof map.panInside === 'function') {
-    const enforce = () => {
-      try {
-        map.panInside([lat, lng], {
-          paddingTopLeft: L.point(Math.max(0, pad.left - 6), Math.max(0, pad.top - 6)),
-          paddingBottomRight: L.point(Math.max(0, pad.right - 6), Math.max(0, pad.bottom - 6)),
-          animate: false
-        });
-      } catch {}
-    };
-    map.once('moveend', enforce);
-    setTimeout(enforce, Math.round(duration * 1000) + 90);
-  }
-}
-
-function fitBoundsWithUiPadding(bounds, opts = {}) {
-  if (!map || !bounds) return;
-  const pad = getMapFocusPadding(opts.padding || {});
-  map.fitBounds(bounds, {
-    paddingTopLeft: [pad.left, pad.top],
-    paddingBottomRight: [pad.right, pad.bottom],
-    animate: opts.animate !== false,
-    maxZoom: opts.maxZoom
-  });
-}
-
 function selectCityHistoryEntry(rec) {
   if (!rec || !map) return;
   const input = document.getElementById('city-input');
@@ -3631,7 +3301,7 @@ function selectCityHistoryEntry(rec) {
     }
   }
   if (Number.isFinite(rec.lat) && Number.isFinite(rec.lng)) {
-    focusMapLatLng(rec.lat, rec.lng, rec.kind === 'mosque' ? Math.max(map.getZoom() || 15, 16) : 14, { duration:0.6 });
+    map.flyTo([rec.lat, rec.lng], rec.kind === 'mosque' ? Math.max(map.getZoom() || 15, 16) : 14, { duration:0.6 });
     map.once('moveend', () => scheduleViewportLoad(80));
     if (rec.kind !== 'mosque' && rec.bbox && rec.bbox.every(Number.isFinite)) {
       highlightPlaceBoundary(rec);
@@ -4561,7 +4231,7 @@ async function highlightPlaceBoundary(item) {
     }).addTo(map);
     try {
       const b = placeBoundaryLayer.getBounds?.();
-      if (b?.isValid?.()) fitBoundsWithUiPadding(b.pad(0.12));
+      if (b?.isValid?.()) map.fitBounds(b.pad(0.12));
     } catch {}
   } catch {}
 }
@@ -4585,10 +4255,10 @@ function selectPlaceSuggestion(item) {
   const zoom = isMosque ? 17 : 14;
   if (Array.isArray(item.bbox) && item.bbox.length === 4 && item.bbox.every(Number.isFinite) && !isMosque) {
     const s = item.bbox[0], n = item.bbox[1], w = item.bbox[2], e = item.bbox[3];
-    if (Math.abs(n - s) > 0.001 && Math.abs(e - w) > 0.001) fitBoundsWithUiPadding([[s, w], [n, e]]);
-    else focusMapLatLng(item.lat, item.lng, zoom, { duration:0.6 });
+    if (Math.abs(n - s) > 0.001 && Math.abs(e - w) > 0.001) map.fitBounds([[s, w], [n, e]]);
+    else map.flyTo([item.lat, item.lng], zoom, { duration:0.6 });
   } else {
-    focusMapLatLng(item.lat, item.lng, zoom, { duration:0.6 });
+    map.flyTo([item.lat, item.lng], zoom, { duration:0.6 });
   }
   map.once('moveend', () => scheduleViewportLoad(80));
   if (isMosque) {
@@ -4781,7 +4451,8 @@ function selectMosque(m) {
     scheduleViewportLoad(80);
     setTimeout(() => handleMosqueClick(m), 120);
   });
-  focusMapLatLng(m.lat, m.lng, targetZoom, { duration:0.65 });
+  if (typeof map.flyTo === 'function') map.flyTo([m.lat, m.lng], targetZoom, { duration:0.65 });
+  else map.setView([m.lat, m.lng], targetZoom, { animate:true });
 }
 
 // Filter the sidebar list + show banner
@@ -4989,7 +4660,7 @@ async function doSearch(){
       processElements(items || []);
       if (mosqueDB.size) {
         const first = [...mosqueDB.values()][0];
-        focusMapLatLng(first.lat, first.lng, 18, { fly:false });
+        map.setView([first.lat, first.lng], 18);
         renderAll();
         triggerAggressiveNameEnrichment();
         setTimeout(() => handleMosqueClick(first), 120);
@@ -5015,13 +4686,13 @@ async function doSearch(){
     });
     currentCity = v;
     if (mosqueMode) {
-      focusMapLatLng(loc.lat, loc.lng, 17, { fly:false });
+      map.setView([loc.lat,loc.lng], 17);
     } else if (loc.bbox && loc.bbox.length === 4 && loc.bbox.every(Number.isFinite)) {
       const s = loc.bbox[0], n = loc.bbox[1], w = loc.bbox[2], e = loc.bbox[3];
-      if (Math.abs(n-s) > 0.001 && Math.abs(e-w) > 0.001) fitBoundsWithUiPadding([[s,w],[n,e]]);
-      else focusMapLatLng(loc.lat, loc.lng, 14, { fly:false });
+      if (Math.abs(n-s) > 0.001 && Math.abs(e-w) > 0.001) map.fitBounds([[s,w],[n,e]]);
+      else map.setView([loc.lat,loc.lng],14);
     } else {
-      focusMapLatLng(loc.lat, loc.lng, 14, { fly:false });
+      map.setView([loc.lat,loc.lng],14);
     }
     searchAreaAnchor = { lat:loc.lat, lng:loc.lng };
     hideSearchAreaButton();
@@ -5065,7 +4736,7 @@ async function doSearch(){
     if (mosqueMode && mosqueDB.size) {
       const best = findBestMosqueByName(v);
       if (best) {
-        focusMapLatLng(best.lat, best.lng, Math.max(map.getZoom(), 17));
+        map.setView([best.lat, best.lng], Math.max(map.getZoom(), 17), {animate:true});
         setTimeout(() => handleMosqueClick(best), 140);
       }
     }
@@ -5158,7 +4829,7 @@ async function useMyLocation(opts = {}){
     }
     if(!map) return false;
     setUserGeoState(pos.coords.latitude, pos.coords.longitude, true);
-    focusMapLatLng(pos.coords.latitude, pos.coords.longitude, zoom, { fly:false });
+    map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
     tileCache.clear(); mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
     updateCacheUI();
@@ -6455,7 +6126,7 @@ function renderHistList() {
 function focusAndAnimate(lat, lng, id) {
   const m = mosqueDB.get(id) || [...mosqueDB.values()].find(x=>String(x.id)===String(id));
   if (!m) return;
-  focusMapLatLng(lat, lng, 17);
+  map.setView([lat, lng], 17, {animate:true});
   handleMosqueClick(m);
 }
 
@@ -7858,7 +7529,7 @@ function focusMosqueOnMap() {
   const m = window._lastClickedMosque;
   if (!m || !map) return;
   closeDetailPanel();
-  focusMapLatLng(m.lat, m.lng, Math.max(map.getZoom() || 15, 16), { duration: 0.7 });
+  map.flyTo([m.lat, m.lng], Math.max(map.getZoom() || 15, 16), { duration: 0.7 });
   setTimeout(() => {
     const marker = renderLayers.find(layer => layer?.mosque?.id == m.id);
     if (marker?.openPopup) marker.openPopup();
@@ -8594,7 +8265,7 @@ function regionLabel(r) {
 function lbGoCity(cityEnc, lat, lng) {
   const city = decodeURIComponent(cityEnc);
   if (lat && lng) {
-    focusMapLatLng(+lat, +lng, 13);
+    map.setView([+lat, +lng], 13, {animate:true});
   }
   closeLeaderboard();
   document.getElementById('city-input').value = city;
