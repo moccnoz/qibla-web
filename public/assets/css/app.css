@@ -5887,6 +5887,22 @@ body:not(.outdoor-mode) #map::after {
 /* Mobile Parity Guard: keep latest desktop-aligned dark-blue behavior as final override */
 @media (max-width: 768px) {
   #map { --mobile-top-hud: 72px; }
+  .sidebar {
+    display:block !important;
+    z-index:2170 !important;
+    background:linear-gradient(180deg, rgba(22,71,115,.98), rgba(20,62,101,.96)) !important;
+    border-top:1px solid rgba(170,214,241,.32) !important;
+    box-shadow:0 -12px 34px rgba(5,18,34,.45) !important;
+  }
+  .sidebar[data-snap="half"] .ms-wrap,
+  .sidebar[data-snap="half"] .ms-filter-banner,
+  .sidebar[data-snap="half"] .mosque-list,
+  .sidebar[data-snap="half"] .legend {
+    display:block !important;
+  }
+  .sidebar[data-snap="half"] #sb-pull-indicator {
+    display:none !important;
+  }
   body:not(.outdoor-mode) {
     background:#164773 !important;
   }
@@ -6131,19 +6147,24 @@ body:not(.outdoor-mode) #map::after {
     right:10px !important;
     gap:8px !important;
   }
+  .compass-fab {
+    display:none !important;
+  }
   .map-fab {
     right:10px !important;
-    bottom:calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    bottom:calc(var(--mobile-sheet-offset, 90px) + env(safe-area-inset-bottom, 0px) + 8px) !important;
     gap:8px !important;
+    z-index:2195 !important;
   }
   .map-fab-btn,
   .map-fab-btn.secondary {
-    width:44px !important;
-    height:44px !important;
-    border-radius:12px !important;
+    width:42px !important;
+    height:42px !important;
+    border-radius:50% !important;
     background:rgba(21,62,101,.84) !important;
     border:1px solid rgba(170,214,241,.34) !important;
     color:rgba(255,255,255,.72) !important;
+    font-size:17px !important;
     box-shadow:0 10px 22px rgba(5,18,34,.32) !important;
   }
   .map-fab-btn:hover,

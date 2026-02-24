@@ -5515,10 +5515,13 @@ function initSidebarSnapSheet() {
   if (!sb || !head) return;
   const snaps = [MOBILE_SHEET_SNAP.min, MOBILE_SHEET_SNAP.half, MOBILE_SHEET_SNAP.full];
   mobileSheetSnapIdx = Math.max(0, Math.min(snaps.length - 1, mobileSheetSnapIdx));
+  if (window.innerWidth <= 768 && mobileSheetSnapIdx < 1) mobileSheetSnapIdx = 1;
   setSidebarSnap(snaps[mobileSheetSnapIdx]);
   head.onclick = () => {
     if (window.innerWidth > 768) return;
-    mobileSheetSnapIdx = (mobileSheetSnapIdx + 1) % snaps.length;
+    // Tap should keep the list usable: toggle between half/full, skip min.
+    if (mobileSheetSnapIdx >= 2) mobileSheetSnapIdx = 1;
+    else mobileSheetSnapIdx = 2;
     setSidebarSnap(snaps[mobileSheetSnapIdx]);
   };
   let sy = 0;
