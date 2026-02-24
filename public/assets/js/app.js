@@ -3539,16 +3539,18 @@ function initMobileSmartSearch() {
   const bindInput = (input, dd, submitFn) => {
     if (!input || !dd) return;
     let t = null;
+    const onSelect = input.id === 'mob-city-input' ? () => closeMobDrawer() : null;
     input.addEventListener('input', () => {
       const q = input.value.trim();
+      setCitySearchValue(q);
       cityDropdownIdx = -1;
       clearTimeout(t);
-      if (!q) { showCityFocusDropdown({ inputEl:input, dropdownEl:dd }); return; }
-      t = setTimeout(() => showCitySmartDropdown(q, { inputEl:input, dropdownEl:dd }), 300);
+      if (!q) { showCityFocusDropdown({ inputEl:input, dropdownEl:dd, onSelect }); return; }
+      t = setTimeout(() => showCitySmartDropdown(q, { inputEl:input, dropdownEl:dd, onSelect }), 300);
     });
     input.addEventListener('focus', () => {
       const q = input.value.trim();
-      if (!q) showCityFocusDropdown({ inputEl:input, dropdownEl:dd });
+      if (!q) showCityFocusDropdown({ inputEl:input, dropdownEl:dd, onSelect });
     });
     input.addEventListener('keydown', e => {
       const items = dd.querySelectorAll('.ms-item');
@@ -3650,6 +3652,7 @@ function selectCityHistoryEntry(rec) {
 
 function showCityFocusDropdown(opts = {}) {
   const dd = opts.dropdownEl || document.getElementById('city-smart-dd');
+  const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : null;
   if (!dd) return;
   closeCitySmartDropdown(dd);
   cityDropdownIdx = -1;
@@ -3699,7 +3702,10 @@ function showCityFocusDropdown(opts = {}) {
         removeCitySearchHistoryEntry(recKey);
         showCityFocusDropdown({ dropdownEl:dd });
       });
-      div.onclick = () => selectCityHistoryEntry(rec);
+      div.onclick = () => {
+        selectCityHistoryEntry(rec);
+        if (onSelect) onSelect(rec);
+      };
       frag.appendChild(div);
     });
   }
@@ -3721,7 +3727,10 @@ function showCityFocusDropdown(opts = {}) {
           <div class="ms-item-sub">${escHtml(getMosqueHierarchyLine(m))}</div>
         </div>
         <div class="ms-item-diff" style="color:var(--gold)">${escHtml(dist || 'yakın')}</div>`;
-      div.onclick = () => selectMosque(m);
+      div.onclick = () => {
+        selectMosque(m);
+        if (onSelect) onSelect(m);
+      };
       frag.appendChild(div);
     });
   }
@@ -4651,6 +4660,7 @@ function citySuggestionIcon(kind = '', groupId = 'global') {
 async function showCitySmartDropdown(q, opts = {}) {
   const dd = opts.dropdownEl || document.getElementById('city-smart-dd');
   const inputEl = opts.inputEl || document.getElementById('city-input');
+  const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : null;
   if (!dd) return;
   closeCitySmartDropdown(dd);
   if (!q || q.length < 2) { closeCitySmartDropdown(); return; }
@@ -4721,7 +4731,10 @@ async function showCitySmartDropdown(q, opts = {}) {
             <div class="ms-item-sub">${escHtml(it.subtitle || '')}</div>
           </div>
           <div class="ms-item-diff" style="color:var(--gold)">${escHtml(rightBadge)}</div>`;
-        div.onclick = () => selectPlaceSuggestion(it);
+        div.onclick = () => {
+          selectPlaceSuggestion(it);
+          if (onSelect) onSelect(it);
+        };
         frag.appendChild(div);
       });
     });
@@ -4733,7 +4746,7 @@ async function showCitySmartDropdown(q, opts = {}) {
   const { ranked, qNorm, bounds } = rankMosqueCandidates(q, 24, { scopeViewportOnly:false });
   queuePopularityHydration(ranked, () => {
     const cur = inputEl?.value?.trim();
-    if (cur === q) showCitySmartDropdown(q, { inputEl, dropdownEl:dd });
+    if (cur === q) showCitySmartDropdown(q, { inputEl, dropdownEl:dd, onSelect });
   });
   if (!ranked.length) {
     dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
@@ -4741,7 +4754,7 @@ async function showCitySmartDropdown(q, opts = {}) {
     triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal:true }).then(added => {
       const cur = inputEl?.value?.trim();
       if (cur !== q || added <= 0) return;
-      showCitySmartDropdown(q, { inputEl, dropdownEl:dd });
+      showCitySmartDropdown(q, { inputEl, dropdownEl:dd, onSelect });
     });
     return;
   }
@@ -4780,6 +4793,7 @@ async function showCitySmartDropdown(q, opts = {}) {
         setCitySearchValue(m.name);
         closeCitySmartDropdown();
         selectMosque(m);
+        if (onSelect) onSelect(m);
       };
       frag.appendChild(div);
     });
