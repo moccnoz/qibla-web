@@ -243,12 +243,16 @@ header {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent), #6d28d9);
-  border: none;
-  box-shadow: 0 0 16px var(--accent-glow);
+  background: transparent;
+  border: 1px solid rgba(170,214,241,.30);
+  box-shadow: 0 6px 14px rgba(5,18,34,.28);
+}
+.logo-q img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  border-radius:inherit;
 }
 .logo-title{font-size:17px;font-weight:700;letter-spacing:.01em;}
 .logo-sub{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:.16em;text-transform:uppercase;}
@@ -902,6 +906,13 @@ body:not(.outdoor-mode) #map::after {
   width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;
   border:1px solid rgba(170,214,241,.32);border-radius:8px;font-size:11px;color:rgba(255,255,255,.7);
 }
+.mob-brand-icon img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+  border-radius:inherit;
+}
 .mob-drawer-close{
   width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
   background:rgba(21,62,101,.72);border:1px solid rgba(170,214,241,.28);border-radius:12px;
@@ -1087,6 +1098,13 @@ body:not(.outdoor-mode) #map::after {
     font-weight:700;
     cursor:pointer;
     flex-shrink:0;
+  }
+  .mob-pill-logo img{
+    width:100%;
+    height:100%;
+    display:block;
+    object-fit:contain;
+    border-radius:inherit;
   }
   .mob-pill-menu{
     display:inline-flex;
@@ -4132,15 +4150,12 @@ header,
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  font-size: 16px;
-  font-weight: 800;
-  color: #fff;
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.3);
-  border: none;
+  background: transparent;
+  border: 1px solid rgba(170,214,241,.30);
+  box-shadow: 0 6px 14px rgba(5,18,34,.28);
 }
 
 .ns-divider {

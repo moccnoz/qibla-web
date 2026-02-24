@@ -5,6 +5,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://overpass-api.de https://overpass.kumi.systems https://lz4.overpass-api.de https://nominatim.openstreetmap.org https://commons.wikimedia.org https://*.wikipedia.org https://www.wikidata.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self';">
 <title>Kıble Dedektörü</title>
+<meta name="description" content="Kıble Dedektörü — bina yönü analizi ve cami kıble doğruluk haritası">
+<link rel="canonical" href="https://qible.app/">
+<link rel="icon" type="image/svg+xml" href="/assets/img/qible.svg">
+<link rel="apple-touch-icon" href="/assets/img/qible.svg">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Qible">
+<meta property="og:title" content="Kıble Dedektörü">
+<meta property="og:description" content="Bina yönü analizi ve cami kıble doğruluk haritası">
+<meta property="og:url" content="https://qible.app/">
+<meta property="og:image" content="https://qible.app/assets/img/qible.svg">
+<meta property="og:image" content="https://www.qible.app/assets/img/qible.svg">
+<meta property="og:image:secure_url" content="https://qible.app/assets/img/qible.svg">
+<meta property="og:image:type" content="image/svg+xml">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kıble Dedektörü">
+<meta name="twitter:description" content="Bina yönü analizi ve cami kıble doğruluk haritası">
+<meta name="twitter:image" content="https://qible.app/assets/img/qible.svg">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +35,7 @@
 
 <header>
   <div class="brand-home" role="button" tabindex="0" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome();}">
-    <div class="logo-q">Q</div>
+    <div class="logo-q"><img src="/assets/img/qible.svg" alt="Qible logo"></div>
     <div>
       <div class="logo-title">Kıble Dedektörü</div>
       <div class="logo-sub">Bina Yönü Analizi</div>
@@ -75,7 +92,7 @@
   <div class="nav-sidebar-top">
     <!-- Logo -->
     <div class="ns-brand" role="button" tabindex="0" onclick="resetToHome()" title="Ana Sayfa">
-      <div class="logo-q">Q</div>
+      <div class="logo-q"><img src="/assets/img/qible.svg" alt="Qible logo"></div>
     </div>
     <div class="ns-divider"></div>
 
@@ -190,7 +207,7 @@
   <div class="mob-drawer-shell">
     <div class="mob-drawer-head">
       <div class="mob-brand-chip">
-        <span class="mob-brand-icon">◉</span>
+        <span class="mob-brand-icon"><img src="/assets/img/qible.svg" alt="Qible logo"></span>
         <span>Kıble Dedektörü</span>
       </div>
       <button class="mob-drawer-close" onclick="closeMobDrawer()">×</button>
@@ -480,7 +497,7 @@
   <div id="map">
     <div class="floating-search">
       <div class="search-box">
-        <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()">Q</button>
+        <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()"><img src="/assets/img/qible.svg" alt="Qible logo"></button>
         <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
         <datalist id="city-suggest-list"></datalist>
         <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
