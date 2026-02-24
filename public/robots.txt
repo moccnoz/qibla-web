@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Primary host
+Host: qible.app
+
+# Sitemap
+Sitemap: https://qible.app/sitemap.xml
