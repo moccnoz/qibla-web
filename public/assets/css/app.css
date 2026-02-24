@@ -1090,8 +1090,8 @@ body:not(.outdoor-mode) #map::after {
     width:38px;
     height:38px;
     border-radius:999px;
-    border:1px solid rgba(170,214,241,.34);
-    background:rgba(21,62,101,.84);
+    border:none;
+    background:transparent;
     color:#f1c96f;
     font-family:inherit;
     font-size:17px;
@@ -1100,11 +1100,11 @@ body:not(.outdoor-mode) #map::after {
     flex-shrink:0;
   }
   .mob-pill-logo img{
-    width:100%;
-    height:100%;
+    width:30px;
+    height:30px;
     display:block;
     object-fit:contain;
-    border-radius:inherit;
+    border-radius:8px;
   }
   .mob-pill-menu{
     display:inline-flex;
@@ -4147,6 +4147,27 @@ header,
 }
 .ns-brand:hover { background: transparent !important; }
 
+.ns-brand-text{
+  padding: 0 8px 8px;
+  text-align:center;
+  cursor:pointer;
+}
+.ns-brand-title{
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:.01em;
+  color:rgba(255,255,255,.90);
+  line-height:1.15;
+}
+.ns-brand-sub{
+  margin-top:2px;
+  font-size:10px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.52);
+  line-height:1.2;
+}
+
 .ns-brand .logo-q {
   width: 34px;
   height: 34px;
@@ -4157,6 +4178,10 @@ header,
   background: transparent;
   border: none;
   box-shadow: none;
+}
+
+.nav-sidebar.collapsed .ns-brand-text{
+  display:none;
 }
 
 .ns-divider {
@@ -5997,7 +6022,20 @@ body:not(.outdoor-mode) #map::after {
   body:not(.outdoor-mode) .mob-drawer .mob-drawer-close::before {
     content:none !important;
   }
-  body:not(.outdoor-mode) .floating-search .mob-pill-logo,
+  body:not(.outdoor-mode) .floating-search .mob-pill-logo {
+    background:transparent !important;
+    border:none !important;
+    color:#f1c96f !important;
+    width:40px !important;
+    height:40px !important;
+    border-radius:0 !important;
+    padding:0 !important;
+  }
+  body:not(.outdoor-mode) .floating-search .mob-pill-logo img {
+    width:30px !important;
+    height:30px !important;
+    border-radius:8px !important;
+  }
   body:not(.outdoor-mode) .floating-search .mob-pill-menu {
     background:rgba(21,62,101,.84) !important;
     border:1px solid rgba(170,214,241,.34) !important;
@@ -6005,9 +6043,6 @@ body:not(.outdoor-mode) #map::after {
     width:40px !important;
     height:40px !important;
     border-radius:11px !important;
-  }
-  body:not(.outdoor-mode) .floating-search .mob-pill-logo {
-    color:#f1c96f !important;
   }
   body:not(.outdoor-mode) .mob-drawer {
     background:linear-gradient(170deg, rgba(22,71,115,.98), rgba(29,86,132,.96)) !important;
