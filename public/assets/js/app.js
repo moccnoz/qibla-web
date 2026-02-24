@@ -7123,6 +7123,28 @@ function syncMobileQuickBarVisibility() {
   const mobileLike = (window.innerWidth <= 900) && (window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768);
   bar.style.display = mobileLike ? 'flex' : 'none';
 }
+function syncMobileTopHudLayout() {
+  const mapEl = document.getElementById('map');
+  const fs = document.querySelector('.floating-search');
+  if (!mapEl || !fs) return;
+  if (window.innerWidth > 768) {
+    mapEl.style.removeProperty('--mobile-top-hud');
+    return;
+  }
+  const r = fs.getBoundingClientRect();
+  const top = Math.max(68, Math.round(r.bottom + 8));
+  mapEl.style.setProperty('--mobile-top-hud', `${top}px`);
+}
+function initMobileTopHudSync() {
+  const fs = document.querySelector('.floating-search');
+  if (!fs || initMobileTopHudSync._inited) return;
+  initMobileTopHudSync._inited = true;
+  if (window.ResizeObserver) {
+    const ro = new ResizeObserver(() => syncMobileTopHudLayout());
+    ro.observe(fs);
+  }
+  setTimeout(syncMobileTopHudLayout, 0);
+}
 function mobSearch() {
   const v = document.getElementById('mob-city-input').value.trim();
   if (!v) return;
@@ -7140,7 +7162,11 @@ function mobQuickSearch() {
 initMobileSmartSearch();
 window.addEventListener('resize', syncMobileQuickBarVisibility);
 window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
+window.addEventListener('resize', syncMobileTopHudLayout);
+window.addEventListener('orientationchange', () => setTimeout(syncMobileTopHudLayout, 140));
 setTimeout(syncMobileQuickBarVisibility, 0);
+setTimeout(syncMobileTopHudLayout, 0);
+initMobileTopHudSync();
 
 /* ═══ NAV SIDEBAR TOGGLE ═══ */
 function toggleNavSidebar() {
