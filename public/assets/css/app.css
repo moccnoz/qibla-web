@@ -5942,6 +5942,14 @@ body:not(.outdoor-mode) #map::after {
   body:not(.outdoor-mode) .floating-search #search-btn::before {
     content:none !important;
   }
+  body:not(.outdoor-mode) .floating-search .btn::before,
+  body:not(.outdoor-mode) .floating-search .btn-sm::before,
+  body:not(.outdoor-mode) .stats-bar .btn::before,
+  body:not(.outdoor-mode) .stats-bar .btn-sm::before,
+  body:not(.outdoor-mode) .mob-drawer-foot .mob-lang-btn::before,
+  body:not(.outdoor-mode) .mob-drawer .mob-drawer-close::before {
+    content:none !important;
+  }
   body:not(.outdoor-mode) .floating-search .mob-pill-logo,
   body:not(.outdoor-mode) .floating-search .mob-pill-menu {
     background:rgba(21,62,101,.84) !important;
@@ -6021,6 +6029,25 @@ body:not(.outdoor-mode) #map::after {
   }
   body:not(.outdoor-mode) .mob-drawer .mob-search-row button::before {
     content:none !important;
+  }
+  body:not(.outdoor-mode) .mob-drawer .mob-search-icon {
+    background:rgba(31,83,127,.78) !important;
+    color:rgba(255,255,255,.62) !important;
+    border:1px solid rgba(170,214,241,.24) !important;
+  }
+  body:not(.outdoor-mode) .mob-drawer .mob-search-row button {
+    background:rgba(201,168,76,.24) !important;
+    border:1px solid rgba(201,168,76,.46) !important;
+    color:#f1c96f !important;
+    border-radius:10px !important;
+    min-height:34px !important;
+    padding:0 12px !important;
+  }
+  body:not(.outdoor-mode) .mob-drawer .mob-search-row input {
+    color:rgba(255,255,255,.84) !important;
+  }
+  body:not(.outdoor-mode) .mob-drawer .mob-search-row input::placeholder {
+    color:rgba(255,255,255,.50) !important;
   }
   #city-smart-dd,
   #mob-city-smart-dd,
