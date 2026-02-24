@@ -5890,6 +5890,38 @@ body:not(.outdoor-mode) #map::after {
   body:not(.outdoor-mode) {
     background:#164773 !important;
   }
+  body:not(.outdoor-mode) .main {
+    position:fixed !important;
+    inset:0 !important;
+    margin:0 !important;
+    padding:0 !important;
+    background:transparent !important;
+  }
+  body:not(.outdoor-mode) #map {
+    position:absolute !important;
+    inset:0 !important;
+    border:0 !important;
+    border-radius:0 !important;
+    box-shadow:none !important;
+  }
+  body:not(.outdoor-mode) .stats-bar {
+    background:linear-gradient(160deg, rgba(22,71,115,.92), rgba(31,84,128,.88)) !important;
+    border:1px solid rgba(170,214,241,.34) !important;
+    box-shadow:0 10px 24px rgba(5,18,34,.30) !important;
+  }
+  body:not(.outdoor-mode) .stats-bar .stat {
+    background:rgba(21,62,101,.72) !important;
+    border:1px solid rgba(170,214,241,.30) !important;
+    color:rgba(255,255,255,.72) !important;
+  }
+  body:not(.outdoor-mode) .stats-bar .stat-num {
+    color:rgba(255,255,255,.88) !important;
+  }
+  body:not(.outdoor-mode) .stats-bar .stat-lbl,
+  body:not(.outdoor-mode) .stats-bar .cache-info,
+  body:not(.outdoor-mode) .stats-bar .district-pill {
+    color:rgba(255,255,255,.52) !important;
+  }
   body:not(.outdoor-mode) .floating-search {
     z-index:2300 !important;
     background:linear-gradient(160deg, rgba(22,71,115,.94), rgba(33,97,146,.9)) !important;
