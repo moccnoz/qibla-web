@@ -3654,6 +3654,7 @@ function showCityFocusDropdown(opts = {}) {
   const dd = opts.dropdownEl || document.getElementById('city-smart-dd');
   const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : null;
   if (!dd) return;
+  syncMobileSearchDropdownAnchors();
   closeCitySmartDropdown(dd);
   cityDropdownIdx = -1;
   const history = citySearchHistory.slice(0, 8);
@@ -4662,6 +4663,7 @@ async function showCitySmartDropdown(q, opts = {}) {
   const inputEl = opts.inputEl || document.getElementById('city-input');
   const onSelect = typeof opts.onSelect === 'function' ? opts.onSelect : null;
   if (!dd) return;
+  syncMobileSearchDropdownAnchors();
   closeCitySmartDropdown(dd);
   if (!q || q.length < 2) { closeCitySmartDropdown(); return; }
   if (isLikelyMosqueQuery(q) && !mosqueDB.size) {
@@ -7111,6 +7113,7 @@ function ksOverlayClick(e) {
 function openMobDrawer() {
   document.getElementById('mob-drawer').classList.add('open');
   document.getElementById('mob-backdrop').classList.add('show');
+  setTimeout(syncMobileSearchDropdownAnchors, 0);
 }
 function closeMobDrawer() {
   document.getElementById('mob-drawer').classList.remove('open');
@@ -7134,6 +7137,51 @@ function syncMobileTopHudLayout() {
   const r = fs.getBoundingClientRect();
   const top = Math.max(68, Math.round(r.bottom + 8));
   mapEl.style.setProperty('--mobile-top-hud', `${top}px`);
+}
+function syncMobileSearchDropdownAnchors() {
+  const root = document.documentElement;
+  if (!root) return;
+  if (window.innerWidth > 768) {
+    root.style.removeProperty('--mob-search-dd-left');
+    root.style.removeProperty('--mob-search-dd-width');
+    root.style.removeProperty('--mob-search-dd-top');
+    root.style.removeProperty('--mob-quick-dd-left');
+    root.style.removeProperty('--mob-quick-dd-width');
+    root.style.removeProperty('--mob-quick-dd-bottom');
+    root.style.removeProperty('--mob-drawer-dd-left');
+    root.style.removeProperty('--mob-drawer-dd-width');
+    root.style.removeProperty('--mob-drawer-dd-top');
+    return;
+  }
+
+  const vvTop = Math.max(0, Math.round(window.visualViewport?.offsetTop || 0));
+  const vvHeight = Math.round(window.visualViewport?.height || window.innerHeight || 0);
+  root.style.setProperty('--mob-vv-top', `${vvTop}px`);
+  root.style.setProperty('--mob-vv-height', `${vvHeight}px`);
+
+  const desktopSearch = document.querySelector('.floating-search .search-box');
+  if (desktopSearch) {
+    const r = desktopSearch.getBoundingClientRect();
+    root.style.setProperty('--mob-search-dd-left', `${Math.round(r.left)}px`);
+    root.style.setProperty('--mob-search-dd-width', `${Math.round(r.width)}px`);
+    root.style.setProperty('--mob-search-dd-top', `${Math.round(r.bottom + 8)}px`);
+  }
+
+  const quickBar = document.getElementById('mob-bottom-bar');
+  if (quickBar) {
+    const r = quickBar.getBoundingClientRect();
+    root.style.setProperty('--mob-quick-dd-left', `${Math.round(r.left)}px`);
+    root.style.setProperty('--mob-quick-dd-width', `${Math.round(r.width)}px`);
+    root.style.setProperty('--mob-quick-dd-bottom', `${Math.round(window.innerHeight - r.top + 8)}px`);
+  }
+
+  const drawerSearch = document.querySelector('#mob-drawer .mob-search-row');
+  if (drawerSearch) {
+    const r = drawerSearch.getBoundingClientRect();
+    root.style.setProperty('--mob-drawer-dd-left', `${Math.round(r.left)}px`);
+    root.style.setProperty('--mob-drawer-dd-width', `${Math.round(r.width)}px`);
+    root.style.setProperty('--mob-drawer-dd-top', `${Math.round(r.bottom + 8)}px`);
+  }
 }
 function initMobileTopHudSync() {
   const fs = document.querySelector('.floating-search');
@@ -7164,8 +7212,13 @@ window.addEventListener('resize', syncMobileQuickBarVisibility);
 window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
 window.addEventListener('resize', syncMobileTopHudLayout);
 window.addEventListener('orientationchange', () => setTimeout(syncMobileTopHudLayout, 140));
+window.addEventListener('resize', syncMobileSearchDropdownAnchors);
+window.addEventListener('orientationchange', () => setTimeout(syncMobileSearchDropdownAnchors, 140));
+window.visualViewport?.addEventListener?.('resize', syncMobileSearchDropdownAnchors);
+window.visualViewport?.addEventListener?.('scroll', syncMobileSearchDropdownAnchors);
 setTimeout(syncMobileQuickBarVisibility, 0);
 setTimeout(syncMobileTopHudLayout, 0);
+setTimeout(syncMobileSearchDropdownAnchors, 0);
 initMobileTopHudSync();
 
 /* ═══ NAV SIDEBAR TOGGLE ═══ */
