@@ -2218,37 +2218,9 @@ body:not(.outdoor-mode) .dp-panel .dp-int-form input::placeholder{
   header > * {
     pointer-events: auto;
   }
-  .brand-home {
-    display: flex !important;
-    gap: 10px;
-    padding: 8px 10px;
-    border-radius: 14px;
-    background: linear-gradient(145deg, rgba(22,71,115,.86), rgba(31,84,128,.78));
-    border: 1px solid rgba(170,214,241,.34);
-    box-shadow: 0 10px 26px rgba(5,18,34,.34);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    margin-right: 10px;
-  }
+  .brand-home,
   .divider {
-    display: block !important;
-    height: 40px;
-    background: rgba(170,214,241,.24);
-  }
-  .logo-title {
-    font-size: 20px;
-    font-weight: 700;
-    letter-spacing: .01em;
-    line-height: 1.05;
-    color: rgba(255,255,255,.92);
-  }
-  .logo-sub {
-    margin-top: 2px;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: .18em;
-    text-transform: uppercase;
-    color: rgba(255,255,255,.58);
+    display: none !important;
   }
   body.nav-collapsed header {
     margin-left: 58px;
@@ -4170,20 +4142,21 @@ header,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 6px 8px;
+  padding: 10px 6px 8px;
   cursor: pointer;
 }
+.ns-brand:hover { background: transparent !important; }
 
 .ns-brand .logo-q {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid rgba(170,214,241,.30);
-  box-shadow: 0 6px 14px rgba(5,18,34,.28);
+  border: none;
+  box-shadow: none;
 }
 
 .ns-divider {
