@@ -7129,13 +7129,21 @@ function syncMobileQuickBarVisibility() {
 function syncMobileTopHudLayout() {
   const mapEl = document.getElementById('map');
   const fs = document.querySelector('.floating-search');
+  const stats = document.querySelector('.stats-bar');
   if (!mapEl || !fs) return;
   if (window.innerWidth > 768) {
     mapEl.style.removeProperty('--mobile-top-hud');
     return;
   }
   const r = fs.getBoundingClientRect();
-  const top = Math.max(68, Math.round(r.bottom + 8));
+  const fsBottom = Number.isFinite(r.bottom) ? r.bottom : 0;
+  let statsBottom = 0;
+  if (stats) {
+    const sr = stats.getBoundingClientRect();
+    const visible = sr.width > 2 && sr.height > 2 && getComputedStyle(stats).display !== 'none';
+    if (visible && Number.isFinite(sr.bottom)) statsBottom = sr.bottom;
+  }
+  const top = Math.max(68, Math.round(Math.max(fsBottom, statsBottom) + 8));
   mapEl.style.setProperty('--mobile-top-hud', `${top}px`);
 }
 function syncMobileSearchDropdownAnchors() {
@@ -7185,11 +7193,13 @@ function syncMobileSearchDropdownAnchors() {
 }
 function initMobileTopHudSync() {
   const fs = document.querySelector('.floating-search');
+  const stats = document.querySelector('.stats-bar');
   if (!fs || initMobileTopHudSync._inited) return;
   initMobileTopHudSync._inited = true;
   if (window.ResizeObserver) {
     const ro = new ResizeObserver(() => syncMobileTopHudLayout());
     ro.observe(fs);
+    if (stats) ro.observe(stats);
   }
   setTimeout(syncMobileTopHudLayout, 0);
 }
