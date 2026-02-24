@@ -12,22 +12,29 @@ Bu adımın hedefi: `qible.app` domaininin Google ve Bing tarafından doğrulanm
 2. Property ekle:
    - Tercih: `Domain` property (`qible.app`)  -> DNS TXT ile doğrulama.
    - Alternatif: `URL-prefix` (`https://qible.app/`) -> meta tag veya HTML dosyası.
-3. Eğer URL-prefix seçersen `google-site-verification` tokenını al.
-4. Tokenı `public/index.html` içindeki şu alana yaz:
+3. Eğer URL-prefix seçersen doğrulama yöntemlerinden birini seç:
+   - `Meta tag` yöntemi
+   - `HTML file` yöntemi
+4. Meta tag kullanacaksan tokenı `public/index.html` içindeki şu alana yaz:
    - `<meta name="google-site-verification" content="REPLACE_WITH_GOOGLE_VERIFICATION_TOKEN">`
-5. Deploy sonrası Verify butonuna bas.
-6. Sol menüden Sitemaps bölümüne git ve şunu gönder:
+5. HTML file kullanacaksan dosyayı güncelle:
+   - `public/google-site-verification.html`
+   - İçeriği Search Console’un verdiği değerle birebir eşleşmeli.
+6. Deploy sonrası Verify butonuna bas.
+7. Sol menüden Sitemaps bölümüne git ve şunu gönder:
    - `https://qible.app/sitemap.xml`
 
 ## 3) Bing Webmaster Tools
 1. [Bing Webmaster Tools](https://www.bing.com/webmasters/) aç.
 2. Site ekle: `https://qible.app/`
 3. Doğrulama yöntemi:
-   - Meta tag yöntemi seçersen tokenı al.
-4. Tokenı `public/index.html` içindeki şu alana yaz:
+   - Meta tag veya XML file.
+4. Meta tag kullanacaksan tokenı `public/index.html` içindeki şu alana yaz:
    - `<meta name="msvalidate.01" content="REPLACE_WITH_BING_VERIFICATION_TOKEN">`
-5. Deploy sonrası Verify butonuna bas.
-6. Sitemap ekle:
+5. XML file kullanacaksan dosyayı güncelle:
+   - `public/BingSiteAuth.xml`
+6. Deploy sonrası Verify butonuna bas.
+7. Sitemap ekle:
    - `https://qible.app/sitemap.xml`
 
 ## 4) robots.txt ve sitemap Kontrolü
@@ -60,6 +67,8 @@ Bu adımın hedefi: `qible.app` domaininin Google ve Bing tarafından doğrulanm
 curl -I https://qible.app/
 curl -I https://qible.app/robots.txt
 curl -I https://qible.app/sitemap.xml
+curl -I https://qible.app/google-site-verification.html
+curl -I https://qible.app/BingSiteAuth.xml
 curl -I https://www.qible.app/
 ```
 
