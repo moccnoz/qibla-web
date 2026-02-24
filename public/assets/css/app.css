@@ -5928,8 +5928,19 @@ body:not(.outdoor-mode) #map::after {
     border:1px solid rgba(170,214,241,.42) !important;
     box-shadow:0 14px 34px rgba(5,18,34,.35) !important;
   }
+  body:not(.outdoor-mode) .floating-search .search-box {
+    min-height:46px !important;
+    padding:6px !important;
+    gap:8px !important;
+    border-radius:14px !important;
+    align-items:center !important;
+    background:rgba(21,62,101,.66) !important;
+    border:1px solid rgba(170,214,241,.34) !important;
+  }
   body:not(.outdoor-mode) .floating-search input {
     color:rgba(255,255,255,.86) !important;
+    font-size:16px !important;
+    line-height:1.25 !important;
   }
   body:not(.outdoor-mode) .floating-search input::placeholder {
     color:rgba(255,255,255,.52) !important;
@@ -5938,6 +5949,10 @@ body:not(.outdoor-mode) #map::after {
     background:rgba(201,168,76,.24) !important;
     border:1px solid rgba(201,168,76,.46) !important;
     color:#f1c96f !important;
+    min-width:72px !important;
+    height:40px !important;
+    padding:0 14px !important;
+    border-radius:11px !important;
   }
   body:not(.outdoor-mode) .floating-search #search-btn::before {
     content:none !important;
@@ -5955,6 +5970,9 @@ body:not(.outdoor-mode) #map::after {
     background:rgba(21,62,101,.84) !important;
     border:1px solid rgba(170,214,241,.34) !important;
     color:rgba(255,255,255,.72) !important;
+    width:40px !important;
+    height:40px !important;
+    border-radius:11px !important;
   }
   body:not(.outdoor-mode) .floating-search .mob-pill-logo {
     color:#f1c96f !important;
@@ -6101,15 +6119,43 @@ body:not(.outdoor-mode) #map::after {
   .live-vp-badge {
     z-index:2200 !important;
     top:var(--mobile-top-hud) !important;
+    left:10px !important;
+    max-width:min(210px, calc(100vw - 20px)) !important;
+    border-radius:12px !important;
+    background:rgba(21,62,101,.82) !important;
+    border:1px solid rgba(170,214,241,.30) !important;
   }
   .mob-layer-stack {
     z-index:2190 !important;
     top:var(--mobile-top-hud) !important;
+    right:10px !important;
+    gap:8px !important;
+  }
+  .map-fab {
+    right:10px !important;
+    bottom:calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    gap:8px !important;
+  }
+  .map-fab-btn,
+  .map-fab-btn.secondary {
+    width:44px !important;
+    height:44px !important;
+    border-radius:12px !important;
+    background:rgba(21,62,101,.84) !important;
+    border:1px solid rgba(170,214,241,.34) !important;
+    color:rgba(255,255,255,.72) !important;
+    box-shadow:0 10px 22px rgba(5,18,34,.32) !important;
+  }
+  .map-fab-btn:hover,
+  .map-fab-btn.secondary:hover {
+    background:rgba(49,106,152,.92) !important;
+    color:rgba(255,255,255,.88) !important;
   }
   .qibla-panel {
     top:calc(var(--mobile-top-hud) + 62px) !important;
     left:10px !important;
     max-width:min(340px, calc(100% - 20px)) !important;
+    z-index:2180 !important;
   }
   #map .leaflet-control-zoom {
     border:none !important;
