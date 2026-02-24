@@ -5943,8 +5943,9 @@ body:not(.outdoor-mode) #map::after {
     position:sticky !important;
     top:0 !important;
     z-index:2 !important;
-    background:var(--surface) !important;
-    border-bottom:1px solid rgba(170,214,241,.30) !important;
+    background:#1b4f7f !important;
+    border-bottom:1px solid rgba(170,214,241,.22) !important;
+    box-shadow:none !important;
     backdrop-filter:none !important;
     -webkit-backdrop-filter:none !important;
   }
@@ -5953,7 +5954,7 @@ body:not(.outdoor-mode) #map::after {
     display:block !important;
     width:42px !important;
     height:4px !important;
-    background:rgba(170,214,241,.46) !important;
+    background:rgba(170,214,241,.56) !important;
     border-radius:3px !important;
     position:absolute !important;
     top:7px !important;
@@ -5986,8 +5987,8 @@ body:not(.outdoor-mode) #map::after {
   .sidebar {
     display:block !important;
     z-index:2170 !important;
-    background:var(--surface) !important;
-    border-top:1px solid var(--border) !important;
+    background:#1b4f7f !important;
+    border-top:1px solid rgba(170,214,241,.22) !important;
     border-radius:0 !important;
     box-shadow:none !important;
   }
@@ -6052,10 +6053,11 @@ body:not(.outdoor-mode) #map::after {
     min-width:58px !important;
     width:58px !important;
     height:34px !important;
-    padding:0 8px !important;
+    padding:0 6px !important;
     margin:0 !important;
     white-space:nowrap !important;
-    justify-self:end !important;
+    justify-self:stretch !important;
+    box-sizing:border-box !important;
     font-size:16px !important;
   }
   .mob-search-row input{
@@ -6248,7 +6250,7 @@ body:not(.outdoor-mode) #map::after {
     align-items:center !important;
     justify-content:center !important;
     color:rgba(255,255,255,.58) !important;
-    font-size:12px !important;
+    font-size:15px !important;
     line-height:1 !important;
   }
   body:not(.outdoor-mode) .mob-drawer .mob-drawer-btn.active {
