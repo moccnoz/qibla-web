@@ -7203,6 +7203,19 @@ function initMobileTopHudSync() {
   }
   setTimeout(syncMobileTopHudLayout, 0);
 }
+function initMobileHudMutationSync() {
+  if (initMobileHudMutationSync._inited) return;
+  initMobileHudMutationSync._inited = true;
+  const body = document.body;
+  const stats = document.querySelector('.stats-bar');
+  if (!window.MutationObserver || !body) return;
+  const mo = new MutationObserver(() => {
+    syncMobileTopHudLayout();
+    syncMobileSearchDropdownAnchors();
+  });
+  mo.observe(body, { attributes:true, attributeFilter:['class', 'style'] });
+  if (stats) mo.observe(stats, { attributes:true, attributeFilter:['class', 'style'] });
+}
 function mobSearch() {
   const v = document.getElementById('mob-city-input').value.trim();
   if (!v) return;
@@ -7230,6 +7243,7 @@ setTimeout(syncMobileQuickBarVisibility, 0);
 setTimeout(syncMobileTopHudLayout, 0);
 setTimeout(syncMobileSearchDropdownAnchors, 0);
 initMobileTopHudSync();
+initMobileHudMutationSync();
 
 /* ═══ NAV SIDEBAR TOGGLE ═══ */
 function toggleNavSidebar() {
