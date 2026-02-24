@@ -164,6 +164,21 @@ function safeStorageSet(key, value) {
   }
 }
 
+function resolveInitialLang() {
+  const forced = String(window.__QIBLE_FORCE_LANG || '').toLowerCase();
+  if (forced === 'en' || forced === 'tr') return forced;
+
+  const pathLang = (location.pathname.match(/^\/(en|tr)(\/|$)/i)?.[1] || '').toLowerCase();
+  if (pathLang === 'en' || pathLang === 'tr') return pathLang;
+
+  const qs = new URLSearchParams(location.search);
+  const queryLang = String(qs.get('hl') || qs.get('lang') || '').toLowerCase();
+  if (queryLang === 'en' || queryLang === 'tr') return queryLang;
+
+  const saved = safeStorageGet(LANG_KEY, 'tr') || 'tr';
+  return saved === 'en' ? 'en' : 'tr';
+}
+
 let activeSearchController = null;
 
 function makeAbortError(msg = 'Arama iptal edildi') {
@@ -510,7 +525,7 @@ async function bootstrap() {
   loadInteriorDB();
   loadManualAxisDB();
   loadSnapshots();
-  const langSaved = safeStorageGet(LANG_KEY, 'tr') || 'tr';
+  const langSaved = resolveInitialLang();
   const outdoorSaved = safeStorageGet(OUTDOOR_KEY, '0');
   if (String(outdoorSaved) === '1') {
     uiState.outdoor = true;
@@ -2453,6 +2468,21 @@ function applyI18nStaticUi() {
   if (legendTitle) legendTitle.textContent = t.legend;
 }
 
+function syncLangUrlPath() {
+  try {
+    const targetPath = currentLang === 'en' ? '/en/' : '/tr/';
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+    params.delete('hl');
+    params.delete('lang');
+    const cleanQuery = params.toString();
+    const next = `${targetPath}${cleanQuery ? '?' + cleanQuery : ''}${url.hash || ''}`;
+    if (url.pathname !== targetPath || url.search !== (cleanQuery ? '?' + cleanQuery : '')) {
+      history.replaceState(null, '', next);
+    }
+  } catch {}
+}
+
 function setLang(lang, silent=false) {
   currentLang = lang === 'en' ? 'en' : 'tr';
   safeStorageSet(LANG_KEY, currentLang);
@@ -2483,6 +2513,7 @@ function setLang(lang, silent=false) {
   document.getElementById('lang-tr')?.classList.toggle('active', currentLang==='tr');
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
   if (typeof syncNavProxyStates === 'function') syncNavProxyStates();
+  syncLangUrlPath();
   if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);
 }
