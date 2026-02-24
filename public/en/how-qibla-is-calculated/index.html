@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Qibla Is Calculated | Qible Methodology</title>
+<meta name="description" content="How qibla direction is computed using great-circle bearing, building axis comparison and deviation scoring.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://qible.app/en/how-qibla-is-calculated/">
+<link rel="alternate" hreflang="tr" href="https://qible.app/tr/kible-nasil-hesaplanir/">
+<link rel="alternate" hreflang="en" href="https://qible.app/en/how-qibla-is-calculated/">
+<link rel="alternate" hreflang="x-default" href="https://qible.app/">
+<link rel="stylesheet" href="/assets/css/seo-pages.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How is qibla direction calculated?",
+      "acceptedAnswer": {"@type":"Answer","text":"Qibla direction is calculated from your coordinates to the Kaaba using the initial great-circle bearing."}
+    },
+    {
+      "@type": "Question",
+      "name": "What does deviation mean?",
+      "acceptedAnswer": {"@type":"Answer","text":"Deviation is the angular difference between the building orientation and theoretical qibla bearing."}
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<main>
+  <header><div class="logo">Qible</div><div class="lang"><a href="/tr/kible-nasil-hesaplanir/">TR</a></div></header>
+  <div class="back"><a href="/en/">← Back to app</a></div>
+  <section class="hero"><h1>How Qibla Is Calculated</h1><p>Qible computes great-circle bearing from your position to the Kaaba, then compares it against building axis or user evidence to produce deviation analysis.</p></section>
+
+  <h2>Calculation steps</h2>
+  <ul>
+    <li>Get location coordinates (latitude/longitude).</li>
+    <li>Compute initial great-circle bearing to Kaaba.</li>
+    <li>Estimate building orientation from OSM geometry or manual axis evidence.</li>
+    <li>Report angular difference as deviation.</li>
+  </ul>
+
+  <h2>Tolerance model</h2>
+  <p>Tolerance slider defines acceptable deviation threshold and can be adjusted in the app.</p>
+
+  <div class="city-links">
+    <a href="/en/data-sources/">Data sources</a>
+    <a href="/en/qibla-direction/">City guides</a>
+  </div>
+
+  <footer>Qible methodology document</footer>
+</main>
+</body>
+</html>

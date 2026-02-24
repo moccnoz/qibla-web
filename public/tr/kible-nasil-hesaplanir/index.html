@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kıble Nasıl Hesaplanır? | Qible Metodoloji</title>
+<meta name="description" content="Kıble yönü büyük daire (great-circle) yaklaşımıyla nasıl hesaplanır? Qible metodolojisi, sapma analizi ve tolerans yaklaşımı.">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+<link rel="canonical" href="https://qible.app/tr/kible-nasil-hesaplanir/">
+<link rel="alternate" hreflang="tr" href="https://qible.app/tr/kible-nasil-hesaplanir/">
+<link rel="alternate" hreflang="en" href="https://qible.app/en/how-qibla-is-calculated/">
+<link rel="alternate" hreflang="x-default" href="https://qible.app/">
+<link rel="stylesheet" href="/assets/css/seo-pages.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Kıble yönü nasıl hesaplanır?",
+      "acceptedAnswer": {"@type":"Answer","text":"Kıble yönü, bulunduğunuz konum ile Kabe arasındaki büyük daire (great-circle) başlangıç açısı hesaplanarak bulunur."}
+    },
+    {
+      "@type": "Question",
+      "name": "Sapma değeri neyi ifade eder?",
+      "acceptedAnswer": {"@type":"Answer","text":"Sapma, bina yönü ile teorik kıble açısı arasındaki farktır. Düşük sapma daha yüksek hizalanma anlamına gelir."}
+    }
+  ]
+}
+</script>
+</head>
+<body>
+<main>
+  <header><div class="logo">Qible</div><div class="lang"><a href="/en/how-qibla-is-calculated/">EN</a></div></header>
+  <div class="back"><a href="/tr/">← Uygulamaya dön</a></div>
+  <section class="hero"><h1>Kıble Nasıl Hesaplanır?</h1><p>Qible, konum ile Kabe arasındaki büyük daire açısını hesaplar. Sonra bina ekseni veya kullanıcı kanıtı ile bu yön karşılaştırılarak sapma analizi üretir.</p></section>
+
+  <h2>Hesaplama adımları</h2>
+  <ul>
+    <li>Konum koordinatı (enlem-boylam) alınır.</li>
+    <li>Kabe koordinatı ile great-circle başlangıç açısı hesaplanır.</li>
+    <li>OSM geometri veya manuel aks verisi ile bina yönü bulunur.</li>
+    <li>İki açı farkı sapma olarak raporlanır.</li>
+  </ul>
+
+  <h2>Tolerans yaklaşımı</h2>
+  <p>Tolerans barı, kabul edilebilir sapma eşiğini belirler. Uygulama içinde bu eşik kullanıcı tarafından ayarlanabilir.</p>
+
+  <div class="city-links">
+    <a href="/tr/veri-kaynaklari/">Veri kaynakları</a>
+    <a href="/tr/kible-yonu/">Şehir rehberleri</a>
+  </div>
+
+  <footer>Qible metodoloji dokümanı</footer>
+</main>
+</body>
+</html>
