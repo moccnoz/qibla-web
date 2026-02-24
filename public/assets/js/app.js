@@ -583,6 +583,19 @@ function initMap() {
     if (dd?.classList.contains('show')) return;
     doSearch();
   };
+  const searchBox = document.querySelector('.floating-search .search-box');
+  if (searchBox) {
+    searchBox.addEventListener('focusin', () => {
+      document.body.classList.add('search-expanded');
+    });
+    searchBox.addEventListener('focusout', () => {
+      setTimeout(() => {
+        if (!searchBox.contains(document.activeElement)) {
+          document.body.classList.remove('search-expanded');
+        }
+      }, 0);
+    });
+  }
   document.getElementById('tol').oninput = e => { tol=+e.target.value; document.getElementById('tol-val').textContent=tol+'°'; recompute(); };
   const mq = document.getElementById('mob-quick-city');
   if (mq) mq.value = document.getElementById('city-input').value || '';
@@ -1313,7 +1326,6 @@ function renderAll() {
 
     const mk=L.circleMarker([m.lat,m.lng],{radius:5,fillColor:col,color:'#164773',weight:1.5,fillOpacity:.95});
     mk.mosque = m;
-    mk.bindPopup(makePopup(m));
     mk.on('click',()=>handleMosqueClick(m));
     if (useCluster && markerClusterLayer) markerClusterLayer.addLayer(mk);
     else mk.addTo(map);
@@ -1586,7 +1598,14 @@ const escHtml = s => String(s ?? '')
 
 function isLikelyMosqueQuery(q) {
   const t = trLower(q || '');
-  return /\b(cami|camii|mescid|mescit|mosque|masjid)\b/.test(t);
+  const n = normalize(t);
+  if (/\b(cami|camii|mescid|mescit|mosque|masjid)\b/.test(t)) return true;
+  // Landmark-only queries (e.g. "suleymaniye") should still trigger mosque search mode.
+  if (/(suleymaniye|sultanahmet|ayasofya|fatih|eyup|eyup_sultan|camlica|selimiye|kocatepe|ulu\s*cami)/.test(n)) return true;
+  try {
+    if (typeof findAliasGroupsForQuery === 'function' && findAliasGroupsForQuery(n).length) return true;
+  } catch {}
+  return false;
 }
 
 function pickNameFromTags(tags = {}) {
@@ -2210,6 +2229,230 @@ const I18N = {
   }
 };
 
+const I18N_STATIC = {
+  tr: {
+    pageTitle: 'Kıble Dedektörü',
+    logoTitle: 'Kıble Dedektörü',
+    logoSub: 'Bina Yönü Analizi',
+    cityOrMosquePlaceholder: 'Şehir / cami ara...',
+    cityOnlyPlaceholder: 'Şehir adı...',
+    mosqueSearchPlaceholder: 'Cami adı ara...',
+    scopeSearch: 'Bu alanda ara',
+    searchArea: 'Bu alanı tara',
+    liveReady: 'Canlı hazır',
+    cancel: 'İptal',
+    loading: 'Yükleniyor...',
+    mosqueList: 'Cami Listesi',
+    legend: 'Açıklama'
+  },
+  en: {
+    pageTitle: 'Qibla Detector',
+    logoTitle: 'Qibla Detector',
+    logoSub: 'Building Orientation Analysis',
+    cityOrMosquePlaceholder: 'Search city / mosque...',
+    cityOnlyPlaceholder: 'City name...',
+    mosqueSearchPlaceholder: 'Search mosque name...',
+    scopeSearch: 'Search in this area',
+    searchArea: 'Search this area',
+    liveReady: 'Live ready',
+    cancel: 'Cancel',
+    loading: 'Loading...',
+    mosqueList: 'Mosque List',
+    legend: 'Legend'
+  }
+};
+
+const TR_EN_REPLACERS = [
+  [/Kıble Dedektörü/g, 'Qibla Detector'],
+  [/\bAra\b/g, 'Search'],
+  [/Bina Yönü Analizi/g, 'Building Orientation Analysis'],
+  [/Şehir \/ cami ara\.\.\./g, 'Search city / mosque...'],
+  [/Şehir veya cami ara/g, 'Search city or mosque'],
+  [/Şehir adı\.\.\./g, 'City name...'],
+  [/Şehir ara\.\.\./g, 'Search city...'],
+  [/Cami adı ara\.\.\./g, 'Search mosque name...'],
+  [/Bu alanda ara/g, 'Search in this area'],
+  [/Bu alanı tara/g, 'Search this area'],
+  [/Canlı yükleniyor/g, 'Live loading'],
+  [/Canlı güncel/g, 'Live updated'],
+  [/Canlı hazır/g, 'Live ready'],
+  [/Tolerans/g, 'Tolerance'],
+  [/Cami Listesi/g, 'Mosque List'],
+  [/Açıklama/g, 'Legend'],
+  [/Kıble yönünde/g, 'Aligned with Qibla'],
+  [/Sapma var/g, 'Deviation present'],
+  [/Gerçek kıble yönü/g, 'True Qibla direction'],
+  [/Bina kıble duvarı/g, 'Building Qibla wall'],
+  [/Binanın gerçek baktığı yön/g, 'Building true facing axis'],
+  [/Kabe'ye büyük daire \(doğru\)/g, 'Great-circle to Kaaba (true)'],
+  [/Yükleniyor\.\.\./g, 'Loading...'],
+  [/İptal/g, 'Cancel'],
+  [/Harita yükleniyor\.\.\./g, 'Loading map...'],
+  [/Leaflet\.js başlatılıyor/g, 'Initializing Leaflet.js'],
+  [/Klavye kısayolları/g, 'Keyboard shortcuts'],
+  [/Şehir karşılaştır/g, 'Compare cities'],
+  [/Küresel sıralama/g, 'Global ranking'],
+  [/Küresel Kıble Sıralaması/g, 'Global Qibla Ranking'],
+  [/Harita/g, 'Map'],
+  [/Analiz/g, 'Analysis'],
+  [/Eylemler/g, 'Actions'],
+  [/Sistem/g, 'System'],
+  [/Araçlar/g, 'Tools'],
+  [/Tümünü Temizle/g, 'Clear All'],
+  [/Tümü/g, 'All'],
+  [/Türkiye/g, 'Turkey'],
+  [/Orta Doğu/g, 'Middle East'],
+  [/Güney Asya/g, 'South Asia'],
+  [/Diğer/g, 'Other'],
+  [/Doğruluk %/g, 'Accuracy %'],
+  [/Cami Sayısı/g, 'Mosque Count'],
+  [/Ort\. Sapma/g, 'Avg. Deviation'],
+  [/Şehir Adı/g, 'City Name'],
+  [/Tarihsel Dönem Analizi/g, 'Historical Period Analysis'],
+  [/Osmanlı/g, 'Ottoman'],
+  [/Şehir A/g, 'City A'],
+  [/Şehir B/g, 'City B'],
+  [/Şehir\/ilçe adı girin\.\.\./g, 'Enter city/district name...'],
+  [/Yükle/g, 'Load'],
+  [/Kaldır/g, 'Remove'],
+  [/İlçe modu/g, 'District mode'],
+  [/Isı haritası/g, 'Heatmap'],
+  [/Skor kartı/g, 'Score card'],
+  [/Şehir Analizi/g, 'City Analysis'],
+  [/İl\/State Sayımı/g, 'Province/State Count'],
+  [/Sırala/g, 'Sort'],
+  [/Doğruluk/g, 'Accuracy'],
+  [/Karşılaştır/g, 'Compare'],
+  [/Sıralama/g, 'Ranking'],
+  [/Konum/g, 'Location'],
+  [/Pusula/g, 'Compass'],
+  [/Takip/g, 'Follow'],
+  [/Yakın/g, 'Nearby'],
+  [/Gelir/g, 'Revenue'],
+  [/Kopyalandı/g, 'Copied'],
+  [/Filtreyi Kaldır/g, 'Clear Filter'],
+  [/Bir şehir arayın/g, 'Search for a city'],
+  [/Bırakınca yenilenecek/g, 'Release to refresh'],
+  [/Koordinat Kopyala/g, 'Copy Coordinates'],
+  [/Haritada Göster/g, 'Show on Map'],
+  [/İsmi Bul/g, 'Find Name'],
+  [/OSM'de Gör/g, 'View on OSM'],
+  [/OSM'de Düzenle/g, 'Edit on OSM'],
+  [/İç Mekan Kanıtı/g, 'Interior Evidence'],
+  [/İç Mekan Yönünü Kaydet/g, 'Save Interior Direction'],
+  [/Manuel Aks Düzeltme/g, 'Manual Axis Correction'],
+  [/Haritada Aks Çiz/g, 'Draw Axis on Map'],
+  [/Hazır/g, 'Ready'],
+  [/Doğru/g, 'Correct'],
+  [/Sapma/g, 'Deviation'],
+  [/Veri Yok/g, 'No Data'],
+  [/Kabe/g, 'Kaaba'],
+  [/Kıble/g, 'Qibla'],
+  [/Şehir/g, 'City'],
+  [/İlçe/g, 'District'],
+  [/Camii/g, 'Mosque'],
+  [/Cami/g, 'Mosque'],
+  [/bulunamadı/g, 'not found'],
+  [/aranıyor/g, 'searching'],
+  [/yükleniyor/g, 'loading'],
+  [/yakınınızda/g, 'near you'],
+  [/Küresel Sonuçlar/g, 'Global Results'],
+  [/Geçmiş Aramalar ve Analizler/g, 'Recent Searches and Analyses'],
+  [/Yakınınızdakiler/g, 'Nearby'],
+  [/Henüz veri yüklenmedi/g, 'No data loaded yet'],
+  [/için sonuç bulunamadı/g, 'no results found for'],
+  [/Dış kaynakta aranıyor/g, 'Searching external sources'],
+  [/Önce haritadan veri yüklenmeli/g, 'Load map data first'],
+  [/öneri yok/g, 'no suggestions'],
+  [/Önce bir cami seçin/g, 'Select a mosque first'],
+  [/Konum alınamadı/g, 'Location unavailable'],
+  [/Konum desteği yok/g, 'Location is not supported'],
+  [/Ana sayfa sıfırlandı/g, 'Home reset'],
+  [/Outdoor mod aktif/g, 'Outdoor mode enabled'],
+  [/Outdoor mod kapatıldı/g, 'Outdoor mode disabled']
+];
+
+function i18nTranslateText(input) {
+  if (currentLang !== 'en') return String(input ?? '');
+  let out = String(input ?? '');
+  TR_EN_REPLACERS.forEach(([rx, rep]) => {
+    out = out.replace(rx, rep);
+  });
+  return out;
+}
+
+function i18nProcessNodeTree(root) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const p = node.parentElement;
+      if (!p) return NodeFilter.FILTER_REJECT;
+      if (p.closest('script,style,noscript,code,pre')) return NodeFilter.FILTER_REJECT;
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let n = walker.nextNode();
+  while (n) {
+    if (typeof n.__i18nBaseText === 'undefined') n.__i18nBaseText = n.nodeValue;
+    n.nodeValue = currentLang === 'en' ? i18nTranslateText(n.__i18nBaseText) : n.__i18nBaseText;
+    n = walker.nextNode();
+  }
+  root.querySelectorAll?.('[placeholder],[title],[data-tip],[aria-label]').forEach((el) => {
+    ['placeholder', 'title', 'data-tip', 'aria-label'].forEach((attr) => {
+      if (!el.hasAttribute(attr)) return;
+      const baseKey = '__i18nBaseAttr_' + attr.replace(/-/g, '_');
+      if (typeof el[baseKey] === 'undefined') el[baseKey] = el.getAttribute(attr);
+      const base = el[baseKey];
+      el.setAttribute(attr, currentLang === 'en' ? i18nTranslateText(base) : base);
+    });
+  });
+}
+
+let i18nObserver = null;
+let i18nMutationTimer = 0;
+function ensureI18nObserver() {
+  if (i18nObserver) return;
+  i18nObserver = new MutationObserver((mutations) => {
+    if (currentLang !== 'en') return;
+    if (i18nMutationTimer) clearTimeout(i18nMutationTimer);
+    i18nMutationTimer = setTimeout(() => {
+      mutations.forEach((m) => {
+        m.addedNodes?.forEach((node) => {
+          if (node.nodeType === 1) i18nProcessNodeTree(node);
+          else if (node.nodeType === 3 && node.parentElement) i18nProcessNodeTree(node.parentElement);
+        });
+      });
+      i18nProcessNodeTree(document.body);
+    }, 40);
+  });
+  i18nObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function applyI18nStaticUi() {
+  const t = I18N_STATIC[currentLang] || I18N_STATIC.tr;
+  document.title = t.pageTitle;
+  const setText = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val; };
+  const setPh = (sel, val) => { const el = document.querySelector(sel); if (el) el.placeholder = val; };
+  setText('.logo-title', t.logoTitle);
+  setText('.logo-sub', t.logoSub);
+  setPh('#city-input', t.cityOrMosquePlaceholder);
+  setPh('#mob-quick-city', t.cityOnlyPlaceholder);
+  setPh('#mob-city-input', t.cityOrMosquePlaceholder);
+  setPh('#mosque-search', t.mosqueSearchPlaceholder);
+  setText('#search-btn', currentLang === 'en' ? 'Search' : 'Ara');
+  setText('#search-area-btn', t.searchArea);
+  setText('#ov-cancel', t.cancel);
+  setText('#ov-text', t.loading);
+  setText('#vp-label', t.liveReady);
+  const scopeLabel = document.querySelector('.ms-scope-lbl b');
+  if (scopeLabel) scopeLabel.textContent = t.scopeSearch;
+  const mosqueListEl = document.querySelector('.sb-head-left span');
+  if (mosqueListEl) mosqueListEl.textContent = t.mosqueList;
+  const legendTitle = Array.from(document.querySelectorAll('.legend > div')).find((el) => (el.textContent || '').trim().match(/Açıklama|Legend/i));
+  if (legendTitle) legendTitle.textContent = t.legend;
+}
+
 function setLang(lang, silent=false) {
   currentLang = lang === 'en' ? 'en' : 'tr';
   safeStorageSet(LANG_KEY, currentLang);
@@ -2234,8 +2477,12 @@ function setLang(lang, silent=false) {
   if (cityInput) cityInput.placeholder = t.searchPlaceholder;
   const logo = document.querySelector('.logo-title');
   if (logo) logo.textContent = t.title;
+  applyI18nStaticUi();
+  i18nProcessNodeTree(document.body);
+  ensureI18nObserver();
   document.getElementById('lang-tr')?.classList.toggle('active', currentLang==='tr');
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
+  if (typeof syncNavProxyStates === 'function') syncNavProxyStates();
   if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);
 }
@@ -2625,8 +2872,7 @@ function makePopup(m){
     <div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</span></div>
     ${m.convertedFrom?.converted?`<div class="p-row"><span class="p-k">Yapı geçmişi</span><span class="p-v" style="color:#fbbf24">Dönüştürülmüş olabilir</span></div>`:''}
     <div class="p-row"><span class="p-k">Kabe mesafesi</span><span class="p-v">${dist} km</span></div>
-    <div class="p-method">Yöntem: ${meth}</div>
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
+    <div class="p-method">Yöntem: ${meth}</div>`;
 }
 
 // Store last clicked for popup button
@@ -2644,11 +2890,19 @@ function animateFromPopup(id) {
   setTimeout(() => handleMosqueClick(m), 80);
 }
 
-function handleMosqueClick(m) {
+function handleMosqueClick(m, source = 'map') {
   window._lastClickedMosque = m;
   document.querySelectorAll('.m-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('mi-'+m.id);
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
+  if (source === 'list' && map && Number.isFinite(m?.lat) && Number.isFinite(m?.lng)) {
+    const targetZoom = Math.max(map.getZoom() || 15, 16);
+    if (typeof map.flyTo === 'function') {
+      map.flyTo([m.lat, m.lng], targetZoom, { duration: 0.75, easeLinearity: 0.2 });
+    } else {
+      map.setView([m.lat, m.lng], targetZoom, { animate: true });
+    }
+  }
   if (m.status === 'wrong') haptic(20);
   pulseMosqueFocus(m);
   ensureSelectedMosqueVisibleOnMobile(m, { animate:true });
@@ -2792,30 +3046,32 @@ function updateList(visible){
         frag.appendChild(hdr);
         items.forEach((m,i) => {
           const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+          const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
           const div=document.createElement('div');
-          div.className='m-item';div.id='mi-'+m.id;
+          div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
           div.style.animationDelay = Math.min(i*18, 300)+'ms';
           const convMark = m.convertedFrom?.converted ? ' →' : '';
           div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
             <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
             <div class="m-sub">${escHtml(getMosqueHierarchyLine(m))}</div></div>
-            <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
-          div.onclick=()=>handleMosqueClick(m);
+            <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+          div.onclick=()=>handleMosqueClick(m,'list');
           frag.appendChild(div);
         });
       });
   } else {
     sorted.forEach((m,i)=>{
       const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
+      const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
       const div=document.createElement('div');
-      div.className='m-item';div.id='mi-'+m.id;
+      div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
       div.style.animationDelay = Math.min(i*18, 300)+'ms';
       const convMark = m.convertedFrom?.converted ? ' →' : '';
       div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
         <div class="m-info"><div class="m-name">${escHtml(m.name)}${convMark}</div>
         <div class="m-sub">Kıble:${m.qibla.toFixed(1)}°${m.axis!==null?' | Bina:'+m.axis.toFixed(1)+'°':''}</div></div>
-        <div class="m-diff" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
-      div.onclick=()=>handleMosqueClick(m);
+        <div class="m-diff ms-deviation ${statusClass}" style="color:${col}">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</div>`;
+      div.onclick=()=>handleMosqueClick(m,'list');
       frag.appendChild(div);
     });
   }
@@ -4063,8 +4319,17 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds, opts = {}) {
     boundedRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
 
     if (!refsMap.size || !msScopeViewportOnly || opts.preferGlobal) {
-      const globalRefs = await fetchNominatimMosqueRefs(`${query} mosque`, null, false, 14).catch(() => []);
-      globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+      const globalQueries = [...new Set([
+        query,
+        `${query} camii`,
+        `${query} cami`,
+        `${query} mosque`,
+        `${query} masjid`
+      ])];
+      for (const gq of globalQueries) {
+        const globalRefs = await fetchNominatimMosqueRefs(gq, null, false, 14).catch(() => []);
+        globalRefs.forEach(r => refsMap.set(`${r.osmType}:${r.id}`, r));
+      }
     }
 
     if (!refsMap.size) {
@@ -4650,7 +4915,9 @@ function setVpStatus(s){
   const box=document.getElementById('live-vp-badge') || document.querySelector('.vp-status');
   dot.className='vp-dot'+(s==='loading'?' loading':s==='done'?' done':'');
   if (box) box.className=`live-vp-badge ${s==='loading'?'loading':s==='done'?'done':'idle'}`;
-  lbl.textContent=s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır';
+  lbl.textContent = currentLang === 'en'
+    ? (s==='loading'?'Live loading':s==='done'?'Live updated':'Live ready')
+    : (s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır');
 }
 function updateCacheUI(){
   const count = tileCache.size;
@@ -4659,20 +4926,20 @@ function updateCacheUI(){
   const metaEl = document.getElementById('vp-meta');
   if (metaEl) metaEl.textContent = `Cache: ${count} tile`;
 }
-function showMini(t){ document.getElementById('mini-text').textContent=t; document.getElementById('mini-loader').classList.add('show'); }
+function showMini(t){ document.getElementById('mini-text').textContent=i18nTranslateText(t); document.getElementById('mini-loader').classList.add('show'); }
 function hideMini(){ document.getElementById('mini-loader').classList.remove('show'); }
 
 function setOv(show,text='',sub=''){
   document.getElementById('overlay').style.display=show?'flex':'none';
   if(show){
-    document.getElementById('ov-text').textContent=text;
-    document.getElementById('ov-sub').textContent=sub;
+    document.getElementById('ov-text').textContent=i18nTranslateText(text);
+    document.getElementById('ov-sub').textContent=i18nTranslateText(sub);
   }
   syncSearchCancelUi();
 }
 function toast(msg,ms=5000){
   const t=document.getElementById('toast');
-  t.textContent=msg;
+  t.textContent=i18nTranslateText(msg);
   t.classList.add('show');
   if (/(hata|error||başarısız|failed)/i.test(String(msg || ''))) haptic(10);
   setTimeout(()=>t.classList.remove('show'),ms);
@@ -5907,7 +6174,6 @@ function applyPeriodColors() {
       radius:5, fillColor:col, color:'#164773', weight:1.5, fillOpacity:opacity
     }).addTo(map);
     mk.mosque = m;
-    mk.bindPopup(makeHistoryPopup(m));
     mk.on('click', () => handleMosqueClick(m));
     renderLayers.push(mk);
   }
@@ -5923,8 +6189,7 @@ function makeHistoryPopup(m) {
     <div class="p-row"><span class="p-k">İnşaat</span><span class="p-v">${yearStr}</span></div>
     <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${statusStr}</span></div>
     <div class="p-row"><span class="p-k">Kıble</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
-    ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}
-    <button class="p-anim-btn" onclick="animateFromPopup(${m.id})"> Büyük Daire Animasyonu</button>`;
+    ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}`;
 }
 
 // Compute per-period stats
@@ -6863,12 +7128,91 @@ window.addEventListener('resize', syncMobileQuickBarVisibility);
 window.addEventListener('orientationchange', syncMobileQuickBarVisibility);
 setTimeout(syncMobileQuickBarVisibility, 0);
 
+/* ═══ NAV SIDEBAR TOGGLE ═══ */
+function toggleNavSidebar() {
+  const sidebar = document.getElementById('nav-sidebar');
+  const body = document.body;
+  if (!sidebar) return;
+  sidebar.classList.toggle('collapsed');
+  body.classList.toggle('nav-collapsed');
+  // Haritayı yeniden boyutlandır
+  setTimeout(() => {
+    if (window.map) window.map.invalidateSize();
+  }, 300);
+}
+
+// Başlangıçta geniş modda (opsiyonel: localStorage'dan hatırla)
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('nav-collapsed');
+  if (saved === 'true') {
+    document.getElementById('nav-sidebar')?.classList.add('collapsed');
+    document.body.classList.add('nav-collapsed');
+  }
+});
+
+// Toggle durumunu kaydet
+const _origToggle = toggleNavSidebar;
+toggleNavSidebar = function() {
+  _origToggle();
+  const isCollapsed = document.body.classList.contains('nav-collapsed');
+  localStorage.setItem('nav-collapsed', isCollapsed);
+};
+
+function syncNavSidebarLayerState(layer) {
+  document.querySelectorAll('#ns-btn-dark,#ns-btn-sat,#ns-btn-osm').forEach(b => b.classList.remove('active'));
+  const map = {dark:'ns-btn-dark', satellite:'ns-btn-sat', osm:'ns-btn-osm'};
+  document.getElementById(map[layer])?.classList.add('active');
+}
+
 // Sync mobile layer buttons with desktop
 const _origSwitchLayer = switchLayer;
 window.switchLayer = function(type) {
   _origSwitchLayer(type);
   setLayerButtonActive(type);
+  syncNavSidebarLayerState(type);
 };
+
+function syncNavProxyStates() {
+  const pairs = [
+    ['btn-district', 'ns-btn-district'],
+    ['btn-heat', 'ns-btn-heat'],
+    ['btn-score', 'ns-btn-score'],
+    ['btn-compare', 'ns-btn-compare'],
+    ['btn-history', 'ns-btn-history'],
+    ['btn-lb', 'ns-btn-lb'],
+    ['loc-btn', 'ns-btn-loc'],
+    ['btn-compass', 'ns-btn-compass'],
+    ['btn-follow', 'ns-btn-follow'],
+    ['btn-nearby', 'ns-btn-nearby'],
+    ['btn-export', 'ns-btn-export'],
+    ['btn-lab', 'ns-btn-lab'],
+    ['btn-outdoor', 'ns-btn-outdoor']
+  ];
+  pairs.forEach(([srcId, navId]) => {
+    const src = document.getElementById(srcId);
+    const nav = document.getElementById(navId);
+    if (!src || !nav) return;
+    nav.classList.toggle('active', src.classList.contains('active'));
+  });
+  const langTr = document.getElementById('lang-tr');
+  const langEn = document.getElementById('lang-en');
+  document.getElementById('ns-lang-tr')?.classList.toggle('active', !!langTr?.classList.contains('active'));
+  document.getElementById('ns-lang-en')?.classList.toggle('active', !!langEn?.classList.contains('active'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  syncNavProxyStates();
+  const watchIds = [
+    'btn-district', 'btn-heat', 'btn-score', 'btn-compare', 'btn-history', 'btn-lb',
+    'loc-btn', 'btn-compass', 'btn-follow', 'btn-nearby', 'btn-export', 'btn-lab', 'btn-outdoor',
+    'lang-tr', 'lang-en'
+  ];
+  const observer = new MutationObserver(syncNavProxyStates);
+  watchIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+});
 
 // ── Touch swipe to close detail panel on mobile
 (function() {
@@ -7608,7 +7952,6 @@ function renderActions(m, tags) {
 
   el.innerHTML = `
     <button class="dp-action-btn" onclick="focusMosqueOnMap()"> Haritada Göster</button>
-    <button class="dp-action-btn anim" onclick="closeDetailPanel();if(window._lastClickedMosque)animateQibla(window._lastClickedMosque)"> Büyük Daire</button>
     <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)"> İsmi Bul</button>
     <button class="dp-action-btn" onclick="open3D()"> 3D Analiz</button>
     <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener"> OSM'de Gör</a>
@@ -7626,7 +7969,7 @@ function focusMosqueOnMap() {
   map.flyTo([m.lat, m.lng], Math.max(map.getZoom() || 15, 16), { duration: 0.7 });
   setTimeout(() => {
     const marker = renderLayers.find(layer => layer?.mosque?.id == m.id);
-    if (marker?.openPopup) marker.openPopup();
+    if (marker?.bringToFront) marker.bringToFront();
   }, 450);
 }
 
@@ -8469,3 +8812,167 @@ async function lbAnalyseCity(city) {
 
   btn.disabled = false;
 }
+
+/* ═══ MOBILE SIDEBAR BOTTOM SHEET ═══ */
+(function() {
+  if (window.innerWidth > 768) return;
+
+  const sidebar = document.querySelector('.sidebar');
+  if (!sidebar) return;
+
+  let startY = 0;
+  let dragging = false;
+
+  sidebar.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches.length) return;
+    startY = e.touches[0].clientY;
+    dragging = true;
+  }, { passive: true });
+
+  sidebar.addEventListener('touchmove', (e) => {
+    if (!dragging || !e.touches || !e.touches.length) return;
+    const diff = e.touches[0].clientY - startY;
+    if (diff < -20) {
+      sidebar.classList.add('expanded');
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('touchend', (e) => {
+    if (!dragging) return;
+    dragging = false;
+    if (!e.changedTouches || !e.changedTouches.length) return;
+    const diff = e.changedTouches[0].clientY - startY;
+    if (diff > 40) {
+      sidebar.classList.remove('expanded');
+    }
+  }, { passive: true });
+
+  sidebar.addEventListener('click', () => {
+    if (!sidebar.classList.contains('expanded')) {
+      sidebar.classList.add('expanded');
+    }
+  });
+})();
+
+/* ═══ NUMBER COUNTER ANIMATION ═══ */
+function animateCounterIO(element, target, duration = 800) {
+  const start = 0;
+  const startTime = performance.now();
+  const isFloat = String(target).includes('.') && Number(target) % 1 !== 0;
+  const suffix = element.dataset.suffix || '';
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const current = start + (target - start) * easeOut;
+
+    if (isFloat) {
+      element.textContent = current.toFixed(1) + suffix;
+    } else {
+      element.textContent = Math.round(current).toLocaleString() + suffix;
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+function parseCounterTargetIO(el) {
+  const raw = (el.dataset.target || el.textContent || '').trim();
+  if (!raw) return null;
+  const clean = raw
+    .replace(/\s+/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .replace(/[^0-9.-]/g, '');
+  if (!clean) return null;
+  const num = Number(clean);
+  return Number.isFinite(num) ? num : null;
+}
+
+function bindAnimatedCountersIO(root = document) {
+  if (typeof IntersectionObserver === 'undefined') return;
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const node = entry.target;
+      if (node.dataset.counted === 'true') return;
+      const target = parseCounterTargetIO(node);
+      if (target === null) return;
+      node.dataset.counted = 'true';
+      animateCounterIO(node, target);
+    });
+  }, { threshold: 0.5 });
+
+  root.querySelectorAll('.stat-card-value, .sc-score-center, .stat-num').forEach(el => {
+    counterObserver.observe(el);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bindAnimatedCountersIO(document);
+
+  const observerTargets = [
+    document.querySelector('.stats-bar'),
+    document.querySelector('.sidebar'),
+    document.querySelector('.score-card')
+  ].filter(Boolean);
+
+  const mo = new MutationObserver(() => {
+    bindAnimatedCountersIO(document);
+  });
+
+  observerTargets.forEach(target => {
+    mo.observe(target, { childList: true, subtree: true });
+  });
+});
+
+/* ═══ DETAIL PANEL CLOSE GUARANTEE ═══ */
+document.addEventListener('click', (e) => {
+  const dpPanel = document.querySelector('.dp-panel');
+  const dpBackdrop = document.querySelector('.dp-backdrop');
+  if (!dpPanel || !dpBackdrop) return;
+  if (e.target === dpBackdrop) {
+    closeDetailPanel();
+    dpBackdrop.classList.remove('show');
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const dpPanel = document.querySelector('.dp-panel');
+  const dpBackdrop = document.querySelector('.dp-backdrop');
+  if (!dpPanel || !dpBackdrop) return;
+  const openByClass = dpPanel.classList.contains('open');
+  const openByStyle = dpPanel.style.display && dpPanel.style.display !== 'none';
+  if (openByClass || openByStyle) {
+    closeDetailPanel();
+    dpBackdrop.classList.remove('show');
+  }
+});
+
+/* ═══ TOLERANCE PILL PLACEMENT (desktop: sidebar, mobile: main) ═══ */
+function syncTolerancePillPlacement() {
+  const pill = document.querySelector('.tolerance-pill');
+  if (!pill) return;
+  const isDesktop = window.matchMedia('(min-width: 769px)').matches;
+  const sidebar = document.querySelector('.sidebar');
+  const main = document.querySelector('.main');
+  const sidebarAnchor = document.querySelector('.sidebar .sb-head');
+  const mainAnchor = document.querySelector('.mode-pills');
+  if (isDesktop && sidebar && sidebarAnchor && pill.parentElement !== sidebar) {
+    sidebar.insertBefore(pill, sidebarAnchor.nextSibling);
+    return;
+  }
+  if (!isDesktop && main && mainAnchor && pill.parentElement !== main) {
+    main.insertBefore(pill, mainAnchor.nextSibling);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', syncTolerancePillPlacement);
+window.addEventListener('resize', syncTolerancePillPlacement);

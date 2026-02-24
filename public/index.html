@@ -3,9 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' https: data: blob:; connect-src 'self' https://overpass-api.de https://overpass.kumi.systems https://lz4.overpass-api.de https://nominatim.openstreetmap.org https://commons.wikimedia.org https://*.wikipedia.org https://www.wikidata.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://overpass-api.de https://overpass.kumi.systems https://lz4.overpass-api.de https://nominatim.openstreetmap.org https://commons.wikimedia.org https://*.wikipedia.org https://www.wikidata.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self';">
 <title>Kıble Dedektörü</title>
 
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./vendor/leaflet/leaflet.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
@@ -67,6 +70,113 @@
   </div>
   <button class="mob-menu-btn" id="mob-menu-show" onclick="openMobDrawer()"></button>
 </header>
+<!-- ═══ DESKTOP NAV SIDEBAR ═══ -->
+<nav class="nav-sidebar" id="nav-sidebar">
+  <div class="nav-sidebar-top">
+    <!-- Logo -->
+    <div class="ns-brand" role="button" tabindex="0" onclick="resetToHome()" title="Ana Sayfa">
+      <div class="logo-q">Q</div>
+    </div>
+    <div class="ns-divider"></div>
+
+    <!-- Harita Grubu -->
+    <div class="ns-group">
+      <div class="ns-group-label">Harita</div>
+      <button class="ns-btn active" id="ns-btn-dark" onclick="switchLayer('dark')" data-tip="Koyu Harita">
+        <span class="ns-icon">◐</span>
+        <span class="ns-label">Koyu</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu">
+        <span class="ns-icon">◫</span>
+        <span class="ns-label">Uydu</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-osm" onclick="switchLayer('osm')" data-tip="Standart">
+        <span class="ns-icon">▦</span>
+        <span class="ns-label">Harita</span>
+      </button>
+    </div>
+
+    <div class="ns-divider"></div>
+
+    <!-- Analiz Grubu -->
+    <div class="ns-group">
+      <div class="ns-group-label">Analiz</div>
+      <button class="ns-btn" id="ns-btn-heat" onclick="document.getElementById('btn-heat').click()" data-tip="Isı Haritası">
+        <span class="ns-icon">◍</span>
+        <span class="ns-label">Isı</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-score" onclick="document.getElementById('btn-score').click()" data-tip="Skor Kartı">
+        <span class="ns-icon">◌</span>
+        <span class="ns-label">Skor</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-compare" onclick="document.getElementById('btn-compare').click()" data-tip="Karşılaştır">
+        <span class="ns-icon">⇄</span>
+        <span class="ns-label">Karşılaştır</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-history" onclick="document.getElementById('btn-history').click()" data-tip="Tarihsel Analiz">
+        <span class="ns-icon">◷</span>
+        <span class="ns-label">Tarih</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-lb" onclick="document.getElementById('btn-lb').click()" data-tip="Küresel Sıralama">
+        <span class="ns-icon">☰</span>
+        <span class="ns-label">Sıralama</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-district" onclick="document.getElementById('btn-district').click()" data-tip="İlçe Modu">
+        <span class="ns-icon">⊞</span>
+        <span class="ns-label">İlçe</span>
+      </button>
+    </div>
+
+    <div class="ns-divider"></div>
+
+    <!-- Araçlar Grubu -->
+    <div class="ns-group">
+      <div class="ns-group-label">Araçlar</div>
+      <button class="ns-btn" id="ns-btn-loc" onclick="document.getElementById('loc-btn').click()" data-tip="Konumum">
+        <span class="ns-icon">⌖</span>
+        <span class="ns-label">Konum</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-compass" onclick="document.getElementById('btn-compass').click()" data-tip="Canlı Pusula">
+        <span class="ns-icon">◎</span>
+        <span class="ns-label">Pusula</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-follow" onclick="document.getElementById('btn-follow').click()" data-tip="Takip Et">
+        <span class="ns-icon">⟳</span>
+        <span class="ns-label">Takip</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-nearby" onclick="document.getElementById('btn-nearby').click()" data-tip="Yakındaki Şehirler">
+        <span class="ns-icon">◉</span>
+        <span class="ns-label">Yakın</span>
+      </button>
+      <button class="ns-btn" id="ns-btn-export" onclick="document.getElementById('btn-export').click()" data-tip="Export & Paylaş">
+        <span class="ns-icon">↗</span>
+        <span class="ns-label">Export</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Alt Kısım -->
+  <div class="nav-sidebar-bottom">
+    <div class="ns-divider"></div>
+    <button class="ns-btn" id="ns-btn-lab" onclick="document.getElementById('btn-lab').click()" data-tip="QA Lab">
+      <span class="ns-icon">◧</span>
+      <span class="ns-label">Lab</span>
+    </button>
+    <button class="ns-btn" id="ns-btn-outdoor" onclick="document.getElementById('btn-outdoor').click()" data-tip="Outdoor Mod">
+      <span class="ns-icon">☼</span>
+      <span class="ns-label">Outdoor</span>
+    </button>
+    <div class="ns-lang">
+      <button class="ns-lang-btn active" id="ns-lang-tr" onclick="document.getElementById('lang-tr').click()">TR</button>
+      <button class="ns-lang-btn" id="ns-lang-en" onclick="document.getElementById('lang-en').click()">EN</button>
+    </div>
+
+    <!-- Sidebar Toggle -->
+    <button class="ns-toggle" id="ns-toggle" onclick="toggleNavSidebar()" data-tip="Menüyü Daralt">
+      <span class="ns-icon">«</span>
+    </button>
+  </div>
+</nav>
 <div class="mob-bottom-bar" id="mob-bottom-bar">
   <input id="mob-quick-city" type="text" placeholder="Şehir ara..." autocomplete="off"/>
   <button class="primary" onclick="mobQuickSearch()">Ara</button>
@@ -102,19 +212,27 @@
       </div>
 
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Araçlar</div>
+        <div class="mob-drawer-section-lbl">Analiz</div>
         <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Isı Haritası</span></button>
         <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Skor Kartı</span></button>
         <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"><span class="mob-nav-ico">⇄</span><span>Karşılaştır</span></button>
         <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"><span class="mob-nav-ico">◷</span><span>Tarihsel Analiz</span></button>
         <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"><span class="mob-nav-ico">☰</span><span>Küresel Sıralama</span></button>
+      </div>
+
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Eylemler</div>
         <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()"><span class="mob-nav-ico">⌖</span><span>Konumum</span></button>
-        <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"><span class="mob-nav-ico">↗</span><span>Export ve Paylaş</span></button>
-        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir ve Paketler</span></button>
-        <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>QA ve Lab</span></button>
-        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Canlı Pusula</span></button>
         <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()"><span class="mob-nav-ico">⟳</span><span>Beni Takip Et</span></button>
         <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()"><span class="mob-nav-ico">◉</span><span>Yakınımdaki Şehirler</span></button>
+        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Canlı Pusula</span></button>
+        <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"><span class="mob-nav-ico">↗</span><span>Export ve Paylaş</span></button>
+      </div>
+
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Sistem</div>
+        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir ve Paketler</span></button>
+        <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>QA ve Lab</span></button>
         <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor Mod</span></button>
       </div>
     </div>
@@ -246,7 +364,6 @@
         <textarea id="biz-msg" placeholder="İhtiyaç: white-label, API, toplu analiz..."></textarea>
         <button class="biz-cta primary" onclick="bizSendLead()">Teklif Maili Oluştur</button>
       </div>
-      <div class="biz-hint">Not: Bu sürüm backend içermez. Buton varsayılan e-posta uygulaması ile taslak açar.</div>
     </div>
   </div>
 </div>
@@ -342,29 +459,37 @@
   <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Doğru</div></div>
   <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Sapma</div></div>
   <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">Veri Yok</div></div>
-  <div class="map-switch" id="axis-switch">
-    <button id="axis-final" class="active" onclick="setAxisMode('final')">Final</button>
-    <button id="axis-raw" onclick="setAxisMode('raw')">Raw</button>
-    <button id="axis-interior" onclick="setAxisMode('interior')">Inside</button>
-  </div>
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
   <div class="district-pill" id="district-pill">
     <span id="district-pill-text">—</span>
     <button id="district-pill-clear" title="İlçe filtresini temizle"></button>
   </div>
+</div>
+<div class="mode-pills">
+  <div class="map-switch" id="axis-switch">
+    <button id="axis-final" class="active" onclick="setAxisMode('final')">Final</button>
+    <button id="axis-raw" onclick="setAxisMode('raw')">Raw</button>
+    <button id="axis-interior" onclick="setAxisMode('interior')">Inside</button>
+  </div>
+</div>
+<div class="tolerance-pill">
   <div class="tol">Tolerans:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
 </div>
 
 <div class="main">
   <div id="map">
-    <div class="search-box floating-search">
-      <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
-      <datalist id="city-suggest-list"></datalist>
-      <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
-      <div class="city-smart-dd" id="city-smart-dd"></div>
+    <div class="floating-search">
+      <div class="search-box">
+        <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()">Q</button>
+        <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
+        <datalist id="city-suggest-list"></datalist>
+        <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+        <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
+        <div class="city-smart-dd" id="city-smart-dd"></div>
+      </div>
     </div>
     <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
-    <button class="live-vp-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
+    <button class="live-vp-badge live-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
       <span class="live-vp-icon-wrap">
         <span class="vp-dot" id="vp-dot"></span>
       </span>
@@ -373,6 +498,10 @@
         <span id="vp-meta">Cache: 0 tile</span>
       </span>
     </button>
+    <div class="map-fab">
+      <button class="map-fab-btn" onclick="document.getElementById('loc-btn').click()" title="Konumum" aria-label="Konumum">⌖</button>
+      <button class="map-fab-btn secondary" onclick="document.getElementById('btn-compass').click()" title="Pusula" aria-label="Pusula">◎</button>
+    </div>
     <div class="mob-layer-stack" id="mob-layer-stack">
       <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita"> Koyu</button>
       <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita"> Uydu</button>
