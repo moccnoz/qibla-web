@@ -3515,6 +3515,47 @@ input[type="range"]::-moz-range-thumb {
 .sidebar .legend-line.amber { background: var(--amber); }
 .sidebar .legend-line.accent { background: var(--accent); }
 
+.ns-link {
+  text-decoration: none;
+}
+
+.seo-links {
+  padding: 10px 13px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255,255,255,.02);
+}
+
+.seo-links-title {
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.seo-links a {
+  color: var(--text);
+  font-size: 12px;
+  text-decoration: none;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: rgba(255,255,255,.03);
+  transition: all var(--transition-fast);
+}
+
+.seo-links a:hover {
+  border-color: var(--accent);
+  color: var(--text-bright);
+}
+
+.mob-drawer a.mob-drawer-btn {
+  text-decoration: none;
+}
+
 /* Chart area */
 .sidebar .chart-area,
 .sidebar .radar-area,

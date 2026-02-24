@@ -2385,6 +2385,13 @@ const TR_EN_REPLACERS = [
   [/Ana sayfa sıfırlandı/g, 'Home reset'],
   [/Outdoor mod aktif/g, 'Outdoor mode enabled'],
   [/Outdoor mod kapatıldı/g, 'Outdoor mode disabled']
+  [/Rehberler/g, 'Guides'],
+  [/Kıble Rehberleri/g, 'Qibla Guides'],
+  [/Şehir rehberleri/g, 'City guides'],
+  [/Kıble nasıl hesaplanır\?/g, 'How is qibla calculated?'],
+  [/Şehir bazlı kıble yönü rehberleri/g, 'City-based qibla direction guides'],
+  [/Veri kaynakları/g, 'Data sources'],
+  [/Metodoloji/g, 'Methodology']
 ];
 
 function i18nTranslateText(input) {
@@ -2468,6 +2475,21 @@ function applyI18nStaticUi() {
   if (legendTitle) legendTitle.textContent = t.legend;
 }
 
+function syncSeoInternalLinks() {
+  const isEn = currentLang === 'en';
+  const guidesHref = isEn ? '/en/qibla-direction/' : '/tr/kible-yonu/';
+  const methodHref = isEn ? '/en/how-qibla-is-calculated/' : '/tr/kible-nasil-hesaplanir/';
+  const sourcesHref = isEn ? '/en/data-sources/' : '/tr/veri-kaynaklari/';
+  const setHref = (id, href) => { const el = document.getElementById(id); if (el) el.setAttribute('href', href); };
+  setHref('ns-link-guides', guidesHref);
+  setHref('ns-link-method', methodHref);
+  setHref('mob-link-guides', guidesHref);
+  setHref('mob-link-method', methodHref);
+  setHref('seo-link-guides', guidesHref);
+  setHref('seo-link-method', methodHref);
+  setHref('seo-link-sources', sourcesHref);
+}
+
 function syncLangUrlPath() {
   try {
     const targetPath = currentLang === 'en' ? '/en/' : '/tr/';
@@ -2513,6 +2535,7 @@ function setLang(lang, silent=false) {
   document.getElementById('lang-tr')?.classList.toggle('active', currentLang==='tr');
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
   if (typeof syncNavProxyStates === 'function') syncNavProxyStates();
+  syncSeoInternalLinks();
   syncLangUrlPath();
   if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);
