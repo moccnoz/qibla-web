@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://qible.app/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://qible.app/tr/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
-  <url><loc>https://qible.app/en/</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://qible.app/</loc><lastmod>2026-02-25</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://qible.app/tr/</loc><lastmod>2026-02-25</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://qible.app/en/</loc><lastmod>2026-02-25</lastmod><changefreq>daily</changefreq><priority>0.9</priority></url>
 
-  <url><loc>https://qible.app/tr/kible-yonu/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-nasil-hesaplanir/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://qible.app/en/how-qibla-is-calculated/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
-  <url><loc>https://qible.app/tr/veri-kaynaklari/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
-  <url><loc>https://qible.app/en/data-sources/</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-nasil-hesaplanir/</loc><lastmod>2026-02-25</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://qible.app/en/how-qibla-is-calculated/</loc><lastmod>2026-02-25</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://qible.app/tr/veri-kaynaklari/</loc><lastmod>2026-02-25</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://qible.app/en/data-sources/</loc><lastmod>2026-02-25</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
 
-  <url><loc>https://qible.app/tr/kible-yonu/istanbul/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-yonu/ankara/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-yonu/izmir/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-yonu/konya/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-yonu/bursa/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/tr/kible-yonu/mardin/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/istanbul/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/ankara/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/izmir/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/konya/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/bursa/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/tr/kible-yonu/mardin/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 
-  <url><loc>https://qible.app/en/qibla-direction/istanbul/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/ankara/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/izmir/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/konya/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/bursa/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
-  <url><loc>https://qible.app/en/qibla-direction/mardin/</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/istanbul/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/ankara/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/izmir/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/konya/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/bursa/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://qible.app/en/qibla-direction/mardin/</loc><lastmod>2026-02-25</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>
 </urlset>
