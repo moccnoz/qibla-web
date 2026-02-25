@@ -164,6 +164,30 @@ function safeStorageSet(key, value) {
   }
 }
 
+function ensureImageAltAttributes(root = document) {
+  try {
+    const imgs = root.querySelectorAll?.('img') || [];
+    imgs.forEach((img, idx) => {
+      const current = String(img.getAttribute('alt') || '').trim();
+      if (current) return;
+      const decorative = img.closest('.logo-q, .mob-brand-icon, .mob-pill-logo');
+      if (decorative) {
+        img.setAttribute('alt', 'Qible logo');
+        return;
+      }
+      const hint = String(
+        img.getAttribute('aria-label') ||
+        img.getAttribute('title') ||
+        img.getAttribute('data-alt') ||
+        img.id ||
+        img.className ||
+        ''
+      ).trim();
+      img.setAttribute('alt', hint ? `Qible image: ${hint}` : `Qible image ${idx + 1}`);
+    });
+  } catch {}
+}
+
 function resolveInitialLang() {
   const forced = String(window.__QIBLE_FORCE_LANG || '').toLowerCase();
   if (forced === 'en' || forced === 'tr') return forced;
@@ -532,6 +556,7 @@ async function geoCacheSet(cellKey, elements, mode = 'full') {
 }
 
 async function bootstrap() {
+  ensureImageAltAttributes(document);
   initGeoCacheDb();
   loadNameEnrichCache();
   loadPopularityCache();
@@ -671,6 +696,7 @@ function initMap() {
     scheduleViewportLoad(260);
   }
   startViewportWatchdog();
+  ensureImageAltAttributes(document);
 }
 
 async function autoLocateOnStartup() {
@@ -7667,34 +7693,40 @@ async function loadPhoto(m, tags) {
   const wrap = document.getElementById('dp-photo-wrap');
   const img  = document.getElementById('dp-photo');
   const cred = document.getElementById('dp-photo-credit');
+  const mosqueName = String(m?.name || '').trim();
+  const langIsEn = currentLang === 'en';
+  const defaultAlt = mosqueName
+    ? (langIsEn ? `${mosqueName} mosque photo` : `${mosqueName} cami fotoğrafı`)
+    : (langIsEn ? 'Mosque photo' : 'Cami fotoğrafı');
 
+  img.alt = defaultAlt;
   wrap.style.display = 'none';
 
   // 1. wikimedia_commons tag
   const wmc = tags.wikimedia_commons || tags.image;
   if (wmc) {
     const url = await resolveWikimediaUrl(wmc);
-    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia Commons'; return; }
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia Commons'; ensureImageAltAttributes(wrap); return; }
   }
 
   // 2. wikipedia tag → try Wikimedia page image
   const wiki = tags.wikipedia;
   if (wiki) {
     const url = await fetchWikiPageImage(wiki);
-    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikipedia'; return; }
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikipedia'; ensureImageAltAttributes(wrap); return; }
   }
 
   // 3. wikidata P18 image
   const wd = String(tags.wikidata || '').trim();
   if (wd) {
     const url = await fetchWikidataImageUrl(wd);
-    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia (Wikidata)'; return; }
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia (Wikidata)'; ensureImageAltAttributes(wrap); return; }
   }
 
   // 4. Commons category fallback
   if (wmc && /^Category:/i.test(wmc)) {
     const url = await fetchCommonsCategoryImage(wmc);
-    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia Commons'; return; }
+    if (url) { img.src = url; wrap.style.display = ''; cred.textContent = '© Wikimedia Commons'; ensureImageAltAttributes(wrap); return; }
   }
 
   // 5. Name/location based Commons search fallback
@@ -7704,6 +7736,7 @@ async function loadPhoto(m, tags) {
     img.src = fallback.url;
     wrap.style.display = '';
     cred.textContent = fallback.source || '© Wikimedia Commons';
+    ensureImageAltAttributes(wrap);
     return;
   }
 }
@@ -8050,11 +8083,12 @@ async function renderInteriorSection(m, tags) {
   } else {
     gallery.innerHTML = photos.map((p,i) => `
       <div class="dp-int-thumb" onclick="window.open('${escHtml(p.url)}','_blank')">
-        <img src="${escHtml(p.url)}" alt="Interior ${i+1}"/>
+        <img src="${escHtml(p.url)}" alt="${escHtml((m?.name || 'Cami') + ' iç mekan fotoğrafı ' + (i+1))}"/>
         <span>${p.source==='commons-category'?'Commons':'Arama'}</span>
       </div>
     `).join('');
   }
+  ensureImageAltAttributes(gallery);
 
   const list = getInteriorEvidenceList(m);
   const manualRec = getManualAxisRecord(m);
