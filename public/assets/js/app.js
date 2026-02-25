@@ -180,6 +180,21 @@ function resolveInitialLang() {
 }
 
 let activeSearchController = null;
+let lastMapMoveTrackAt = 0;
+
+function gaTrack(eventName, params = {}) {
+  try {
+    if (typeof gtag !== 'function' || !eventName) return;
+    const clean = {};
+    Object.entries(params || {}).forEach(([k, v]) => {
+      if (v == null) return;
+      if (typeof v === 'number' && Number.isFinite(v)) clean[k] = v;
+      else if (typeof v === 'boolean') clean[k] = v ? 1 : 0;
+      else clean[k] = String(v).slice(0, 120);
+    });
+    gtag('event', eventName, clean);
+  } catch {}
+}
 
 function makeAbortError(msg = 'Arama iptal edildi') {
   const err = new Error(msg);
@@ -566,6 +581,16 @@ function initMap() {
     if (mosqueDB.size) renderAll();
     maybeArmSearchAreaButton();
     scheduleViewportLoad(420);
+    const now = Date.now();
+    if (now - lastMapMoveTrackAt > 6000) {
+      lastMapMoveTrackAt = now;
+      const c = map.getCenter();
+      gaTrack('map_move', {
+        zoom: Number(map.getZoom() || 0),
+        lat: Number(c.lat.toFixed(4)),
+        lng: Number(c.lng.toFixed(4))
+      });
+    }
   });
   map.on('moveend zoomend', updateHashFromMap);
   map.on('dragstart', () => {
@@ -882,6 +907,7 @@ function startViewportWatchdog() {
 //  VIEWPORT AUTO-LOAD
 // ══════════════════════════════════════════════════════════════
 async function loadViewport(opts = {}) {
+  const startedAt = Date.now();
   const signal = opts.signal;
   throwIfAborted(signal);
   if (isVpLoading) {
@@ -954,6 +980,13 @@ async function loadViewport(opts = {}) {
     throwIfAborted(signal);
     updateCacheUI();
     renderAll();
+    gaTrack('live_load_done', {
+      loaded_cells: batch.length,
+      queued_cells: newCells.length,
+      cache_tiles: tileCache.size,
+      visible_count: getVisibleMosques(0.1).length,
+      duration_ms: Date.now() - startedAt
+    });
     setVpStatus('done');
     if (newCells.length > batch.length) {
       clearTimeout(vpDebounceTimer);
@@ -4861,6 +4894,12 @@ async function showCitySmartDropdown(q, opts = {}) {
 
 // Navigate to mosque on map + highlight
 function selectMosque(m) {
+  gaTrack('mosque_select', {
+    mosque_name: m?.name || '',
+    city: m?.searchMeta?.city || m?.city || '',
+    status: m?.status || '',
+    deviation_deg: Number.isFinite(m?.diff) ? Number(m.diff.toFixed(2)) : -1
+  });
   bumpVisitTrafficCount(m);
   bumpCitySearchHistory({
     query: m.name,
@@ -5022,6 +5061,12 @@ async function doSearch(){
   if(!map) return;
   const v=document.getElementById('city-input').value.trim();
   if(!v) return;
+  gaTrack('search_submit', {
+    query: v,
+    query_len: v.length,
+    is_mosque_query: isLikelyMosqueQuery(v),
+    lang: currentLang
+  });
   if (activeSearchController) cancelActiveSearch({ silent:true });
   const searchCtrl = new AbortController();
   activeSearchController = searchCtrl;
@@ -5263,6 +5308,12 @@ async function useMyLocation(opts = {}){
     }
     if(!map) return false;
     setUserGeoState(pos.coords.latitude, pos.coords.longitude, true);
+    gaTrack('location_enable', {
+      granted: 1,
+      source,
+      lat: Number(pos.coords.latitude.toFixed(4)),
+      lng: Number(pos.coords.longitude.toFixed(4))
+    });
     map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
     tileCache.clear(); mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
@@ -5271,6 +5322,11 @@ async function useMyLocation(opts = {}){
     if (showToast && source === 'manual') toast('Konum tespit edildi', 1800);
     return true;
   } catch (err) {
+    gaTrack('location_enable', {
+      granted: 0,
+      source,
+      error_code: Number(err?.code || 0)
+    });
     if (source === 'auto' && err?.code === 1) safeStorageSet(GEO_PROMPT_KEY, 'denied');
     if (showToast) toast(geoErrorMessage(err), 3600);
     return false;
@@ -6619,6 +6675,10 @@ function parseHash() {
 
 // ── Export modal
 function openExport() {
+  gaTrack('export_open', {
+    city: currentCity || '',
+    total: mosqueDB.size
+  });
   document.getElementById('exp-overlay').classList.add('show');
   document.getElementById('btn-export').classList.add('active');
   // Fill share URL
@@ -6757,6 +6817,7 @@ function copyShareUrl() {
 
 // ── JSON export
 function exportJSON() {
+  gaTrack('export_click', { format:'json', city: currentCity || '', total: mosqueDB.size });
   const data = {
     meta: {
       city: currentCity,
@@ -6792,6 +6853,7 @@ function exportJSON() {
 
 // ── CSV export
 function exportCSV() {
+  gaTrack('export_click', { format:'csv', city: currentCity || '', total: mosqueDB.size });
   const headers = ['id','name','lat','lng','qibla_angle','building_axis','deviation_deg',
                    'status','method','construction_year','period'];
   const rows = [...mosqueDB.values()].map(m => [
@@ -6819,6 +6881,7 @@ function exportCSV() {
 
 // ── GeoJSON export
 function exportGeoJSON() {
+  gaTrack('export_click', { format:'geojson', city: currentCity || '', total: mosqueDB.size });
   const geojson = {
     type: 'FeatureCollection',
     metadata: {
@@ -6855,6 +6918,7 @@ function exportGeoJSON() {
 
 // ── HTML Report (opens in new tab)
 function exportReport() {
+  gaTrack('export_click', { format:'report', city: currentCity || '', total: mosqueDB.size });
   const all = [...mosqueDB.values()];
   const withData = all.filter(m => m.diff !== null);
   const correct  = withData.filter(m => m.diff <= tol);
