@@ -6449,3 +6449,55 @@ body:not(.outdoor-mode) #map::after {
     color:rgba(255,255,255,.36) !important;
   }
 }
+
+/* STEP 1: Detail panel spacing + typography uplift */
+.dp-panel{width:420px;}
+.dp-head{padding:22px 24px 16px;}
+.dp-head-left{padding-right:12px;}
+.dp-name{font-size:21px;line-height:1.28;}
+.dp-name-ar{font-size:17px;margin-top:6px;}
+.dp-place{font-size:15px;line-height:1.45;margin-top:8px;}
+.dp-coords{font-size:12px;line-height:1.4;margin-top:6px;}
+.dp-ribbon-item{padding:14px 14px 12px;gap:6px;}
+.dp-ribbon-lbl{font-size:11px;letter-spacing:.07em;}
+.dp-ribbon-val{font-size:17px;line-height:1.3;}
+.dp-status-badge{font-size:13px;padding:6px 12px;border-radius:12px;}
+.dp-photo{max-height:250px;}
+.dp-photo-credit{font-size:10px;padding:3px 8px;border-radius:6px;}
+.dp-section{padding:18px 20px;}
+.dp-section-title{font-size:13px;margin-bottom:14px;}
+.dp-int-gallery{gap:10px;margin-bottom:12px;}
+.dp-int-thumb{height:82px;border-radius:8px;}
+.dp-int-thumb span{font-size:11px;left:6px;bottom:6px;padding:2px 6px;}
+.dp-int-meta{font-size:15px;line-height:1.5;margin-bottom:12px;}
+.dp-int-form{gap:10px;margin-bottom:12px;}
+.dp-int-form label{font-size:14px;}
+.dp-int-form input,.dp-int-form select{font-size:14px;padding:10px 12px;border-radius:8px;}
+.dp-int-axis-val{font-size:15px;}
+.dp-int-ev-list{gap:8px;}
+.dp-int-ev-row{padding:10px 12px;font-size:13px;border-radius:8px;}
+.dp-int-ev-sub{font-size:12px;line-height:1.4;}
+.dp-int-ev-del{font-size:12px;padding:5px 10px;}
+.dp-qibla-row{gap:18px;}
+.dp-qibla-stats{gap:10px;}
+.dp-qs-row{font-size:16px;line-height:1.45;}
+.dp-wiki-body{font-size:15px;line-height:1.65;margin-bottom:12px;}
+.dp-wiki-link{font-size:13px;}
+.dp-tags{gap:5px;}
+.dp-tag-row{grid-template-columns:155px 1fr;gap:10px;font-size:14px;padding:7px 0;}
+.dp-actions{gap:10px;padding:18px 20px 24px;}
+.dp-action-btn{font-size:14px;padding:10px 14px;border-radius:8px;}
+
+@media (max-width:768px){
+  .dp-panel{width:100%;}
+  .dp-head{padding:18px 16px 14px;}
+  .dp-name{font-size:19px;}
+  .dp-place{font-size:13px;}
+  .dp-ribbon-item{padding:12px 10px 10px;}
+  .dp-ribbon-lbl{font-size:10px;}
+  .dp-ribbon-val{font-size:15px;}
+  .dp-section{padding:16px 14px;}
+  .dp-section-title{font-size:12px;}
+  .dp-int-meta,.dp-qs-row,.dp-wiki-body{font-size:14px;}
+  .dp-tag-row{grid-template-columns:128px 1fr;font-size:13px;gap:8px;}
+}
