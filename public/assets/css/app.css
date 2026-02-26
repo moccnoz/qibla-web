@@ -6526,17 +6526,17 @@ body:not(.outdoor-mode) #map::after {
 }
 
 /* DETAIL SPACING FIX: keep true inner distance from modal borders */
-.dp-panel > .dp-section{
-  padding:18px 20px !important;
+.dp-panel > div.dp-section{
+  padding:18px 24px !important;
 }
-.dp-panel > .dp-actions{
-  padding:18px 20px 24px !important;
+.dp-panel > div.dp-actions{
+  padding:18px 24px 24px !important;
 }
 @media (max-width:768px){
-  .dp-panel > .dp-section{
-    padding:16px 14px !important;
+  .dp-panel > div.dp-section{
+    padding:16px 16px !important;
   }
-  .dp-panel > .dp-actions{
-    padding:16px 14px 20px !important;
+  .dp-panel > div.dp-actions{
+    padding:16px 16px 20px !important;
   }
 }
