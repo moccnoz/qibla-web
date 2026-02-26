@@ -1224,9 +1224,10 @@ async function hydrateMosqueDetailOnDemand(m) {
   try {
     const items = await fetchByOsmId(m.osmType, m.id);
     if (!Array.isArray(items) || !items.length) return;
-    const before = mosqueDB.get(m.id);
+    const key = getMosqueKey(m);
+    const before = mosqueDB.get(key);
     processElements(items);
-    const after = mosqueDB.get(m.id);
+    const after = mosqueDB.get(key);
     if (!after || !before) return;
     const gotGeometry = !!(after.polyCoords && after.polyCoords.length >= 4);
     if (!gotGeometry) return;
@@ -1249,6 +1250,53 @@ async function fetchByWikidataQid(qid, opts = {}) {
   relation["wikidata"="${qid}"];
 );out body geom tags center;`;
   return fetchOverpassQuery(q, { signal: opts.signal });
+}
+
+function buildWikidataSearchQueries(query = '') {
+  const q = String(query || '').trim();
+  if (!q) return [];
+  const base = q.replace(/\b(cami|camii|mescit|mescid|mosque|masjid)\b/gi, '').trim();
+  return [...new Set([
+    q,
+    `${q} mosque`,
+    `${q} camii`,
+    base ? `${base} camii` : '',
+    base ? `${base} mosque` : '',
+    base
+  ].filter(Boolean))].slice(0, 6);
+}
+
+function isLikelyMosqueWikidataHit(hit = {}) {
+  const label = trLower(hit?.label || '');
+  const desc = trLower(hit?.description || '');
+  const t = `${label} ${desc}`;
+  return /(mosque|cami|camii|mescit|mescid|masjid|džamija|dzamija|islam|muslim)/.test(t);
+}
+
+async function fetchWikidataQidsByQuery(query = '', max = 3) {
+  const out = [];
+  const seen = new Set();
+  const queries = buildWikidataSearchQueries(query);
+  for (const q of queries) {
+    for (const lang of ['tr', 'en']) {
+      try {
+        const api = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(q)}&language=${lang}&uselang=${lang}&type=item&limit=10&format=json&origin=*`;
+        const r = await fetch(api);
+        if (!r.ok) continue;
+        const d = await r.json();
+        const hits = Array.isArray(d?.search) ? d.search : [];
+        for (const hit of hits) {
+          if (!isLikelyMosqueWikidataHit(hit)) continue;
+          const qid = String(hit?.id || '').toUpperCase();
+          if (!/^Q\d+$/.test(qid) || seen.has(qid)) continue;
+          seen.add(qid);
+          out.push(qid);
+          if (out.length >= max) return out;
+        }
+      } catch {}
+    }
+  }
+  return out;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1286,7 +1334,8 @@ function processElements(elements) {
       if(res){ axis=res.angle; method='edge-analysis'; }
     }
 
-    const fallbackName = pickNameFromTags(el.tags) || buildTagsAddressFallbackName(el.tags || {}, el.id);
+    const remoteMeta = msRemoteMetaByRef.get(`${el.type}:${el.id}`);
+    const fallbackName = pickNameFromTags(el.tags) || buildTagsAddressFallbackName(el.tags || {}, el.id, remoteMeta || {});
     const rec = {
       id:el.id,
       osmType: el.type,
@@ -1301,13 +1350,13 @@ function processElements(elements) {
       tags: el.tags||{},
       geomComplexity: computeGeometryComplexity(polyCoords)
     };
-    const remoteMeta = msRemoteMetaByRef.get(`${el.type}:${el.id}`);
+    const dbKey = `${rec.osmType || 'way'}:${rec.id}`;
     if (remoteMeta) {
       rec.searchMeta = { ...remoteMeta };
     }
     buildSearchIndexForMosque(rec);
     applyAxisFusion(rec);
-    const existing = mosqueDB.get(el.id);
+    const existing = mosqueDB.get(dbKey);
     if (existing) {
       if (remoteMeta && !existing.searchMeta) existing.searchMeta = { ...remoteMeta };
       const recScore =
@@ -1324,7 +1373,7 @@ function processElements(elements) {
     } else {
       added++;
     }
-    mosqueDB.set(el.id, rec);
+    mosqueDB.set(dbKey, rec);
     if (rec && (isPlaceholderMosqueName(rec.name) || isGenericMosqueName(rec.name))) enqueueMosqueNameEnrichment(rec);
   }
   return added;
@@ -1733,7 +1782,7 @@ function buildAddressBasedMosqueName(addr = {}) {
   return `${base} Camii`;
 }
 
-function buildTagsAddressFallbackName(tags = {}, osmId = '') {
+function buildTagsAddressFallbackName(tags = {}, osmId = '', ctx = {}) {
   const addr = {
     suburb: tags['addr:suburb'],
     neighbourhood: tags['addr:neighbourhood'],
@@ -1749,7 +1798,11 @@ function buildTagsAddressFallbackName(tags = {}, osmId = '') {
   if (byAddr) return byAddr;
   const area = tags['addr:place'] || tags['addr:street'] || tags['addr:county'] || tags['addr:state'];
   if (typeof area === 'string' && area.trim()) return `${area.trim()} Camii`;
-  return `OSM Cami #${osmId}`;
+  const cityLike = String(
+    addr.city || addr.town || addr.city_district || ctx.city || ctx.province || currentCity || ''
+  ).trim();
+  if (cityLike) return `${cityLike} İsimsiz Camii`;
+  return `İsimsiz Cami #${osmId}`;
 }
 
 async function fetchWikidataLabel(qid) {
@@ -1772,7 +1825,7 @@ async function fetchWikidataLabel(qid) {
 
 function isPlaceholderMosqueName(name) {
   const t = trLower(name || '').trim();
-  return !t || t === 'isimsiz cami' || t.startsWith('isimsiz cami (#') || t.startsWith('osm cami #');
+  return !t || t === 'isimsiz cami' || t.startsWith('isimsiz cami (#') || t.startsWith('isimsiz cami #') || t.startsWith('osm cami #');
 }
 
 function isGenericMosqueName(name) {
@@ -2032,8 +2085,11 @@ async function fetchNominatimReverseCandidate(m) {
     const cls = trLower(d.class || '');
     const type = trLower(d.type || '');
     const nm = pickBestNamedetailName(d.namedetails || {}) || String(d.name || d.display_name || '').split(',')[0].trim();
-    if (!nm || isGenericMosqueName(nm)) return null;
-    return { name:nm, source:'nominatim-reverse', cls, type, address:d.address || {} };
+    const address = d.address || {};
+    if (!nm || isGenericMosqueName(nm)) {
+      return { name:'', source:'nominatim-reverse', cls, type, address };
+    }
+    return { name:nm, source:'nominatim-reverse', cls, type, address };
   } catch {
     return null;
   }
@@ -2088,6 +2144,7 @@ function scoreNameCandidate(c) {
     s += c.dist <= 25 ? 45 : c.dist <= 60 ? 35 : 20;
     if (c.cls === 'amenity' && (c.type === 'place_of_worship' || c.type === 'mosque')) s += 20;
   }
+  if (c.source === 'context-synth') s += 34;
   if (isGenericMosqueName(c.name)) s -= 55;
   if (c.name.length < 4) s -= 18;
   return s;
@@ -2098,7 +2155,7 @@ async function resolveMosqueNameFromSources(m) {
   const wd = m.tags?.wikidata ? await fetchWikidataLabel(m.tags.wikidata) : null;
   if (wd) candidates.push({ name:wd, source:'wikidata' });
   const rev = await fetchNominatimReverseCandidate(m);
-  if (rev) candidates.push(rev);
+  if (rev?.name && !isGenericMosqueName(rev.name)) candidates.push(rev);
   const nearNom = await fetchNominatimNearbyCandidates(m);
   nearNom.forEach(x => candidates.push(x));
   for (const r of [60, 140, 260]) {
@@ -2110,12 +2167,16 @@ async function resolveMosqueNameFromSources(m) {
     const synth = buildAddressBasedMosqueName(rev.address);
     if (synth) candidates.push({ name:synth, source:'address-synth', cls:'synthetic', type:'synthetic' });
   }
+  const synthCtx = buildTagsAddressFallbackName(m.tags || {}, m.id, m.searchMeta || {});
+  if (synthCtx && !/^isimsiz cami #/i.test(synthCtx)) {
+    candidates.push({ name:synthCtx, source:'context-synth', cls:'synthetic', type:'synthetic' });
+  }
   if (!candidates.length) return null;
 
   const best = candidates
     .map(c => ({...c, score:scoreNameCandidate(c)}))
     .sort((a,b) => b.score - a.score)[0];
-  if (!best || (best.source === 'address-synth' ? best.score < 28 : best.score < 45)) return null;
+  if (!best || ((best.source === 'address-synth' || best.source === 'context-synth') ? best.score < 28 : best.score < 45)) return null;
   return { name: best.name.trim(), source: best.source, score: best.score };
 }
 
@@ -3374,7 +3435,7 @@ function pickLocalizedMosqueNames(m, tags = {}) {
   const primaryPool = currentLang === 'en'
     ? [...enCands, ...latinGeneric, ...trCands, ...generic, ...arCands]
     : [...trCands, ...latinGeneric, ...enCands, ...generic, ...arCands];
-  const primary = primaryPool[0] || m?.name || `OSM Cami #${m?.id ?? '?'}`;
+  const primary = primaryPool[0] || m?.name || `İsimsiz Cami #${m?.id ?? '?'}`;
 
   const arName = arCands.find(x => trLower(x) !== trLower(primary)) || '';
   return { primary, arName };
@@ -3399,7 +3460,7 @@ function makePopup(m){
   const dist=greatCircleKm(m.lat,m.lng,KAABA.lat,KAABA.lng).toFixed(0);
   // Store mosque in global registry so popup button can find it by id
   window._popupRegistry = window._popupRegistry || {};
-  window._popupRegistry[m.id] = m;
+  window._popupRegistry[getMosqueKey(m)] = m;
   return`<div class="p-name">${escHtml(names.primary)}</div>
     <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${s}</span></div>
     <div class="p-row"><span class="p-k">Güven</span><span class="p-v">${m.confidence ?? '—'}/100</span></div>
@@ -3416,10 +3477,9 @@ let _lastClickedMosque = null;
 
 // Called by popup button — looks up mosque by id from registry or mosqueDB
 function animateFromPopup(id) {
-  // OSM ids are numbers; try both numeric and string lookup
-  const numId = typeof id === 'string' ? parseInt(id) : id;
-  const m = mosqueDB.get(numId) || mosqueDB.get(String(numId))
-         || [...mosqueDB.values()].find(x => x.id == id);
+  const key = String(id || '');
+  const m = mosqueDB.get(key)
+         || [...mosqueDB.values()].find(x => getMosqueKey(x) === key || String(x.id) === key);
   if (!m) { console.warn('animateFromPopup: mosque not found', id); return; }
   map.closePopup();
   // Small delay to let popup close before animating
@@ -3429,7 +3489,7 @@ function animateFromPopup(id) {
 function handleMosqueClick(m, source = 'map') {
   window._lastClickedMosque = m;
   document.querySelectorAll('.m-item').forEach(el=>el.classList.remove('active'));
-  const el=document.getElementById('mi-'+m.id);
+  const el=document.getElementById('mi-'+getMosqueKey(m));
   if(el){el.classList.add('active');el.scrollIntoView({block:'nearest',behavior:'smooth'});}
   if (source === 'list' && map && Number.isFinite(m?.lat) && Number.isFinite(m?.lng)) {
     const targetZoom = Math.max(map.getZoom() || 15, 16);
@@ -3584,7 +3644,7 @@ function updateList(visible){
           const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
           const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
           const div=document.createElement('div');
-          div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
+          div.className=`m-item ${statusClass}`;div.id='mi-'+getMosqueKey(m);
           div.style.animationDelay = Math.min(i*18, 300)+'ms';
           const convMark = m.convertedFrom?.converted ? ' →' : '';
           div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
@@ -3600,7 +3660,7 @@ function updateList(visible){
       const col=m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
       const statusClass = m.status === 'correct' ? 'correct' : (m.status === 'wrong' ? 'deviated' : 'nodata');
       const div=document.createElement('div');
-      div.className=`m-item ${statusClass}`;div.id='mi-'+m.id;
+      div.className=`m-item ${statusClass}`;div.id='mi-'+getMosqueKey(m);
       div.style.animationDelay = Math.min(i*18, 300)+'ms';
       const convMark = m.convertedFrom?.converted ? ' →' : '';
       div.innerHTML=`<div class="m-dot" style="background:${col};box-shadow:0 0 4px ${col}"></div>
@@ -4878,23 +4938,27 @@ async function triggerRemoteMosqueLookup(query, qNorm, bounds, opts = {}) {
       }
     }
 
-    if (!refsMap.size) {
-      msRemoteLookupMissAt.set(qNorm, Date.now());
-      return 0;
+    if (refsMap.size) {
+      refsMap.forEach((r, key) => {
+        msRemoteMetaByRef.set(key, {
+          city:r.city || '',
+          province:r.province || '',
+          country:r.country || '',
+          displayName:r.displayName || '',
+          importance:Number.isFinite(r.importance) ? r.importance : 0
+        });
+      });
     }
 
-    refsMap.forEach((r, key) => {
-      msRemoteMetaByRef.set(key, {
-        city:r.city || '',
-        province:r.province || '',
-        country:r.country || '',
-        displayName:r.displayName || '',
-        importance:Number.isFinite(r.importance) ? r.importance : 0
-      });
-    });
-
-    const elements = await fetchByOsmRefs([...refsMap.values()]);
-    const added = processElements(elements);
+    const elements = refsMap.size ? await fetchByOsmRefs([...refsMap.values()]) : [];
+    let added = processElements(elements);
+    if (added === 0) {
+      const qids = await fetchWikidataQidsByQuery(query, 4);
+      for (const qid of qids) {
+        const wdEls = await fetchByWikidataQid(qid).catch(() => []);
+        added += processElements(wdEls || []);
+      }
+    }
     if (!added) msRemoteLookupMissAt.set(qNorm, Date.now());
     return added;
   } catch {
@@ -7054,7 +7118,7 @@ function renderHistList() {
     const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
     const pCol = getPeriodColor(m.period);
     const yearStr = m.year ? m.year : '?';
-    return `<div class="hist-list-item" onclick="focusAndAnimate(${m.lat},${m.lng},'${m.id}')">
+    return `<div class="hist-list-item" onclick="focusAndAnimate(${m.lat},${m.lng},'${getMosqueKey(m)}')">
       <div class="hist-list-dot" style="background:${pCol}"></div>
       <div class="hist-list-name">${escHtml(m.name)}</div>
       <div class="hist-list-year" style="color:${pCol}">${yearStr}</div>
@@ -7064,7 +7128,8 @@ function renderHistList() {
 }
 
 function focusAndAnimate(lat, lng, id) {
-  const m = mosqueDB.get(id) || [...mosqueDB.values()].find(x=>String(x.id)===String(id));
+  const key = String(id || '');
+  const m = mosqueDB.get(key) || [...mosqueDB.values()].find(x => getMosqueKey(x) === key || String(x.id) === key);
   if (!m) return;
   map.setView([lat, lng], 17, {animate:true});
   handleMosqueClick(m);
@@ -7569,8 +7634,7 @@ function mosqueNavStep(dir) {
     active.scrollIntoView({block:'nearest', behavior:'smooth'});
     // Find mosque by id
     const id = active.id.replace('mi-','');
-    const numId = parseInt(id);
-    const m = mosqueDB.get(numId) || mosqueDB.get(id);
+    const m = mosqueDB.get(id) || [...mosqueDB.values()].find(x => getMosqueKey(x) === id || String(x.id) === id);
     if (m) handleMosqueClick(m);
   }
 }
