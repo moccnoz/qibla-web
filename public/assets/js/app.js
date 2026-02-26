@@ -33,6 +33,7 @@ let currentCity = '';
 let denseModeNotified = false;
 const wikidataLabelCache = new Map();
 const mosqueIdentityCache = new Map();
+const mosqueIdentityInFlight = new Map();
 const NAME_ENRICH_KEY = 'qibla-name-enrich-v1';
 const INTERIOR_KEY = 'qibla-interior-v1';
 const SNAPSHOT_KEY = 'qibla-snapshots-v1';
@@ -43,6 +44,8 @@ const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
 const POPULARITY_KEY = 'qibla-popularity-v1';
 const VISIT_TRAFFIC_KEY = 'qibla-visit-traffic-v1';
 const CITY_SEARCH_HISTORY_KEY = 'qibla-city-history-v1';
+const MOSQUE_IDENTITY_KEY = 'qibla-mosque-identity-v1';
+const MOSQUE_IDENTITY_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 const nameEnrichCache = new Map();
 const nameEnrichQueue = [];
 const nameEnrichQueued = new Set();
@@ -141,6 +144,11 @@ function storageCleanup() {
     let manObj = {};
     try { manObj = JSON.parse(rawManual) || {}; } catch {}
     localStorage.setItem(MANUAL_AXIS_KEY, JSON.stringify(trimObjectByCount(manObj, 380)));
+
+    const rawIdentity = safeStorageGet(MOSQUE_IDENTITY_KEY, '{}');
+    let idObj = {};
+    try { idObj = JSON.parse(rawIdentity) || {}; } catch {}
+    localStorage.setItem(MOSQUE_IDENTITY_KEY, JSON.stringify(trimObjectByCount(idObj, 650)));
 
     const lbKey = 'qibla-leaderboard-v2';
     const rawLb = safeStorageGet(lbKey, '[]');
@@ -560,6 +568,7 @@ async function bootstrap() {
   ensureImageAltAttributes(document);
   initGeoCacheDb();
   loadNameEnrichCache();
+  loadMosqueIdentityCache();
   loadPopularityCache();
   loadVisitTrafficCache();
   loadCitySearchHistory();
@@ -1791,6 +1800,39 @@ function saveNameEnrichCache() {
   } catch {}
 }
 
+function loadMosqueIdentityCache() {
+  try {
+    const raw = safeStorageGet(MOSQUE_IDENTITY_KEY, null);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+    const now = Date.now();
+    Object.entries(parsed).forEach(([k, v]) => {
+      if (!v || typeof v !== 'object') return;
+      const ts = Number(v.ts || 0);
+      if (!Number.isFinite(ts) || (now - ts) > MOSQUE_IDENTITY_TTL_MS) return;
+      const data = v.data;
+      if (!data || typeof data !== 'object') return;
+      mosqueIdentityCache.set(k, { ...data, _cachedAt: ts });
+    });
+  } catch {}
+}
+
+function saveMosqueIdentityCache() {
+  try {
+    const obj = {};
+    mosqueIdentityCache.forEach((v, k) => {
+      if (!v || typeof v !== 'object') return;
+      const { _cachedAt, ...data } = v;
+      obj[k] = {
+        ts: Number.isFinite(_cachedAt) ? _cachedAt : Date.now(),
+        data
+      };
+    });
+    safeStorageSet(MOSQUE_IDENTITY_KEY, JSON.stringify(trimObjectByCount(obj, 650)));
+  } catch {}
+}
+
 function loadPopularityCache() {
   try {
     const raw = safeStorageGet(POPULARITY_KEY, null);
@@ -2808,6 +2850,22 @@ function buildIdentitySearchQueries(m, tags = {}) {
   return [...new Set(q)].slice(0, 3);
 }
 
+function tokenizeIdentityText(text) {
+  return normalize(trLower(String(text || '')))
+    .split(/[^a-z0-9ığüşöçâêîû]+/i)
+    .map(s => s.trim())
+    .filter(s => s.length >= 3);
+}
+
+function identityNameSimilarity(a = '', b = '') {
+  const A = new Set(tokenizeIdentityText(a));
+  const B = new Set(tokenizeIdentityText(b));
+  if (!A.size || !B.size) return 0;
+  let hit = 0;
+  A.forEach(t => { if (B.has(t)) hit++; });
+  return hit / Math.max(1, Math.min(A.size, B.size));
+}
+
 function scoreWikidataSearchHit(hit = {}, m, tags = {}) {
   const label = String(hit?.label || '').toLowerCase();
   const desc = String(hit?.description || '').toLowerCase();
@@ -2827,6 +2885,10 @@ function scoreWikidataSearchHit(hit = {}, m, tags = {}) {
 async function searchWikidataQidByName(m, tags = {}) {
   const queries = buildIdentitySearchQueries(m, tags);
   if (!queries.length) return '';
+  const rawName = String(m?.name || '').trim();
+  const city = String(tags['addr:city'] || tags['addr:town'] || m?.searchMeta?.city || currentCity || '').trim();
+  // Güvenlik freni: şehir bilgisi yoksa ve isim kısa/jenerikse uzak eşleşmeleri alma.
+  if (!city && tokenizeIdentityText(rawName).length < 2) return '';
   for (const query of queries) {
     for (const lang of ['tr', 'en']) {
       try {
@@ -2841,7 +2903,9 @@ async function searchWikidataQidByName(m, tags = {}) {
           .sort((a, b) => b.score - a.score);
         if (ranked[0]?.score >= 55) {
           const id = String(ranked[0].hit?.id || '').toUpperCase();
-          if (/^Q\d+$/.test(id)) return id;
+          const topLabel = String(ranked[0].hit?.label || '');
+          const sim = identityNameSimilarity(rawName, topLabel);
+          if (/^Q\d+$/.test(id) && sim >= 0.5) return id;
         }
       } catch {}
     }
@@ -2881,56 +2945,76 @@ async function fetchWikidataIdentity(qid = '') {
   }
 }
 
-async function renderMosqueIdentity(m, tags = {}, token = 0) {
-  const el = document.getElementById('dp-kunye');
-  if (!el) return;
+function withTimeout(promise, ms = 2400, fallback = null) {
+  return Promise.race([
+    Promise.resolve(promise).catch(() => fallback),
+    new Promise(resolve => setTimeout(() => resolve(fallback), ms))
+  ]);
+}
+
+async function buildMosqueIdentity(m, tags = {}) {
+  const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
+  const osmYear = parseFirstYearFromText(buildRaw);
+  const restoration = pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']);
+  const osmArchitect = pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']);
+  const osmPatron = pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']);
+  const osmStyle = pickTag(tags, ['architectural_style', 'building:style', 'style']);
+  const osmDenomination = pickTag(tags, ['denomination', 'religion']);
+  const osmOperator = pickTag(tags, ['operator', 'owner']);
+
+  const qid = await withTimeout(resolveMosqueWikidataQid(m, tags), 2200, '');
+  const wd = qid ? await withTimeout(fetchWikidataIdentity(qid), 2800, null) : null;
+  const bestYear = wd?.year || osmYear || null;
+  const derived = deriveHistoricalPeriod(bestYear);
+  const merged = {
+    yearText: wd?.year ? String(wd.year) : (buildRaw || (osmYear ? String(osmYear) : '')),
+    architect: wd?.architect || osmArchitect,
+    patron: wd?.patron || osmPatron,
+    style: wd?.style || osmStyle,
+    denomination: wd?.denomination || osmDenomination,
+    operator: wd?.operator || osmOperator,
+    restoration,
+    era: pickTag(tags, ['historic:period', 'period']) || derived.period,
+    ruler: pickTag(tags, ['ruler', 'dynasty']) || derived.ruler,
+    source: wd?.qid ? `Wikidata (${wd.qid}), OSM` : 'OSM',
+    wikidataQid: wd?.qid || qid || '',
+    wikipediaTag: String(tags.wikipedia || '').trim()
+  };
+
+  const archQid = pickTag(tags, ['architect:wikidata']);
+  const patronQid = pickTag(tags, ['patron:wikidata']);
+  const [archLbl, patronLbl] = await Promise.all([
+    (!merged.architect && archQid) ? withTimeout(fetchWikidataLabel(archQid), 1400, '') : Promise.resolve(''),
+    (!merged.patron && patronQid) ? withTimeout(fetchWikidataLabel(patronQid), 1400, '') : Promise.resolve('')
+  ]);
+  if (!merged.architect && archLbl) merged.architect = archLbl;
+  if (!merged.patron && patronLbl) merged.patron = patronLbl;
+  return merged;
+}
+
+function buildBaseMosqueIdentity(tags = {}) {
+  const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
+  const osmYear = parseFirstYearFromText(buildRaw);
+  const derived = deriveHistoricalPeriod(osmYear);
+  return {
+    yearText: buildRaw || (osmYear ? String(osmYear) : ''),
+    architect: pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']),
+    patron: pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']),
+    style: pickTag(tags, ['architectural_style', 'building:style', 'style']),
+    denomination: pickTag(tags, ['denomination', 'religion']),
+    operator: pickTag(tags, ['operator', 'owner']),
+    restoration: pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']),
+    era: pickTag(tags, ['historic:period', 'period']) || derived.period,
+    ruler: pickTag(tags, ['ruler', 'dynasty']) || derived.ruler,
+    source: 'OSM',
+    wikidataQid: String(tags.wikidata || '').trim().toUpperCase(),
+    wikipediaTag: String(tags.wikipedia || '').trim()
+  };
+}
+
+function renderMosqueIdentityRows(el, merged) {
   const row = (k, v, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${escHtml(v || '')}</span></div>`;
-  el.innerHTML = row('Yükleniyor', 'Künye bilgileri hazırlanıyor...');
-
-  const cacheKey = `${m?.id || ''}|${String(tags.wikidata || '')}|${String(tags.wikipedia || '')}|${String(m?.name || '')}`;
-  let merged = mosqueIdentityCache.get(cacheKey);
-  if (!merged) {
-    const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
-    const osmYear = parseFirstYearFromText(buildRaw);
-    const restoration = pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']);
-    const osmArchitect = pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']);
-    const osmPatron = pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']);
-    const osmStyle = pickTag(tags, ['architectural_style', 'building:style', 'style']);
-    const osmDenomination = pickTag(tags, ['denomination', 'religion']);
-    const osmOperator = pickTag(tags, ['operator', 'owner']);
-    const qid = await resolveMosqueWikidataQid(m, tags);
-    const wd = qid ? await fetchWikidataIdentity(qid) : null;
-    const bestYear = wd?.year || osmYear || null;
-    const derived = deriveHistoricalPeriod(bestYear);
-    merged = {
-      yearText: wd?.year ? String(wd.year) : (buildRaw || (osmYear ? String(osmYear) : '')),
-      architect: wd?.architect || osmArchitect,
-      patron: wd?.patron || osmPatron,
-      style: wd?.style || osmStyle,
-      denomination: wd?.denomination || osmDenomination,
-      operator: wd?.operator || osmOperator,
-      restoration,
-      era: pickTag(tags, ['historic:period', 'period']) || derived.period,
-      ruler: pickTag(tags, ['ruler', 'dynasty']) || derived.ruler,
-      source: wd?.qid ? `Wikidata (${wd.qid}), OSM` : 'OSM'
-    };
-
-    const archQid = pickTag(tags, ['architect:wikidata']);
-    if (!merged.architect && archQid) {
-      const lbl = await fetchWikidataLabel(archQid);
-      if (lbl) merged.architect = lbl;
-    }
-    const patronQid = pickTag(tags, ['patron:wikidata']);
-    if (!merged.patron && patronQid) {
-      const lbl = await fetchWikidataLabel(patronQid);
-      if (lbl) merged.patron = lbl;
-    }
-    mosqueIdentityCache.set(cacheKey, merged);
-  }
-
-  if (token && token !== dpPopulateToken) return;
-  if (window._lastClickedMosque?.id !== m.id) return;
-
+  const rowHtml = (k, vHtml, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${vHtml || ''}</span></div>`;
   const items = [
     ['Yapım yılı', merged.yearText],
     ['Mimar', merged.architect],
@@ -2947,8 +3031,56 @@ async function renderMosqueIdentity(m, tags = {}, token = 0) {
     el.innerHTML = row('Künye', currentLang === 'en' ? 'No verified data found' : 'Doğrulanmış veri bulunamadı');
     return;
   }
-  if (String(merged.source || '').trim()) items.push(['Kaynak', merged.source]);
-  el.innerHTML = items.map(([k, v]) => row(k, v)).join('');
+
+  const srcBits = [];
+  const wikiParsed = parseWikiTag(merged.wikipediaTag);
+  if (wikiParsed) {
+    const wikiUrl = `https://${wikiParsed.lang}.wikipedia.org/wiki/${encodeURIComponent(wikiParsed.title.replace(/\s+/g, '_'))}`;
+    srcBits.push(`<a href="${wikiUrl}" target="_blank" rel="noopener">Wikipedia</a>`);
+  }
+  if (String(merged.wikidataQid || '').trim()) {
+    const wdUrl = `https://www.wikidata.org/wiki/${encodeURIComponent(merged.wikidataQid)}`;
+    srcBits.push(`<a href="${wdUrl}" target="_blank" rel="noopener">Wikidata (${escHtml(merged.wikidataQid)})</a>`);
+  }
+  srcBits.push('OSM');
+
+  const htmlRows = items.map(([k, v]) => row(k, v));
+  htmlRows.push(rowHtml('Kaynak', srcBits.join(' · ')));
+  el.innerHTML = htmlRows.join('');
+}
+
+async function renderMosqueIdentity(m, tags = {}, token = 0) {
+  const el = document.getElementById('dp-kunye');
+  if (!el) return;
+  const baseIdentity = buildBaseMosqueIdentity(tags);
+  renderMosqueIdentityRows(el, baseIdentity);
+  const cacheKey = `${m?.id || ''}|${String(tags.wikidata || '')}|${String(tags.wikipedia || '')}|${String(m?.name || '')}`;
+  let merged = mosqueIdentityCache.get(cacheKey);
+  if (merged && Number.isFinite(merged._cachedAt) && (Date.now() - merged._cachedAt) > MOSQUE_IDENTITY_TTL_MS) {
+    mosqueIdentityCache.delete(cacheKey);
+    merged = null;
+  }
+  if (merged) {
+    if (token && token !== dpPopulateToken) return;
+    if (window._lastClickedMosque?.id !== m.id) return;
+    renderMosqueIdentityRows(el, merged);
+    return;
+  }
+
+  let task = mosqueIdentityInFlight.get(cacheKey);
+  if (!task) {
+    task = buildMosqueIdentity(m, tags).finally(() => mosqueIdentityInFlight.delete(cacheKey));
+    mosqueIdentityInFlight.set(cacheKey, task);
+  }
+  task.then((resolved) => {
+    if (!resolved || typeof resolved !== 'object') return;
+    resolved._cachedAt = Date.now();
+    mosqueIdentityCache.set(cacheKey, resolved);
+    saveMosqueIdentityCache();
+    if (token && token !== dpPopulateToken) return;
+    if (window._lastClickedMosque?.id !== m.id) return;
+    renderMosqueIdentityRows(el, resolved);
+  }).catch(() => {});
 }
 
 function computeConfidenceScore(m) {

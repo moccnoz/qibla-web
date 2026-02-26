@@ -6507,6 +6507,15 @@ body:not(.outdoor-mode) #map::after {
   line-height:1.45;
   font-weight:600;
 }
+.dp-kunye-v a{
+  color:rgba(180, 230, 255, .92);
+  text-decoration:none;
+  border-bottom:1px solid rgba(180, 230, 255, .4);
+}
+.dp-kunye-v a:hover{
+  color:#ffffff;
+  border-bottom-color:rgba(255,255,255,.8);
+}
 
 @media (max-width:768px){
   .dp-panel{width:100%;}
