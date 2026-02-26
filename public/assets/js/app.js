@@ -2660,6 +2660,122 @@ function detectConversionInfo(tags = {}) {
   };
 }
 
+function parseFirstYearFromText(raw) {
+  const txt = String(raw || '').trim();
+  if (!txt) return null;
+  const m = txt.match(/\b(1[0-9]{3}|20[0-9]{2})\b/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  return Number.isFinite(y) ? y : null;
+}
+
+function deriveOttomanRulerByYear(y) {
+  if (!Number.isFinite(y)) return '';
+  const rulers = [
+    [1299, 1326, 'I. Osman'],
+    [1326, 1362, 'Orhan Gazi'],
+    [1362, 1389, 'I. Murad'],
+    [1389, 1402, 'Yıldırım Bayezid'],
+    [1413, 1421, 'I. Mehmed'],
+    [1421, 1451, 'II. Murad'],
+    [1451, 1481, 'Fatih Sultan Mehmed'],
+    [1481, 1512, 'II. Bayezid'],
+    [1512, 1520, 'Yavuz Sultan Selim'],
+    [1520, 1566, 'Kanuni Sultan Süleyman'],
+    [1566, 1574, 'II. Selim'],
+    [1574, 1595, 'III. Murad'],
+    [1595, 1603, 'III. Mehmed'],
+    [1603, 1617, 'I. Ahmed'],
+    [1618, 1622, 'II. Osman'],
+    [1623, 1640, 'IV. Murad'],
+    [1648, 1687, 'IV. Mehmed'],
+    [1703, 1730, 'III. Ahmed'],
+    [1730, 1754, 'I. Mahmud'],
+    [1757, 1774, 'III. Mustafa'],
+    [1789, 1807, 'III. Selim'],
+    [1808, 1839, 'II. Mahmud'],
+    [1839, 1861, 'Abdülmecid'],
+    [1861, 1876, 'Abdülaziz'],
+    [1876, 1909, 'II. Abdülhamid'],
+    [1909, 1918, 'V. Mehmed Reşad'],
+    [1918, 1922, 'VI. Mehmed Vahdeddin']
+  ];
+  const hit = rulers.find(([s, e]) => y >= s && y <= e);
+  return hit ? hit[2] : '';
+}
+
+function deriveHistoricalPeriod(year) {
+  if (!Number.isFinite(year)) return { period:'', ruler:'' };
+  if (year >= 1923) return { period:'Cumhuriyet Dönemi', ruler:'Türkiye Cumhuriyeti' };
+  if (year >= 1299 && year <= 1922) {
+    return { period:'Osmanlı Dönemi', ruler: deriveOttomanRulerByYear(year) || 'Osmanlı İmparatorluğu' };
+  }
+  if (year >= 1071 && year < 1299) return { period:'Selçuklu / Beylikler Dönemi', ruler:'' };
+  return { period:'Erken İslam Dönemi', ruler:'' };
+}
+
+function cleanIdentityValue(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  if (/^(yes|no|unknown|none|null)$/i.test(s)) return '';
+  return s;
+}
+
+function pickTag(tags = {}, keys = []) {
+  for (const k of keys) {
+    const v = cleanIdentityValue(tags[k]);
+    if (v) return v;
+  }
+  return '';
+}
+
+async function renderMosqueIdentity(m, tags = {}, token = 0) {
+  const el = document.getElementById('dp-kunye');
+  if (!el) return;
+  const notFound = currentLang === 'en' ? 'No verified data' : 'Doğrulanmış veri yok';
+  const row = (k, v, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${escHtml(v || notFound)}</span></div>`;
+  el.innerHTML = row('Yükleniyor', 'Künye bilgileri hazırlanıyor...');
+
+  const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
+  const year = parseFirstYearFromText(buildRaw);
+  const derived = deriveHistoricalPeriod(year);
+
+  let architect = pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']);
+  let patron = pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']);
+  const style = pickTag(tags, ['architectural_style', 'building:style', 'style']);
+  const restoration = pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']);
+  const era = pickTag(tags, ['historic:period', 'period']) || derived.period;
+  const ruler = pickTag(tags, ['ruler', 'dynasty']) || derived.ruler;
+  const denomination = pickTag(tags, ['denomination', 'religion']);
+  const operator = pickTag(tags, ['operator', 'owner']);
+
+  const archQid = pickTag(tags, ['architect:wikidata']);
+  if (!architect && archQid) {
+    const lbl = await fetchWikidataLabel(archQid);
+    if (lbl) architect = lbl;
+  }
+  const patronQid = pickTag(tags, ['patron:wikidata']);
+  if (!patron && patronQid) {
+    const lbl = await fetchWikidataLabel(patronQid);
+    if (lbl) patron = lbl;
+  }
+
+  if (token && token !== dpPopulateToken) return;
+  if (window._lastClickedMosque?.id !== m.id) return;
+
+  el.innerHTML = [
+    row('Yapım yılı', buildRaw || (year ? String(year) : '')),
+    row('Mimar', architect),
+    row('Banisi / Yaptıran', patron),
+    row('Tarihsel dönem', era),
+    row('Hükümdar dönemi', ruler),
+    row('Mimari üslup', style),
+    row('Mezhep / Din', denomination),
+    row('İşletici / Vakıf', operator),
+    row('Restorasyon', restoration)
+  ].join('');
+}
+
 function computeConfidenceScore(m) {
   const manualRec = getManualAxisRecord(m);
   let score = 45;
@@ -7660,6 +7776,7 @@ function populateDetailPanel(m) {
     ${m.diff!==null?`<div class="dp-qs-row"><span class="dp-qs-k">Değerlendirme</span><span class="dp-qs-v" style="color:${col}">${m.diff<=5?'Mükemmel (<5°)':m.diff<=tol?'Kabul edilebilir':'Düzeltilmeli'}</span></div>`:''}
     ${buildDate?`<div class="dp-qs-row"><span class="dp-qs-k">İnşaat tarihi</span><span class="dp-qs-v">${escHtml(buildDate)}</span></div>`:''}
   `;
+  renderMosqueIdentity(m, tags, token);
 
   // ── Wikipedia
   loadWikipedia(m, tags);
