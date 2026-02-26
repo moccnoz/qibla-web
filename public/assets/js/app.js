@@ -32,6 +32,7 @@ let scoreCardVisible = false;
 let currentCity = '';
 let denseModeNotified = false;
 const wikidataLabelCache = new Map();
+const mosqueIdentityCache = new Map();
 const NAME_ENRICH_KEY = 'qibla-name-enrich-v1';
 const INTERIOR_KEY = 'qibla-interior-v1';
 const SNAPSHOT_KEY = 'qibla-snapshots-v1';
@@ -2729,51 +2730,225 @@ function pickTag(tags = {}, keys = []) {
   return '';
 }
 
+function parseWikiTag(wikiTag = '') {
+  const raw = String(wikiTag || '').trim();
+  if (!raw) return null;
+  if (!raw.includes(':')) return { lang:'tr', title: raw.replace(/_/g, ' ').trim() };
+  const [langRaw, ...rest] = raw.split(':');
+  const lang = String(langRaw || 'tr').trim().toLowerCase() || 'tr';
+  const title = rest.join(':').replace(/_/g, ' ').trim();
+  if (!title) return null;
+  return { lang, title };
+}
+
+async function fetchWikidataIdFromWikipediaTag(wikiTag = '') {
+  try {
+    const parsed = parseWikiTag(wikiTag);
+    if (!parsed) return '';
+    const { lang, title } = parsed;
+    const api = `https://${lang}.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=pageprops&ppprop=wikibase_item&format=json&origin=*`;
+    const r = await fetch(api);
+    if (!r.ok) return '';
+    const d = await r.json();
+    const pages = Object.values(d?.query?.pages || {});
+    const qid = String(pages?.[0]?.pageprops?.wikibase_item || '').trim().toUpperCase();
+    return /^Q\d+$/.test(qid) ? qid : '';
+  } catch {
+    return '';
+  }
+}
+
+function extractWikidataYear(entity = {}, pids = []) {
+  for (const pid of pids) {
+    const claims = entity?.claims?.[pid] || [];
+    for (const claim of claims) {
+      const val = claim?.mainsnak?.datavalue?.value;
+      if (!val || typeof val !== 'object') continue;
+      const t = String(val.time || '');
+      const m = t.match(/^([+-]?\d{1,6})-/);
+      if (!m) continue;
+      const y = Number(m[1]);
+      if (Number.isFinite(y) && y > 0) return y;
+    }
+  }
+  return null;
+}
+
+function extractWikidataEntityIds(entity = {}, pid = '', limit = 4) {
+  const claims = entity?.claims?.[pid] || [];
+  const ids = [];
+  for (const claim of claims) {
+    const id = String(claim?.mainsnak?.datavalue?.value?.id || '').toUpperCase();
+    if (!/^Q\d+$/.test(id)) continue;
+    if (!ids.includes(id)) ids.push(id);
+    if (ids.length >= limit) break;
+  }
+  return ids;
+}
+
+async function resolveWikidataEntityLabels(ids = [], limit = 3) {
+  const picked = [];
+  for (const id of ids.slice(0, limit)) {
+    const lbl = await fetchWikidataLabel(id);
+    if (lbl && !picked.includes(lbl)) picked.push(lbl);
+  }
+  return picked.join(', ');
+}
+
+function buildIdentitySearchQueries(m, tags = {}) {
+  const city = String(
+    tags['addr:city'] || tags['addr:town'] || tags['is_in:city'] || m?.searchMeta?.city || currentCity || ''
+  ).trim();
+  const base = String(m?.name || '').trim();
+  if (!base) return [];
+  const q = [];
+  if (city) q.push(`${base} ${city} camii`);
+  q.push(`${base} camii`);
+  q.push(base);
+  return [...new Set(q)].slice(0, 3);
+}
+
+function scoreWikidataSearchHit(hit = {}, m, tags = {}) {
+  const label = String(hit?.label || '').toLowerCase();
+  const desc = String(hit?.description || '').toLowerCase();
+  const text = `${label} ${desc}`;
+  const name = String(m?.name || '').toLowerCase().trim();
+  const city = String(tags['addr:city'] || tags['addr:town'] || m?.searchMeta?.city || currentCity || '').toLowerCase().trim();
+
+  let s = 0;
+  if (name && label.includes(name)) s += 50;
+  if (name && desc.includes(name)) s += 18;
+  if (city && text.includes(city)) s += 22;
+  if (/(mosque|cami|camii|mescit|mescid|masjid|dzamija|džamija)/i.test(text)) s += 35;
+  if (/(religious|ibadet|place of worship|osmanlı|ottoman)/i.test(text)) s += 8;
+  return s;
+}
+
+async function searchWikidataQidByName(m, tags = {}) {
+  const queries = buildIdentitySearchQueries(m, tags);
+  if (!queries.length) return '';
+  for (const query of queries) {
+    for (const lang of ['tr', 'en']) {
+      try {
+        const api = `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(query)}&language=${lang}&uselang=${lang}&type=item&limit=8&format=json&origin=*`;
+        const r = await fetch(api);
+        if (!r.ok) continue;
+        const d = await r.json();
+        const hits = Array.isArray(d?.search) ? d.search : [];
+        if (!hits.length) continue;
+        const ranked = hits
+          .map(hit => ({ hit, score: scoreWikidataSearchHit(hit, m, tags) }))
+          .sort((a, b) => b.score - a.score);
+        if (ranked[0]?.score >= 55) {
+          const id = String(ranked[0].hit?.id || '').toUpperCase();
+          if (/^Q\d+$/.test(id)) return id;
+        }
+      } catch {}
+    }
+  }
+  return '';
+}
+
+async function resolveMosqueWikidataQid(m, tags = {}) {
+  const fromTag = String(tags.wikidata || '').trim().toUpperCase();
+  if (/^Q\d+$/.test(fromTag)) return fromTag;
+  const fromWiki = await fetchWikidataIdFromWikipediaTag(tags.wikipedia || '');
+  if (fromWiki) return fromWiki;
+  return await searchWikidataQidByName(m, tags);
+}
+
+async function fetchWikidataIdentity(qid = '') {
+  const id = String(qid || '').trim().toUpperCase();
+  if (!/^Q\d+$/.test(id)) return null;
+  try {
+    const api = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${encodeURIComponent(id)}&props=claims&format=json&origin=*`;
+    const r = await fetch(api);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const ent = d?.entities?.[id];
+    if (!ent) return null;
+
+    const year = extractWikidataYear(ent, ['P571', 'P1619', 'P729']);
+    const architect = await resolveWikidataEntityLabels(extractWikidataEntityIds(ent, 'P84', 3), 3);
+    const patron = await resolveWikidataEntityLabels([...extractWikidataEntityIds(ent, 'P88', 2), ...extractWikidataEntityIds(ent, 'P859', 2)], 3);
+    const style = await resolveWikidataEntityLabels(extractWikidataEntityIds(ent, 'P149', 3), 3);
+    const denomination = await resolveWikidataEntityLabels([...extractWikidataEntityIds(ent, 'P140', 2), ...extractWikidataEntityIds(ent, 'P3075', 2)], 3);
+    const operator = await resolveWikidataEntityLabels([...extractWikidataEntityIds(ent, 'P137', 2), ...extractWikidataEntityIds(ent, 'P127', 2)], 3);
+
+    return { qid:id, year, architect, patron, style, denomination, operator };
+  } catch {
+    return null;
+  }
+}
+
 async function renderMosqueIdentity(m, tags = {}, token = 0) {
   const el = document.getElementById('dp-kunye');
   if (!el) return;
-  const notFound = currentLang === 'en' ? 'No verified data' : 'Doğrulanmış veri yok';
-  const row = (k, v, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${escHtml(v || notFound)}</span></div>`;
+  const row = (k, v, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${escHtml(v || '')}</span></div>`;
   el.innerHTML = row('Yükleniyor', 'Künye bilgileri hazırlanıyor...');
 
-  const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
-  const year = parseFirstYearFromText(buildRaw);
-  const derived = deriveHistoricalPeriod(year);
+  const cacheKey = `${m?.id || ''}|${String(tags.wikidata || '')}|${String(tags.wikipedia || '')}|${String(m?.name || '')}`;
+  let merged = mosqueIdentityCache.get(cacheKey);
+  if (!merged) {
+    const buildRaw = pickTag(tags, ['start_date', 'building:start_date', 'construction_date', 'opening_date']);
+    const osmYear = parseFirstYearFromText(buildRaw);
+    const restoration = pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']);
+    const osmArchitect = pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']);
+    const osmPatron = pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']);
+    const osmStyle = pickTag(tags, ['architectural_style', 'building:style', 'style']);
+    const osmDenomination = pickTag(tags, ['denomination', 'religion']);
+    const osmOperator = pickTag(tags, ['operator', 'owner']);
+    const qid = await resolveMosqueWikidataQid(m, tags);
+    const wd = qid ? await fetchWikidataIdentity(qid) : null;
+    const bestYear = wd?.year || osmYear || null;
+    const derived = deriveHistoricalPeriod(bestYear);
+    merged = {
+      yearText: wd?.year ? String(wd.year) : (buildRaw || (osmYear ? String(osmYear) : '')),
+      architect: wd?.architect || osmArchitect,
+      patron: wd?.patron || osmPatron,
+      style: wd?.style || osmStyle,
+      denomination: wd?.denomination || osmDenomination,
+      operator: wd?.operator || osmOperator,
+      restoration,
+      era: pickTag(tags, ['historic:period', 'period']) || derived.period,
+      ruler: pickTag(tags, ['ruler', 'dynasty']) || derived.ruler,
+      source: wd?.qid ? `Wikidata (${wd.qid}), OSM` : 'OSM'
+    };
 
-  let architect = pickTag(tags, ['architect', 'architect:tr', 'architect:en', 'building:architect']);
-  let patron = pickTag(tags, ['patron', 'builder', 'founder', 'sponsor', 'dedicated_to']);
-  const style = pickTag(tags, ['architectural_style', 'building:style', 'style']);
-  const restoration = pickTag(tags, ['renovated', 'restoration_date', 'ref:restoration']);
-  const era = pickTag(tags, ['historic:period', 'period']) || derived.period;
-  const ruler = pickTag(tags, ['ruler', 'dynasty']) || derived.ruler;
-  const denomination = pickTag(tags, ['denomination', 'religion']);
-  const operator = pickTag(tags, ['operator', 'owner']);
-
-  const archQid = pickTag(tags, ['architect:wikidata']);
-  if (!architect && archQid) {
-    const lbl = await fetchWikidataLabel(archQid);
-    if (lbl) architect = lbl;
-  }
-  const patronQid = pickTag(tags, ['patron:wikidata']);
-  if (!patron && patronQid) {
-    const lbl = await fetchWikidataLabel(patronQid);
-    if (lbl) patron = lbl;
+    const archQid = pickTag(tags, ['architect:wikidata']);
+    if (!merged.architect && archQid) {
+      const lbl = await fetchWikidataLabel(archQid);
+      if (lbl) merged.architect = lbl;
+    }
+    const patronQid = pickTag(tags, ['patron:wikidata']);
+    if (!merged.patron && patronQid) {
+      const lbl = await fetchWikidataLabel(patronQid);
+      if (lbl) merged.patron = lbl;
+    }
+    mosqueIdentityCache.set(cacheKey, merged);
   }
 
   if (token && token !== dpPopulateToken) return;
   if (window._lastClickedMosque?.id !== m.id) return;
 
-  el.innerHTML = [
-    row('Yapım yılı', buildRaw || (year ? String(year) : '')),
-    row('Mimar', architect),
-    row('Banisi / Yaptıran', patron),
-    row('Tarihsel dönem', era),
-    row('Hükümdar dönemi', ruler),
-    row('Mimari üslup', style),
-    row('Mezhep / Din', denomination),
-    row('İşletici / Vakıf', operator),
-    row('Restorasyon', restoration)
-  ].join('');
+  const items = [
+    ['Yapım yılı', merged.yearText],
+    ['Mimar', merged.architect],
+    ['Banisi / Yaptıran', merged.patron],
+    ['Tarihsel dönem', merged.era],
+    ['Hükümdar dönemi', merged.ruler],
+    ['Mimari üslup', merged.style],
+    ['Mezhep / Din', merged.denomination],
+    ['İşletici / Vakıf', merged.operator],
+    ['Restorasyon', merged.restoration]
+  ].filter(([, v]) => String(v || '').trim());
+
+  if (!items.length) {
+    el.innerHTML = row('Künye', currentLang === 'en' ? 'No verified data found' : 'Doğrulanmış veri bulunamadı');
+    return;
+  }
+  if (String(merged.source || '').trim()) items.push(['Kaynak', merged.source]);
+  el.innerHTML = items.map(([k, v]) => row(k, v)).join('');
 }
 
 function computeConfidenceScore(m) {
