@@ -8819,12 +8819,14 @@ function compassOverlayClick(e) {
 function openCompass() {
   document.getElementById('cmps-overlay').classList.add('show');
   document.getElementById('btn-compass')?.classList.add('active');
+  document.getElementById('compass-fab')?.classList.add('active');
   document.getElementById('btn-map-sync')?.classList.toggle('active', uiState.mapSyncWithCompass);
   startCompass();
 }
 function closeCompass() {
   document.getElementById('cmps-overlay').classList.remove('show');
   document.getElementById('btn-compass')?.classList.remove('active');
+  if (!uiState.liveMapCompass) document.getElementById('compass-fab')?.classList.remove('active');
   if (!uiState.liveMapCompass) stopCompass();
   if (uiState.mapSyncWithCompass && !uiState.liveMapCompass) {
     uiState.mapSyncWithCompass = false;

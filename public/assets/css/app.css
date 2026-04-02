@@ -6400,7 +6400,13 @@ body:not(.outdoor-mode) #map::after {
     gap:8px !important;
   }
   .compass-fab {
-    display:none !important;
+    display:flex !important;
+    right:10px !important;
+    bottom:calc(var(--mobile-sheet-offset, 90px) + env(safe-area-inset-bottom, 0px) + 60px) !important;
+    z-index:2196 !important;
+  }
+  body:not(.outdoor-mode) .compass-fab::before{
+    font-size:18px !important;
   }
   .map-fab {
     right:10px !important;
