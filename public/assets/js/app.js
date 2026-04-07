@@ -61,6 +61,7 @@ const visitTrafficCache = new Map();
 let citySearchHistory = [];
 let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
+let pendingFullEnrichment = false;
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
 let userGeoState = { lat:null, lng:null, enabled:false, ts:0 };
 let uiState = { mapSyncWithCompass:false, outdoor:false, pullRefreshing:false, sheetSnap:20, liveMapCompass:false };
@@ -967,6 +968,18 @@ async function loadViewport(opts = {}) {
     // No new fetch needed, but viewport may have changed.
     if (mosqueDB.size) renderAll();
     setVpStatus('done');
+    if (isMobileFast && isFirstPaint && (opts.queryMode || 'lite') === 'lite' && !pendingFullEnrichment) {
+      pendingFullEnrichment = true;
+      setTimeout(() => {
+        pendingFullEnrichment = false;
+        loadViewport({
+          queryMode: 'full',
+          batchSize: Math.min(6, getUncachedCells(map.getBounds()).length || 6),
+          concurrency: 1,
+          fetchPolicy: { retries:0, timeoutMs:18000, backoffMs:600, minInterval:320 }
+        });
+      }, 900);
+    }
     return;
   }
 
