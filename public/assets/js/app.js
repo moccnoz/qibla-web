@@ -943,8 +943,6 @@ function startViewportWatchdog() {
 //  VIEWPORT AUTO-LOAD
 // ══════════════════════════════════════════════════════════════
 async function loadViewport(opts = {}) {
-  const isMobileFast = window.innerWidth <= 768;
-  const isFirstPaint = !mosqueDB.size;
   const startedAt = Date.now();
   const signal = opts.signal;
   throwIfAborted(signal);
@@ -972,12 +970,8 @@ async function loadViewport(opts = {}) {
 
   isVpLoading = true;
   setVpStatus('loading');
-  const batchSize = Number.isFinite(opts.batchSize)
-    ? Math.max(1, opts.batchSize | 0)
-    : (isMobileFast ? (isFirstPaint ? 2 : 5) : 10);
-  const concurrency = Number.isFinite(opts.concurrency)
-    ? Math.max(1, opts.concurrency | 0)
-    : (isMobileFast ? (isFirstPaint ? 1 : 2) : 2);
+  const batchSize = Number.isFinite(opts.batchSize) ? Math.max(1, opts.batchSize | 0) : 10;
+  const concurrency = Number.isFinite(opts.concurrency) ? Math.max(1, opts.concurrency | 0) : 2;
   const batch = newCells.slice(0, batchSize);
   showMini(`${batch.length}/${newCells.length} alan yükleniyor...`);
   showSkeletonList();
@@ -997,16 +991,12 @@ async function loadViewport(opts = {}) {
         const e = c.lng + half + pad;
         try {
           const zoom = map?.getZoom?.() || 13;
-          // On mobile, do a fast lite pass first, then full geometry later.
-          const queryMode = opts.queryMode || (isMobileFast ? (isFirstPaint ? 'lite' : (zoom <= 11 ? 'lite' : 'full')) : (zoom <= 11 ? 'lite' : 'full'));
+          // Restore full geometry from zoom 12+ so axis arrows remain visible.
+          const queryMode = zoom <= 11 ? 'lite' : 'full';
           let elements = await geoCacheGet(c.key, queryMode);
           if (!elements) {
-            const basePolicy = isMobileFast
-              ? { retries:0, timeoutMs:12000, backoffMs:500, minInterval:260 }
-              : { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 };
             const fetchPolicy = {
-              ...(basePolicy),
-              ...(opts.fetchPolicy || {}),
+              ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }),
               signal,
               queryMode
             };
@@ -1069,17 +1059,16 @@ function showSkeletonList() {
 //  OSM API
 // ══════════════════════════════════════════════════════════════
 const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter',
-  'https://overpass-api.de/api/interpreter'
+  'https://lz4.overpass-api.de/api/interpreter'
 ];
 
 function buildMosqueQuery(s,w,n,e, mode = 'full') {
-  const timeout = mode === 'lite' ? 25 : 60;
   const outLine = mode === 'lite'
     ? 'out center tags qt 3000;'
     : 'out body geom qt 3000;';
-  return `[out:json][timeout:${timeout}];
+  return `[out:json][timeout:60];
 (
   way["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
   node["amenity"="place_of_worship"]["religion"~"muslim|islam",i](${s},${w},${n},${e});
