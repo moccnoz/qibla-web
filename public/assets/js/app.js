@@ -41,6 +41,7 @@ const LANG_KEY = 'qibla-lang-v1';
 const MANUAL_AXIS_KEY = 'qibla-manual-axis-v1';
 const OUTDOOR_KEY = 'qibla-outdoor-v1';
 const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
+const INTRO_DISMISSED_KEY = 'qibla-intro-dismissed-v1';
 const POPULARITY_KEY = 'qibla-popularity-v1';
 const VISIT_TRAFFIC_KEY = 'qibla-visit-traffic-v1';
 const CITY_SEARCH_HISTORY_KEY = 'qibla-city-history-v1';
@@ -59,6 +60,24 @@ const popularityCache = new Map();
 const popularityInFlight = new Set();
 const visitTrafficCache = new Map();
 let citySearchHistory = [];
+const INTRO_COPY = {
+  tr: {
+    eyebrow: 'Kıble yönü analizi',
+    title: 'Dünyadaki camilerin kıble doğruluğunu harita üzerinde inceleyin.',
+    copy: 'OpenStreetMap verisiyle camilerin kıble sapmasını, şehir karşılaştırmalarını ve tarihsel yön değişimlerini görüntüleyin.',
+    meta: 'Açık veri · Canlı tarama · 15° tolerans',
+    primary: 'Haritayı Aç',
+    close: 'Kapat'
+  },
+  en: {
+    eyebrow: 'Qibla orientation analysis',
+    title: 'Inspect mosque orientation accuracy on a live map.',
+    copy: 'Use OpenStreetMap data to explore qibla deviation, compare cities, and trace historical direction patterns.',
+    meta: 'Open data · Live scan · 15° tolerance',
+    primary: 'Open the map',
+    close: 'Close'
+  }
+};
 let manualCapture = { active:false, markers:[], line:null, points:[] };
 let compassState = { running:false, heading:null, qibla:null, loc:null, watchId:null };
 let followState = { enabled:false, watchId:null, lastFixAt:0 };
@@ -2409,7 +2428,7 @@ const I18N = {
 
 const I18N_STATIC = {
   tr: {
-    pageTitle: 'Kıble Dedektörü',
+    pageTitle: 'Kıble Dedektörü | Cami Kıble Yönü Analizi ve Haritası',
     logoTitle: 'Kıble Dedektörü',
     logoSub: 'Bina Yönü Analizi',
     cityOrMosquePlaceholder: 'Şehir / cami ara...',
@@ -2421,10 +2440,40 @@ const I18N_STATIC = {
     cancel: 'İptal',
     loading: 'Yükleniyor...',
     mosqueList: 'Cami Listesi',
-    legend: 'Açıklama'
+    legend: 'Açıklama',
+    headerMap: 'Harita',
+    headerAnalysis: 'Analiz',
+    headerActions: 'Eylemler',
+    headerSystem: 'Sistem',
+    sidebarMap: 'Harita',
+    sidebarAnalysis: 'Analiz',
+    sidebarTools: 'Araçlar',
+    sidebarGuides: 'Rehberler',
+    layerDark: 'Koyu',
+    layerSatellite: 'Uydu',
+    layerMap: 'Harita',
+    district: 'İlçe',
+    location: 'Konum',
+    compass: 'Pusula',
+    follow: 'Takip',
+    nearby: 'Yakın',
+    export: 'Export',
+    revenue: 'Gelir',
+    lab: 'Lab',
+    outdoor: 'Outdoor',
+    guidesCity: 'Şehir rehberleri',
+    guidesMethod: 'Kıble nasıl hesaplanır?',
+    guidesAbout: 'Hakkında',
+    creatorKicker: 'Bu uygulama',
+    creatorContext: 'tarafından geliştirildi. Köklere Dönüş için',
+    seoGuidesTitle: 'Kıble Rehberleri',
+    seoGuidesLink: 'Şehir bazlı kıble yönü rehberleri',
+    seoMethodLink: 'Kıble nasıl hesaplanır?',
+    seoAboutLink: 'Kıble Dedektörü hakkında',
+    seoSourcesLink: 'Veri kaynakları'
   },
   en: {
-    pageTitle: 'Qibla Detector',
+    pageTitle: 'Qibla Detector | Mosque Qibla Direction Map & Analysis',
     logoTitle: 'Qibla Detector',
     logoSub: 'Building Orientation Analysis',
     cityOrMosquePlaceholder: 'Search city / mosque...',
@@ -2436,7 +2485,37 @@ const I18N_STATIC = {
     cancel: 'Cancel',
     loading: 'Loading...',
     mosqueList: 'Mosque List',
-    legend: 'Legend'
+    legend: 'Legend',
+    headerMap: 'Map',
+    headerAnalysis: 'Analysis',
+    headerActions: 'Actions',
+    headerSystem: 'System',
+    sidebarMap: 'Map',
+    sidebarAnalysis: 'Analysis',
+    sidebarTools: 'Tools',
+    sidebarGuides: 'Guides',
+    layerDark: 'Dark',
+    layerSatellite: 'Satellite',
+    layerMap: 'Map',
+    district: 'District',
+    location: 'Location',
+    compass: 'Compass',
+    follow: 'Follow',
+    nearby: 'Nearby',
+    export: 'Export',
+    revenue: 'Revenue',
+    lab: 'Lab',
+    outdoor: 'Outdoor',
+    guidesCity: 'City guides',
+    guidesMethod: 'How qibla is calculated?',
+    guidesAbout: 'About',
+    creatorKicker: 'This app was built by',
+    creatorContext: 'For the wider editorial context of Koklere Donus:',
+    seoGuidesTitle: 'Qibla Guides',
+    seoGuidesLink: 'City-based qibla direction guides',
+    seoMethodLink: 'How qibla is calculated?',
+    seoAboutLink: 'About Qibla Detector',
+    seoSourcesLink: 'Data sources'
   }
 };
 
@@ -2547,7 +2626,7 @@ const TR_EN_REPLACERS = [
   [/Konum desteği yok/g, 'Location is not supported'],
   [/Ana sayfa sıfırlandı/g, 'Home reset'],
   [/Outdoor mod aktif/g, 'Outdoor mode enabled'],
-  [/Outdoor mod kapatıldı/g, 'Outdoor mode disabled']
+  [/Outdoor mod kapatıldı/g, 'Outdoor mode disabled'],
   [/Rehberler/g, 'Guides'],
   [/Kıble Rehberleri/g, 'Qibla Guides'],
   [/Şehir rehberleri/g, 'City guides'],
@@ -2619,6 +2698,10 @@ function applyI18nStaticUi() {
   document.title = t.pageTitle;
   const setText = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val; };
   const setPh = (sel, val) => { const el = document.querySelector(sel); if (el) el.placeholder = val; };
+  const setTextAt = (sel, idx, val) => {
+    const el = document.querySelectorAll(sel)?.[idx];
+    if (el) el.textContent = val;
+  };
   setText('.logo-title', t.logoTitle);
   setText('.logo-sub', t.logoSub);
   setPh('#city-input', t.cityOrMosquePlaceholder);
@@ -2630,9 +2713,63 @@ function applyI18nStaticUi() {
   setText('#ov-cancel', t.cancel);
   setText('#ov-text', t.loading);
   setText('#vp-label', t.liveReady);
+  setTextAt('.nav-group-title', 0, t.headerMap);
+  setTextAt('.nav-group-title', 1, t.headerAnalysis);
+  setTextAt('.nav-group-title', 2, t.headerActions);
+  setTextAt('.nav-group-title', 3, t.headerSystem);
+  setTextAt('.ns-group-label', 0, t.sidebarMap);
+  setTextAt('.ns-group-label', 1, t.sidebarAnalysis);
+  setTextAt('.ns-group-label', 2, t.sidebarTools);
+  setText('#btn-dark', t.layerDark);
+  setText('#btn-sat', t.layerSatellite);
+  setText('#btn-osm', t.layerMap);
+  setText('#btn-district', ` ${t.district}`);
+  setText('#ns-btn-dark .ns-label', t.layerDark);
+  setText('#ns-btn-sat .ns-label', t.layerSatellite);
+  setText('#ns-btn-osm .ns-label', t.layerMap);
+  setText('#ns-btn-district .ns-label', t.district);
+  setText('#ns-btn-loc .ns-label', t.location);
+  setText('#ns-btn-compass .ns-label', t.compass);
+  setText('#ns-btn-follow .ns-label', t.follow);
+  setText('#ns-btn-nearby .ns-label', t.nearby);
+  setText('#ns-btn-export .ns-label', t.export);
+  setText('#ns-btn-lab .ns-label', t.lab);
+  setText('#ns-btn-outdoor .ns-label', t.outdoor);
+  setText('#ns-link-guides .ns-label', t.sidebarGuides);
+  setText('#ns-link-method .ns-label', t.guidesMethod);
+  setText('#ns-link-about .ns-label', t.guidesAbout);
+  setTextAt('.mob-drawer-section-lbl', 0, t.sidebarMap);
+  setTextAt('.mob-drawer-section-lbl', 1, t.sidebarAnalysis);
+  setTextAt('.mob-drawer-section-lbl', 2, t.headerActions);
+  setTextAt('.mob-drawer-section-lbl', 3, t.headerSystem);
+  setTextAt('.mob-drawer-section-lbl', 4, t.sidebarGuides);
+  setText('#mob-btn-dark span:last-child', t.layerDark);
+  setText('#mob-btn-sat span:last-child', t.layerSatellite);
+  setText('#mob-btn-osm span:last-child', t.layerMap);
+  setText('#mob-btn-district span:last-child', t.district);
+  setText('#mob-btn-follow span:last-child', t.follow);
+  setText('#mob-btn-outdoor span:last-child', t.outdoor);
+  setText('#mob-link-guides span:last-child', t.guidesCity);
+  setText('#mob-link-method span:last-child', t.guidesMethod);
+  setText('#mob-link-about span:last-child', t.guidesAbout);
+  setText('.mob-search-row button', currentLang === 'en' ? 'Search' : 'Ara');
+  setText('#mob-fab-dark', ` ${t.layerDark}`);
+  setText('#mob-fab-sat', ` ${t.layerSatellite}`);
+  setText('#mob-fab-osm', ` ${t.layerMap}`);
+  document.querySelectorAll('.creator-kicker').forEach((el) => { el.textContent = t.creatorKicker; });
+  document.querySelectorAll('.creator-context').forEach((el) => {
+    const link = el.querySelector('a');
+    el.textContent = `${t.creatorContext} `;
+    if (link) el.appendChild(link);
+  });
+  setText('.seo-links-title', t.seoGuidesTitle);
+  setText('#seo-link-guides', t.seoGuidesLink);
+  setText('#seo-link-method', t.seoMethodLink);
+  setText('#seo-link-about', t.seoAboutLink);
+  setText('#seo-link-sources', t.seoSourcesLink);
   const scopeLabel = document.querySelector('.ms-scope-lbl b');
   if (scopeLabel) scopeLabel.textContent = t.scopeSearch;
-  const mosqueListEl = document.querySelector('.sb-head-left span');
+  const mosqueListEl = document.querySelector('.sb-head-left span') || document.querySelector('#sb-head span');
   if (mosqueListEl) mosqueListEl.textContent = t.mosqueList;
   const legendTitle = Array.from(document.querySelectorAll('.legend > div')).find((el) => (el.textContent || '').trim().match(/Açıklama|Legend/i));
   if (legendTitle) legendTitle.textContent = t.legend;
@@ -2655,6 +2792,44 @@ function syncSeoInternalLinks() {
   setHref('seo-link-method', methodHref);
   setHref('seo-link-about', aboutHref);
   setHref('seo-link-sources', sourcesHref);
+  setHref('intro-link-method', methodHref);
+}
+
+function focusPrimarySearch() {
+  const input = document.getElementById('city-input');
+  if (!input) return;
+  try {
+    input.focus({ preventScroll:true });
+    input.select?.();
+  } catch {
+    input.focus();
+  }
+}
+
+function updateIntroCardVisibility() {
+  const card = document.getElementById('intro-card');
+  if (!card) return;
+  const dismissed = safeStorageGet(INTRO_DISMISSED_KEY, '') === '1';
+  card.classList.toggle('is-hidden', dismissed);
+}
+
+function dismissIntroCard(persist = true) {
+  if (persist) safeStorageSet(INTRO_DISMISSED_KEY, '1');
+  document.getElementById('intro-card')?.classList.add('is-hidden');
+}
+
+function syncIntroCardCopy() {
+  const t = INTRO_COPY[currentLang] || INTRO_COPY.tr;
+  const setText = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  setText('intro-card-eyebrow', t.eyebrow);
+  setText('intro-card-title', t.title);
+  setText('intro-card-copy', t.copy);
+  setText('intro-card-meta', t.meta);
+  setText('intro-card-primary', t.primary);
+  document.getElementById('intro-card-close')?.setAttribute('aria-label', t.close);
 }
 
 function syncLangUrlPath() {
@@ -2703,6 +2878,8 @@ function setLang(lang, silent=false) {
   document.getElementById('lang-en')?.classList.toggle('active', currentLang==='en');
   if (typeof syncNavProxyStates === 'function') syncNavProxyStates();
   syncSeoInternalLinks();
+  syncIntroCardCopy();
+  updateIntroCardVisibility();
   syncLangUrlPath();
   if (dpOpen && window._lastClickedMosque) populateDetailPanel(window._lastClickedMosque);
   if (!silent) toast(currentLang==='tr' ? 'Dil Türkçe' : 'Language set to English', 1400);

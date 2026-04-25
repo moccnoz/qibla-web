@@ -6,6 +6,9 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://overpass-api.de https://overpass.kumi.systems https://lz4.overpass-api.de https://nominatim.openstreetmap.org https://commons.wikimedia.org https://*.wikipedia.org https://www.wikidata.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self';">
 <title>Kıble Dedektörü | Cami Kıble Yönü Analizi ve Haritası</title>
 <meta name="description" content="Kıble Dedektörü ile şehir ve cami bazlı kıble yönü analizini harita üzerinde görün. Kıble açısı, sapma değeri ve canlı konum desteği ile doğru yönü bulun.">
+<meta name="author" content="Güzin Göksu">
+<meta name="application-name" content="Qible">
+<meta name="apple-mobile-web-app-title" content="Qible">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <meta name="google-site-verification" content="Qmcapgk35YxXQPssOFcmc3p1GC0IHyiVHmK8Pi469AY">
 <meta name="msvalidate.01" content="22C700A5126EF710F6ADBA597E25872E">
@@ -19,7 +22,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Qible">
 <meta property="og:title" content="Kıble Dedektörü | Cami Kıble Yönü Analizi">
-<meta property="og:description" content="Şehir ve cami bazlı kıble analizi, bina yönü karşılaştırması ve canlı harita görünümü.">
+<meta property="og:description" content="Dünyadaki camilerin kıble yönü doğruluğunu açık veriyle analiz edin. Şehir karşılaştırma, tarihsel dönem analizi ve canlı harita görünümü tek yerde.">
 <meta property="og:image" content="https://qible.app/assets/img/qible.png">
 <meta property="og:image:url" content="https://qible.app/assets/img/qible.png">
 <meta property="og:image:secure_url" content="https://qible.app/assets/img/qible.png">
@@ -32,9 +35,64 @@
 <meta property="og:image:alt" content="Qible logo">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Kıble Dedektörü | Cami Kıble Yönü Analizi">
-<meta name="twitter:description" content="Kıble açısı ve sapma analizi yapan canlı harita tabanlı kıble uygulaması.">
+<meta name="twitter:description" content="Açık veriyle çalışan cami kıble analizi: şehir rehberleri, tarihsel kıyas ve canlı harita görünümü.">
 <meta name="twitter:image" content="https://qible.app/assets/img/qible.png">
 <meta name="twitter:image:src" content="https://qible.app/assets/img/qible.png">
+<meta name="twitter:image:alt" content="Qible logo and Qibla Detector brand mark">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Qible",
+  "url": "https://qible.app/tr/",
+  "description": "Açık veri ile cami kıble yönü doğruluğunu ölçen harita tabanlı analiz aracı.",
+  "inLanguage": "tr",
+  "publisher": {
+    "@type": "Person",
+    "name": "Güzin Göksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://qible.app/tr/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Kıble Dedektörü",
+  "applicationCategory": "NavigationApplication",
+  "operatingSystem": "Web",
+  "url": "https://qible.app/tr/",
+  "description": "Cami bazlı kıble yönü doğruluğu, sapma analizi, şehir karşılaştırması ve tarihsel kıyas sunan harita tabanlı uygulama.",
+  "inLanguage": "tr",
+  "creator": {
+    "@type": "Person",
+    "name": "Güzin Göksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Güzin Göksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Cami bazlı kıble sapma analizi",
+    "Şehir karşılaştırması",
+    "Tarihsel dönem analizi",
+    "Canlı harita taraması",
+    "OpenStreetMap tabanlı veri"
+  ]
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -288,6 +346,12 @@
         <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir</span></button>
         <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>Lab</span></button>
         <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor Mod</span></button>
+      </div>
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Rehberler</div>
+        <a class="mob-drawer-btn" id="mob-link-guides" href="/tr/kible-yonu/"><span class="mob-nav-ico">◉</span><span>Şehir rehberleri</span></a>
+        <a class="mob-drawer-btn" id="mob-link-method" href="/tr/kible-nasil-hesaplanir/"><span class="mob-nav-ico">◌</span><span>Kıble nasıl hesaplanır?</span></a>
+        <a class="mob-drawer-btn" id="mob-link-about" href="/tr/hakkinda/"><span class="mob-nav-ico">◎</span><span>Hakkında</span></a>
       </div>
     </div>
 
@@ -545,6 +609,17 @@
         <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
         <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
         <div class="city-smart-dd" id="city-smart-dd"></div>
+      </div>
+      <div class="intro-card" id="intro-card" aria-live="polite">
+        <button class="intro-card-close" id="intro-card-close" type="button" aria-label="Kapat" onclick="dismissIntroCard()"></button>
+        <div class="intro-card-eyebrow" id="intro-card-eyebrow">Kıble yönü analizi</div>
+        <div class="intro-card-title" id="intro-card-title">Dünyadaki camilerin kıble doğruluğunu harita üzerinde inceleyin.</div>
+        <p class="intro-card-copy" id="intro-card-copy">OpenStreetMap verisiyle camilerin kıble sapmasını, şehir karşılaştırmalarını ve tarihsel yön değişimlerini görüntüleyin.</p>
+        <div class="intro-card-meta" id="intro-card-meta">Açık veri · Canlı tarama · 15° tolerans</div>
+        <div class="intro-card-actions">
+          <button class="intro-card-btn intro-card-btn-primary" id="intro-card-primary" type="button" onclick="dismissIntroCard();focusPrimarySearch()">Haritayı Aç</button>
+          <a class="intro-card-btn intro-card-btn-secondary" id="intro-link-method" href="/tr/kible-nasil-hesaplanir/">Nasıl çalışır?</a>
+        </div>
       </div>
     </div>
     <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
@@ -1016,6 +1091,19 @@
       </div>
     </div>
     <div class="cmp-footer">Tolerans: <span id="cmp-tol">15°</span> · OSM verisi</div>
+  </div>
+</div>
+
+<div class="seo-links">
+  <div class="seo-links-title">Kıble Rehberleri</div>
+  <a id="seo-link-guides" href="/tr/kible-yonu/">Şehir bazlı kıble yönü rehberleri</a>
+  <a id="seo-link-method" href="/tr/kible-nasil-hesaplanir/">Kıble nasıl hesaplanır?</a>
+  <a id="seo-link-about" href="/tr/hakkinda/">Kıble Dedektörü hakkında</a>
+  <a id="seo-link-sources" href="/tr/veri-kaynaklari/">Veri kaynakları</a>
+  <div class="creator-block creator-block-seo">
+    <p class="creator-kicker">Bu uygulama</p>
+    <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Güzin Göksu</a>
+    <p class="creator-context">tarafından geliştirildi. Köklere Dönüş için <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
   </div>
 </div>
 

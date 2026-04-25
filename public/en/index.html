@@ -6,6 +6,9 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' https: data: blob:; connect-src 'self' https://overpass-api.de https://overpass.kumi.systems https://lz4.overpass-api.de https://nominatim.openstreetmap.org https://commons.wikimedia.org https://*.wikipedia.org https://www.wikidata.org https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self';">
 <title>Qibla Detector | Mosque Qibla Direction Map & Analysis</title>
 <meta name="description" content="Find qibla direction by city and mosque on an interactive map. Analyze qibla angle, building orientation deviation, and live location guidance.">
+<meta name="author" content="Guzin Goksu">
+<meta name="application-name" content="Qible">
+<meta name="apple-mobile-web-app-title" content="Qible">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
 <meta name="google-site-verification" content="Qmcapgk35YxXQPssOFcmc3p1GC0IHyiVHmK8Pi469AY">
 <meta name="msvalidate.01" content="22C700A5126EF710F6ADBA597E25872E">
@@ -19,7 +22,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Qible">
 <meta property="og:title" content="Qibla Detector | Mosque Qibla Direction Analysis">
-<meta property="og:description" content="City and mosque based qibla analysis with building direction comparison and live map view.">
+<meta property="og:description" content="Analyze mosque qibla orientation with open data. Compare cities, review historical periods, and explore live map-based direction checks.">
 <meta property="og:image" content="https://qible.app/assets/img/qible.png">
 <meta property="og:image:url" content="https://qible.app/assets/img/qible.png">
 <meta property="og:image:secure_url" content="https://qible.app/assets/img/qible.png">
@@ -32,9 +35,64 @@
 <meta property="og:image:alt" content="Qible logo">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Qibla Detector | Mosque Qibla Direction Analysis">
-<meta name="twitter:description" content="Interactive qibla map with qibla angle and deviation analysis.">
+<meta name="twitter:description" content="Open-data qibla analysis with city guides, historical comparison, and live mosque orientation mapping.">
 <meta name="twitter:image" content="https://qible.app/assets/img/qible.png">
 <meta name="twitter:image:src" content="https://qible.app/assets/img/qible.png">
+<meta name="twitter:image:alt" content="Qible logo and Qibla Detector brand mark">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Qible",
+  "url": "https://qible.app/en/",
+  "description": "Map-based qibla direction analysis for mosques using open data.",
+  "inLanguage": "en",
+  "publisher": {
+    "@type": "Person",
+    "name": "Guzin Goksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://qible.app/en/?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Qibla Detector",
+  "applicationCategory": "NavigationApplication",
+  "operatingSystem": "Web",
+  "url": "https://qible.app/en/",
+  "description": "A map-based application for mosque-level qibla accuracy checks, deviation analysis, city comparison, and historical review.",
+  "inLanguage": "en",
+  "creator": {
+    "@type": "Person",
+    "name": "Guzin Goksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": "Guzin Goksu",
+    "url": "https://www.guzingoksu.com"
+  },
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "featureList": [
+    "Mosque-level qibla deviation analysis",
+    "City comparison",
+    "Historical period analysis",
+    "Live map scanning",
+    "OpenStreetMap-based data"
+  ]
+}
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -288,6 +346,12 @@
         <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir</span></button>
         <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>Lab</span></button>
         <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor Mod</span></button>
+      </div>
+      <div class="mob-drawer-section">
+        <div class="mob-drawer-section-lbl">Guides</div>
+        <a class="mob-drawer-btn" id="mob-link-guides" href="/en/qibla-direction/"><span class="mob-nav-ico">◉</span><span>City guides</span></a>
+        <a class="mob-drawer-btn" id="mob-link-method" href="/en/how-qibla-is-calculated/"><span class="mob-nav-ico">◌</span><span>How qibla is calculated</span></a>
+        <a class="mob-drawer-btn" id="mob-link-about" href="/en/about/"><span class="mob-nav-ico">◎</span><span>About</span></a>
       </div>
     </div>
 
@@ -545,6 +609,17 @@
         <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
         <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
         <div class="city-smart-dd" id="city-smart-dd"></div>
+      </div>
+      <div class="intro-card" id="intro-card" aria-live="polite">
+        <button class="intro-card-close" id="intro-card-close" type="button" aria-label="Close" onclick="dismissIntroCard()"></button>
+        <div class="intro-card-eyebrow" id="intro-card-eyebrow">Qibla orientation analysis</div>
+        <div class="intro-card-title" id="intro-card-title">Inspect mosque orientation accuracy on a live map.</div>
+        <p class="intro-card-copy" id="intro-card-copy">Use OpenStreetMap data to explore qibla deviation, compare cities, and trace historical direction patterns.</p>
+        <div class="intro-card-meta" id="intro-card-meta">Open data · Live scan · 15° tolerance</div>
+        <div class="intro-card-actions">
+          <button class="intro-card-btn intro-card-btn-primary" id="intro-card-primary" type="button" onclick="dismissIntroCard();focusPrimarySearch()">Open the map</button>
+          <a class="intro-card-btn intro-card-btn-secondary" id="intro-link-method" href="/en/how-qibla-is-calculated/">How it works</a>
+        </div>
       </div>
     </div>
     <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
@@ -1016,6 +1091,19 @@
       </div>
     </div>
     <div class="cmp-footer">Tolerans: <span id="cmp-tol">15°</span> · OSM verisi</div>
+  </div>
+</div>
+
+<div class="seo-links">
+  <div class="seo-links-title">Qibla Guides</div>
+  <a id="seo-link-guides" href="/en/qibla-direction/">City-based qibla direction guides</a>
+  <a id="seo-link-method" href="/en/how-qibla-is-calculated/">How qibla is calculated</a>
+  <a id="seo-link-about" href="/en/about/">About Qibla Detector</a>
+  <a id="seo-link-sources" href="/en/data-sources/">Data sources</a>
+  <div class="creator-block creator-block-seo">
+    <p class="creator-kicker">This app was built by</p>
+    <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
+    <p class="creator-context">For the wider editorial context of Koklere Donus: <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
   </div>
 </div>
 

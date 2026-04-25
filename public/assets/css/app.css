@@ -6604,3 +6604,148 @@ body:not(.outdoor-mode) #map::after {
     padding:16px 16px 20px !important;
   }
 }
+
+.floating-search .intro-card{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  padding:16px 18px 17px;
+  border-radius:24px;
+  border:1px solid rgba(170,214,241,.28);
+  background:linear-gradient(180deg, rgba(10,31,56,.92), rgba(16,48,81,.86));
+  box-shadow:0 16px 36px rgba(4,14,28,.34);
+  color:rgba(255,255,255,.88);
+  position:relative;
+  max-width:min(560px, 100%);
+  backdrop-filter:blur(12px);
+}
+
+.floating-search .intro-card.is-hidden{display:none;}
+
+.intro-card-close{
+  position:absolute;
+  top:12px;
+  right:12px;
+  width:30px;
+  height:30px;
+  border:none;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  color:rgba(255,255,255,.72);
+  cursor:pointer;
+  transition:background .18s ease, color .18s ease, transform .18s ease;
+}
+
+.intro-card-close::before{
+  content:'×';
+  font-size:18px;
+  line-height:1;
+}
+
+.intro-card-close:hover{
+  background:rgba(255,255,255,.14);
+  color:#fff;
+  transform:translateY(-1px);
+}
+
+.intro-card-eyebrow{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:#7dd3fc;
+}
+
+.intro-card-title{
+  max-width:44ch;
+  padding-right:42px;
+  font-size:21px;
+  line-height:1.22;
+  font-weight:700;
+  color:#f8fbff;
+}
+
+.intro-card-copy{
+  margin:0;
+  max-width:58ch;
+  font-size:14px;
+  line-height:1.55;
+  color:rgba(232,242,255,.76);
+}
+
+.intro-card-meta{
+  font-size:12px;
+  color:rgba(201,168,76,.94);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
+.intro-card-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.intro-card-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:40px;
+  padding:0 15px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  text-decoration:none;
+  cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.intro-card-btn:hover{transform:translateY(-1px);}
+
+.intro-card-btn-primary{
+  border:1px solid rgba(13,255,186,.62);
+  background:#0DFFBA;
+  color:#04251d;
+  box-shadow:0 10px 24px rgba(13,255,186,.24);
+}
+
+.intro-card-btn-secondary{
+  border:1px solid rgba(170,214,241,.28);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.84);
+}
+
+@media (max-width:768px){
+  .floating-search .intro-card{
+    margin-top:8px;
+    padding:14px 14px 15px;
+    border-radius:22px;
+  }
+
+  .intro-card-title{
+    max-width:none;
+    font-size:17px;
+  }
+
+  .intro-card-copy{
+    font-size:13px;
+    line-height:1.48;
+  }
+
+  .intro-card-meta{
+    font-size:11px;
+    letter-spacing:.05em;
+  }
+
+  .intro-card-actions{
+    gap:8px;
+  }
+
+  .intro-card-btn{
+    width:100%;
+    min-height:38px;
+    font-size:13px;
+  }
+}
