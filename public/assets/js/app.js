@@ -2642,14 +2642,18 @@ function syncSeoInternalLinks() {
   const isEn = currentLang === 'en';
   const guidesHref = isEn ? '/en/qibla-direction/' : '/tr/kible-yonu/';
   const methodHref = isEn ? '/en/how-qibla-is-calculated/' : '/tr/kible-nasil-hesaplanir/';
+  const aboutHref = isEn ? '/en/about/' : '/tr/hakkinda/';
   const sourcesHref = isEn ? '/en/data-sources/' : '/tr/veri-kaynaklari/';
   const setHref = (id, href) => { const el = document.getElementById(id); if (el) el.setAttribute('href', href); };
   setHref('ns-link-guides', guidesHref);
   setHref('ns-link-method', methodHref);
+  setHref('ns-link-about', aboutHref);
   setHref('mob-link-guides', guidesHref);
   setHref('mob-link-method', methodHref);
+  setHref('mob-link-about', aboutHref);
   setHref('seo-link-guides', guidesHref);
   setHref('seo-link-method', methodHref);
+  setHref('seo-link-about', aboutHref);
   setHref('seo-link-sources', sourcesHref);
 }
 

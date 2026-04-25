@@ -3552,6 +3552,55 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text-bright);
 }
 
+.creator-block {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.025);
+}
+
+.creator-kicker {
+  margin: 0 0 4px;
+  font-size: 10px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.creator-name {
+  display: inline-block;
+  color: var(--text-bright);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.creator-context {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.creator-context a,
+.creator-name:hover,
+.creator-context a:hover {
+  color: var(--accent-light);
+}
+
+.creator-block-sidebar {
+  margin-top: 10px;
+}
+
+.creator-block-drawer {
+  margin: 10px 0 0;
+}
+
+.creator-block-seo {
+  margin-top: 8px;
+}
+
 .mob-drawer a.mob-drawer-btn {
   text-decoration: none;
 }
