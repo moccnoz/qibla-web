@@ -2783,6 +2783,7 @@ function ensureI18nObserver() {
 
 function applyI18nStaticUi() {
   const t = I18N_STATIC[currentLang] || I18N_STATIC.tr;
+  const isEn = currentLang === 'en';
   document.title = t.pageTitle;
   const setText = (sel, val) => { const el = document.querySelector(sel); if (el) el.textContent = val; };
   const setPh = (sel, val) => { const el = document.querySelector(sel); if (el) el.placeholder = val; };
@@ -2814,10 +2815,10 @@ function applyI18nStaticUi() {
   setText('#btn-district', ` ${t.district}`);
   setText('#btn-heat', t.heat);
   setText('#btn-score', t.score);
-  setText('#btn-compare', currentLang === 'en' ? 'Compare' : 'Karşılaştır');
-  setText('#btn-history', currentLang === 'en' ? 'History' : 'Tarih');
-  setText('#btn-lb', currentLang === 'en' ? 'Ranking' : 'Sıralama');
-  setText('#loc-btn', currentLang === 'en' ? 'Location' : 'Konum');
+  setText('#btn-compare', isEn ? 'Compare' : 'Karşılaştır');
+  setText('#btn-history', isEn ? 'History' : 'Tarih');
+  setText('#btn-lb', isEn ? 'Ranking' : 'Sıralama');
+  setText('#loc-btn', isEn ? 'Location' : 'Konum');
   setText('#btn-compass', t.compass);
   setText('#btn-follow', t.follow);
   setText('#btn-nearby', t.nearby);
@@ -2837,6 +2838,9 @@ function applyI18nStaticUi() {
   setText('#ns-btn-outdoor .ns-label', t.outdoor);
   setText('#ns-btn-heat .ns-label', t.heat);
   setText('#ns-btn-score .ns-label', t.score);
+  setText('#ns-btn-compare .ns-label', isEn ? 'Compare' : 'Karşılaştır');
+  setText('#ns-btn-history .ns-label', isEn ? 'History' : 'Tarih');
+  setText('#ns-btn-lb .ns-label', isEn ? 'Ranking' : 'Sıralama');
   setText('#ns-link-guides .ns-label', t.sidebarGuides);
   setText('#ns-link-method .ns-label', t.guidesMethod);
   setText('#ns-link-about .ns-label', t.guidesAbout);
@@ -2851,6 +2855,9 @@ function applyI18nStaticUi() {
   setText('#mob-btn-district span:last-child', t.district);
   setText('#mob-btn-heat span:last-child', t.heat);
   setText('#mob-btn-score span:last-child', t.score);
+  setTextAt('.mob-drawer-btn span:last-child', 6, isEn ? 'Compare' : 'Karşılaştır');
+  setTextAt('.mob-drawer-btn span:last-child', 7, isEn ? 'History' : 'Tarih');
+  setTextAt('.mob-drawer-btn span:last-child', 8, isEn ? 'Ranking' : 'Sıralama');
   setText('#mob-btn-follow span:last-child', t.follow);
   setText('#mob-btn-outdoor span:last-child', t.outdoor);
   setText('#mob-link-guides span:last-child', t.guidesCity);
@@ -7034,6 +7041,17 @@ const PERIODS = {
   unknown: { label:'Bilinmiyor',   range:null,         color:'rgba(255,255,255,.50)', cls:'unknown' },
 };
 
+function historyPeriodLabel(key) {
+  if (currentLang !== 'en') return PERIODS[key]?.label || '';
+  return ({
+    ottoman: 'Ottoman',
+    early: 'Early Republic',
+    mid: 'Mid Period',
+    modern: 'Modern',
+    unknown: 'Unknown'
+  })[key] || PERIODS[key]?.label || '';
+}
+
 let historyModeActive = false;
 let histPeriodFilter = 'all';
 
@@ -7150,6 +7168,7 @@ function applyPeriodColors() {
 function makeHistoryPopup(m) {
   const col = getPeriodColor(m.period);
   const period = PERIODS[m.period];
+  const periodLabel = historyPeriodLabel(m.period);
   const yearStr = m.year
     ? (currentLang === 'en' ? `${m.year}` : `${m.year} yılı`)
     : (currentLang === 'en' ? 'Unknown date' : 'Tarih bilinmiyor');
@@ -7159,7 +7178,7 @@ function makeHistoryPopup(m) {
       ? ` ${currentLang === 'en' ? 'Deviation' : 'Sapma'}`
       : ` ${currentLang === 'en' ? 'No data' : 'Veri yok'}`;
   return `<div class="p-name">${escHtml(m.name)}</div>
-    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Period' : 'Dönem'}</span><span style="color:${col};font-weight:700">${period.label}</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Period' : 'Dönem'}</span><span style="color:${col};font-weight:700">${periodLabel}</span></div>
     <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Construction' : 'İnşaat'}</span><span class="p-v">${yearStr}</span></div>
     <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Status' : 'Durum'}</span><span class="p-v">${statusStr}</span></div>
     <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Qibla' : 'Kıble'}</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
@@ -7233,12 +7252,15 @@ function renderHistCards(stats) {
   el.innerHTML = order.map(key => {
     const s = stats[key];
     const p = PERIODS[key];
+    const periodLabel = historyPeriodLabel(key);
     const pctStr = s.pct !== null ? s.pct + '%' : '—';
-    const avgStr = s.avg !== null ? s.avg.toFixed(1) + '° ort.' : 'veri yok';
+    const avgStr = s.avg !== null
+      ? (currentLang === 'en' ? `${s.avg.toFixed(1)}° avg.` : `${s.avg.toFixed(1)}° ort.`)
+      : (currentLang === 'en' ? 'no data' : 'veri yok');
     return `<div class="hist-card ${key}" data-period="${key}" onclick="filterPeriod('${key}')" style="cursor:pointer">
-      <div class="hist-card-period">${p.label}</div>
+      <div class="hist-card-period">${periodLabel}</div>
       <div class="hist-card-count">${s.count}</div>
-      <div class="hist-card-pct">${pctStr} doğru</div>
+      <div class="hist-card-pct">${pctStr} ${currentLang === 'en' ? 'aligned' : 'doğru'}</div>
       <div class="hist-card-avg">${avgStr}</div>
     </div>`;
   }).join('');
@@ -7313,7 +7335,7 @@ function drawHistBarChart(stats) {
   ctx.fillStyle = 'rgba(248,113,113,0.5)';
   ctx.fillRect(pad.l, pad.t + 2, 8, 8);
   ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '8px Manrope,monospace'; ctx.textAlign = 'left';
-  ctx.fillText('■ ort. sapma (yardımcı)', pad.l + 12, pad.t + 10);
+  ctx.fillText(currentLang === 'en' ? '■ avg. deviation (secondary)' : '■ ort. sapma (yardımcı)', pad.l + 12, pad.t + 10);
 }
 
 function drawHistScatter() {
@@ -7329,7 +7351,7 @@ function drawHistScatter() {
   });
   if (!points.length) {
     ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.font = '11px Manrope,monospace'; ctx.textAlign = 'center';
-    ctx.fillText('Tarih + sapma verisi olan cami bulunamadı', canvas.width/2, canvas.height/2);
+    ctx.fillText(currentLang === 'en' ? 'No mosques with date + deviation data found' : 'Tarih + sapma verisi olan cami bulunamadı', canvas.width/2, canvas.height/2);
     return;
   }
 
@@ -7356,7 +7378,7 @@ function drawHistScatter() {
   ctx.beginPath(); ctx.moveTo(pad.l,tolY); ctx.lineTo(W-pad.r,tolY); ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle='rgba(201,168,76,.5)'; ctx.font='8px Manrope,monospace'; ctx.textAlign='left';
-  ctx.fillText('tolerans '+tol+'°', pad.l+4, tolY-3);
+  ctx.fillText((currentLang === 'en' ? 'tolerance ' : 'tolerans ')+tol+'°', pad.l+4, tolY-3);
 
   // X axis years
   const yearStep = Math.ceil((maxY-minY)/5 / 50)*50 || 50;
@@ -7391,7 +7413,11 @@ function drawHistScatter() {
     ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
     ctx.setLineDash([]);
     // Trend direction label
-    const trendDir = slope > 0.01 ? '↑ Sapma artıyor' : slope < -0.01 ? '↓ Sapma azalıyor' : '→ Sabit';
+    const trendDir = slope > 0.01
+      ? (currentLang === 'en' ? '↑ Deviation increasing' : '↑ Sapma artıyor')
+      : slope < -0.01
+        ? (currentLang === 'en' ? '↓ Deviation decreasing' : '↓ Sapma azalıyor')
+        : (currentLang === 'en' ? '→ Stable' : '→ Sabit');
     ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='9px Manrope,monospace'; ctx.textAlign='right';
     ctx.fillText(trendDir, W-pad.r-4, pad.t+10);
   }
@@ -7402,15 +7428,15 @@ function renderHistTable(stats) {
   const order = ['ottoman','early','mid','modern','unknown'];
   el.innerHTML = `<table class="hist-tbl">
     <thead><tr>
-      <th>Dönem</th><th>Tarih Aralığı</th><th>Cami</th>
-      <th>Doğruluk</th><th>Ort. Sapma</th><th>Med. Sapma</th><th>Maks.</th>
+      <th>${currentLang === 'en' ? 'Period' : 'Dönem'}</th><th>${currentLang === 'en' ? 'Date Range' : 'Tarih Aralığı'}</th><th>${currentLang === 'en' ? 'Mosques' : 'Cami'}</th>
+      <th>${currentLang === 'en' ? 'Accuracy' : 'Doğruluk'}</th><th>${currentLang === 'en' ? 'Avg. Deviation' : 'Ort. Sapma'}</th><th>${currentLang === 'en' ? 'Median Deviation' : 'Med. Sapma'}</th><th>${currentLang === 'en' ? 'Max.' : 'Maks.'}</th>
     </tr></thead>
     <tbody>${order.map(key => {
       const s = stats[key]; const p = PERIODS[key];
       const range = key==='unknown' ? '—' :
-        (s.yearMin && s.yearMax ? s.yearMin+(s.yearMin!==s.yearMax?'–'+s.yearMax:'') : p.range?p.range[0]+'–'+(p.range[1]===9999?'bugün':p.range[1]):'—');
+        (s.yearMin && s.yearMax ? s.yearMin+(s.yearMin!==s.yearMax?'–'+s.yearMax:'') : p.range?p.range[0]+'–'+(p.range[1]===9999?(currentLang === 'en' ? 'today' : 'bugün'):p.range[1]):'—');
       return `<tr>
-        <td><span class="hist-period-badge ${key}">${p.label}</span></td>
+        <td><span class="hist-period-badge ${key}">${historyPeriodLabel(key)}</span></td>
         <td style="color:rgba(255,255,255,.50)">${range}</td>
         <td>${s.count}</td>
         <td style="color:${p.color};font-weight:700">${s.pct!==null?s.pct+'%':'—'}</td>
@@ -7438,11 +7464,15 @@ function renderHistList() {
     return b.diff - a.diff;
   });
 
-  const periodLabel = period === 'all' ? 'tüm dönemler' : PERIODS[period].label;
-  label.textContent = `${periodLabel} — ${items.length} cami (en kötüden iyiye)`;
+  const periodLabel = period === 'all'
+    ? (currentLang === 'en' ? 'all periods' : 'tüm dönemler')
+    : historyPeriodLabel(period);
+  label.textContent = currentLang === 'en'
+    ? `${periodLabel} — ${items.length} mosques (worst to best)`
+    : `${periodLabel} — ${items.length} cami (en kötüden iyiye)`;
 
   if (!items.length) {
-    el.innerHTML = '<div style="color:rgba(255,255,255,.50);font-size:11px;padding:12px">Bu dönemde cami bulunamadı</div>';
+    el.innerHTML = `<div style="color:rgba(255,255,255,.50);font-size:11px;padding:12px">${currentLang === 'en' ? 'No mosques found in this period' : 'Bu dönemde cami bulunamadı'}</div>`;
     return;
   }
 

@@ -906,7 +906,7 @@
         <button id="lb-add-btn" onclick="lbAddCity()">+ Analiz Et</button>
       </div>
       <div class="lb-mode-row">
-        <span class="lb-sort-label">Mod:</span>
+        <span class="lb-sort-label">Mode:</span>
         <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')"> Şehir Analizi</button>
         <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')"> İl/State Sayımı</button>
       </div>
@@ -915,7 +915,7 @@
         <span class="lb-progress-label" id="lb-progress-label">Analiz ediliyor...</span>
       </div>
       <div class="lb-filters">
-        <button class="lb-filter active" data-region="all"   onclick="lbSetRegion('all')"> Tümü</button>
+        <button class="lb-filter active" data-region="all"   onclick="lbSetRegion('all')"> All</button>
         <button class="lb-filter"        data-region="turkey" onclick="lbSetRegion('turkey')"> Türkiye</button>
         <button class="lb-filter"        data-region="mideast" onclick="lbSetRegion('mideast')"> Orta Doğu</button>
         <button class="lb-filter"        data-region="asia"    onclick="lbSetRegion('asia')"> Güney Asya</button>
@@ -953,7 +953,7 @@
 
     <div class="lb-footer">
       Veriler <strong>OpenStreetMap</strong> · Şehir merkezi 8km yarıçapı · localStorage'da saklanır
-      <button class="lb-clear-btn" onclick="lbClearAll()"> Tümünü Temizle</button>
+      <button class="lb-clear-btn" onclick="lbClearAll()"> Clear All</button>
     </div>
   </div>
 </div>
@@ -968,10 +968,10 @@
 
     <!-- Period filter chips -->
     <div class="hist-chips" id="hist-chips">
-      <button class="hist-chip all active" onclick="filterPeriod('all')" data-period="all">Tümü</button>
-      <button class="hist-chip ottoman" onclick="filterPeriod('ottoman')" data-period="ottoman"> Osmanlı <span class="hist-chip-sub">—1922</span></button>
-      <button class="hist-chip early" onclick="filterPeriod('early')" data-period="early"> Erken Cum. <span class="hist-chip-sub">1923–50</span></button>
-      <button class="hist-chip mid" onclick="filterPeriod('mid')" data-period="mid"> Orta <span class="hist-chip-sub">1951–2000</span></button>
+      <button class="hist-chip all active" onclick="filterPeriod('all')" data-period="all">All</button>
+      <button class="hist-chip ottoman" onclick="filterPeriod('ottoman')" data-period="ottoman"> Ottoman <span class="hist-chip-sub">—1922</span></button>
+      <button class="hist-chip early" onclick="filterPeriod('early')" data-period="early"> Early Rep. <span class="hist-chip-sub">1923–50</span></button>
+      <button class="hist-chip mid" onclick="filterPeriod('mid')" data-period="mid"> Mid Period <span class="hist-chip-sub">1951–2000</span></button>
       <button class="hist-chip modern" onclick="filterPeriod('modern')" data-period="modern"> Modern <span class="hist-chip-sub">2001+</span></button>
       <button class="hist-chip unknown" onclick="filterPeriod('unknown')" data-period="unknown"> Unknown Date</button>
     </div>
@@ -987,25 +987,25 @@
 
     <!-- Scatter: inşaat yılı vs sapma -->
     <div class="hist-scatter-wrap">
-      <div class="hist-section-label">İnşaat Yılı × Kıble Sapması <span style="color:#6b6b7a;font-size:9px">(veri olan camiler)</span></div>
+      <div class="hist-section-label">Construction Year × Qibla Deviation <span style="color:#6b6b7a;font-size:9px">(mosques with data)</span></div>
       <canvas id="hist-scatter" height="160"></canvas>
       <div class="hist-scatter-legend">
-        <span class="hsl-dot ottoman"></span>Osmanlı &nbsp;
-        <span class="hsl-dot early"></span>Erken Cum. &nbsp;
-        <span class="hsl-dot mid"></span>Orta &nbsp;
+        <span class="hsl-dot ottoman"></span>Ottoman &nbsp;
+        <span class="hsl-dot early"></span>Early Rep. &nbsp;
+        <span class="hsl-dot mid"></span>Mid &nbsp;
         <span class="hsl-dot modern"></span>Modern
       </div>
     </div>
 
     <!-- Detail table -->
     <div class="hist-table-wrap">
-      <div class="hist-section-label">Dönem Detay Tablosu</div>
+      <div class="hist-section-label">Period Detail Table</div>
       <div id="hist-table"></div>
     </div>
 
     <!-- Filtered list -->
     <div class="hist-list-wrap">
-      <div class="hist-section-label" id="hist-list-label">Seçili dönemdeki camiler</div>
+      <div class="hist-section-label" id="hist-list-label">Mosques in selected period</div>
       <div class="hist-list" id="hist-list"></div>
     </div>
 
