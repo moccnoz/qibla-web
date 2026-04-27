@@ -3652,13 +3652,22 @@ input[type="range"]::-moz-range-thumb {
 }
 
 @media (min-width: 769px) {
+  body > .project-context,
   body > .seo-links {
     margin-left: 220px;
-    transition: margin-left var(--transition-smooth);
+    width: calc(100% - 220px);
+    max-width: calc(100% - 220px);
+    transition:
+      margin-left var(--transition-smooth),
+      width var(--transition-smooth),
+      max-width var(--transition-smooth);
   }
 
+  body.nav-collapsed > .project-context,
   body.nav-collapsed > .seo-links {
     margin-left: 58px;
+    width: calc(100% - 58px);
+    max-width: calc(100% - 58px);
   }
 }
 
