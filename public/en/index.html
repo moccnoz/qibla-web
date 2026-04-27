@@ -118,51 +118,51 @@
   <div class="brand-home" role="button" tabindex="0" onclick="resetToHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();resetToHome();}">
     <div class="logo-q"><img src="/assets/img/qible.svg" alt="Qible logo"></div>
     <div>
-      <div class="logo-title">Kıble Dedektörü</div>
-      <div class="logo-sub">Bina yönü analizi</div>
+      <div class="logo-title">Qibla Detector</div>
+      <div class="logo-sub">Building orientation analysis</div>
     </div>
   </div>
   <div class="divider"></div>
   <div class="header-actions">
     <div class="header-row header-row-groups">
       <div class="nav-group">
-        <div class="nav-group-title">Harita</div>
+        <div class="nav-group-title">Map</div>
         <div class="map-switch">
-          <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Koyu harita"> Koyu</button>
-          <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu görünümü"> Uydu</button>
-          <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standart harita"> Harita</button>
+          <button id="btn-dark" class="active" onclick="switchLayer('dark')" data-tip="Dark map"> Dark</button>
+          <button id="btn-sat" onclick="switchLayer('satellite')" data-tip="Satellite view"> Satellite</button>
+          <button id="btn-osm" onclick="switchLayer('osm')" data-tip="Standard map"> Map</button>
         </div>
-        <button id="btn-district" class="btn btn-sm" data-tip="İlçe modu (hover + tıkla)"> İlçe</button>
+        <button id="btn-district" class="btn btn-sm" data-tip="District mode (hover + click)"> District</button>
       </div>
 
       <div class="nav-group">
         <div class="nav-group-title">Analiz</div>
-        <button id="btn-heat" class="btn btn-sm" onclick="toggleHeatmap()" data-tip="Isı haritası [H]"> Isı</button>
-        <button id="btn-score" class="btn btn-sm" onclick="toggleScoreCard()" data-tip="Skor kartı [S]"> Skor</button>
-        <button id="btn-compare" class="btn btn-sm" onclick="openCompare()" data-tip="Şehir karşılaştır [C]"> Karşılaştır</button>
-        <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Tarihsel analiz [T]"> Tarih</button>
-        <button id="btn-lb" class="btn btn-sm" onclick="openLeaderboard()" data-tip="Küresel sıralama [L]"> Sıralama</button>
+        <button id="btn-heat" class="btn btn-sm" onclick="toggleHeatmap()" data-tip="Heatmap [H]"> Heat</button>
+        <button id="btn-score" class="btn btn-sm" onclick="toggleScoreCard()" data-tip="Score card [S]"> Score</button>
+        <button id="btn-compare" class="btn btn-sm" onclick="openCompare()" data-tip="Compare cities [C]"> Compare</button>
+        <button id="btn-history" class="btn btn-sm" onclick="toggleHistoryMode()" data-tip="Historical analysis [T]"> History</button>
+        <button id="btn-lb" class="btn btn-sm" onclick="openLeaderboard()" data-tip="Global ranking [L]"> Ranking</button>
       </div>
 
       <div class="nav-group">
-        <div class="nav-group-title">Eylemler</div>
-        <button class="btn btn-sm" id="loc-btn" data-tip="Konumuma git [G]"> Konum</button>
-        <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Canlı pusula"> Pusula</button>
-        <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Konum takip kilidi"> Takip</button>
-        <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Yakınımdaki şehir önerileri"> Yakın</button>
-        <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Paylaş"> Export</button>
+        <div class="nav-group-title">Actions</div>
+        <button class="btn btn-sm" id="loc-btn" data-tip="Go to my location [G]"> Location</button>
+        <button class="btn btn-sm" id="btn-compass" onclick="openCompass()" data-tip="Live compass"> Compass</button>
+        <button class="btn btn-sm" id="btn-follow" onclick="toggleFollowLock()" data-tip="Location follow lock"> Follow</button>
+        <button class="btn btn-sm" id="btn-nearby" onclick="loadNearbyCitySuggestions()" data-tip="Nearby city suggestions"> Nearby</button>
+        <button class="btn btn-sm" id="btn-export" onclick="openExport()" data-tip="Export & Share"> Export</button>
       </div>
 
       <div class="nav-group">
         <div class="nav-group-title">Sistem</div>
-        <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Gelir & iş modeli [P]"> Gelir</button>
-        <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & içgörü"> Lab</button>
-        <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="Yüksek kontrast dış mekan"> Outdoor</button>
+        <button class="btn btn-sm" id="btn-biz" onclick="openBiz()" data-tip="Revenue & business model [P]"> Revenue</button>
+        <button class="btn btn-sm" id="btn-lab" onclick="openLab()" data-tip="QA & insights"> Lab</button>
+        <button class="btn btn-sm" id="btn-outdoor" onclick="toggleOutdoorMode()" data-tip="High contrast outdoor mode"> Outdoor</button>
         <div class="lang-switch">
-          <button class="btn-sm active" id="lang-tr" onclick="setLang('tr')">TR</button>
-          <button class="btn-sm" id="lang-en" onclick="setLang('en')">EN</button>
+          <button class="btn-sm" id="lang-tr" onclick="setLang('tr')">TR</button>
+          <button class="btn-sm active" id="lang-en" onclick="setLang('en')">EN</button>
         </div>
-        <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Klavye kısayolları [?]" style="border-color:transparent;padding:6px 8px">⌨</button>
+        <button class="btn btn-sm" onclick="openShortcuts()" data-tip="Keyboard shortcuts [?]" style="border-color:transparent;padding:6px 8px">⌨</button>
       </div>
     </div>
   </div>
@@ -175,26 +175,26 @@
     <div class="ns-brand" role="button" tabindex="0" onclick="resetToHome()" title="Ana Sayfa">
       <div class="logo-q"><img src="/assets/img/qible.svg" alt="Qible logo"></div>
     </div>
-    <div class="ns-brand-text" role="button" tabindex="0" onclick="resetToHome()" title="Ana Sayfa">
-      <div class="ns-brand-title">Kıble Dedektörü</div>
-      <div class="ns-brand-sub">Bina Yönü Analizi</div>
+    <div class="ns-brand-text" role="button" tabindex="0" onclick="resetToHome()" title="Home">
+      <div class="ns-brand-title">Qibla Detector</div>
+      <div class="ns-brand-sub">Building Orientation Analysis</div>
     </div>
     <div class="ns-divider"></div>
 
     <!-- Harita Grubu -->
     <div class="ns-group">
-      <div class="ns-group-label">Harita</div>
-      <button class="ns-btn active" id="ns-btn-dark" onclick="switchLayer('dark')" data-tip="Koyu Harita">
+      <div class="ns-group-label">Map</div>
+      <button class="ns-btn active" id="ns-btn-dark" onclick="switchLayer('dark')" data-tip="Dark Map">
         <span class="ns-icon">◐</span>
-        <span class="ns-label">Koyu</span>
+        <span class="ns-label">Dark</span>
       </button>
-      <button class="ns-btn" id="ns-btn-sat" onclick="switchLayer('satellite')" data-tip="Uydu">
+      <button class="ns-btn" id="ns-btn-sat" onclick="switchLayer('satellite')" data-tip="Satellite">
         <span class="ns-icon">◫</span>
-        <span class="ns-label">Uydu</span>
+        <span class="ns-label">Satellite</span>
       </button>
-      <button class="ns-btn" id="ns-btn-osm" onclick="switchLayer('osm')" data-tip="Standart">
+      <button class="ns-btn" id="ns-btn-osm" onclick="switchLayer('osm')" data-tip="Standard">
         <span class="ns-icon">▦</span>
-        <span class="ns-label">Harita</span>
+        <span class="ns-label">Map</span>
       </button>
     </div>
 
@@ -202,30 +202,30 @@
 
     <!-- Analiz Grubu -->
     <div class="ns-group">
-      <div class="ns-group-label">Analiz</div>
-      <button class="ns-btn" id="ns-btn-heat" onclick="document.getElementById('btn-heat').click()" data-tip="Isı Haritası">
+      <div class="ns-group-label">Analysis</div>
+      <button class="ns-btn" id="ns-btn-heat" onclick="document.getElementById('btn-heat').click()" data-tip="Heatmap">
         <span class="ns-icon">◍</span>
-        <span class="ns-label">Isı</span>
+        <span class="ns-label">Heat</span>
       </button>
-      <button class="ns-btn" id="ns-btn-score" onclick="document.getElementById('btn-score').click()" data-tip="Skor Kartı">
+      <button class="ns-btn" id="ns-btn-score" onclick="document.getElementById('btn-score').click()" data-tip="Score Card">
         <span class="ns-icon">◌</span>
-        <span class="ns-label">Skor</span>
+        <span class="ns-label">Score</span>
       </button>
-      <button class="ns-btn" id="ns-btn-compare" onclick="document.getElementById('btn-compare').click()" data-tip="Karşılaştır">
+      <button class="ns-btn" id="ns-btn-compare" onclick="document.getElementById('btn-compare').click()" data-tip="Compare">
         <span class="ns-icon">⇄</span>
-        <span class="ns-label">Karşılaştır</span>
+        <span class="ns-label">Compare</span>
       </button>
-      <button class="ns-btn" id="ns-btn-history" onclick="document.getElementById('btn-history').click()" data-tip="Tarihsel Analiz">
+      <button class="ns-btn" id="ns-btn-history" onclick="document.getElementById('btn-history').click()" data-tip="Historical Analysis">
         <span class="ns-icon">◷</span>
-        <span class="ns-label">Tarih</span>
+        <span class="ns-label">History</span>
       </button>
-      <button class="ns-btn" id="ns-btn-lb" onclick="document.getElementById('btn-lb').click()" data-tip="Küresel Sıralama">
+      <button class="ns-btn" id="ns-btn-lb" onclick="document.getElementById('btn-lb').click()" data-tip="Global Ranking">
         <span class="ns-icon">☰</span>
-        <span class="ns-label">Sıralama</span>
+        <span class="ns-label">Ranking</span>
       </button>
-      <button class="ns-btn" id="ns-btn-district" onclick="document.getElementById('btn-district').click()" data-tip="İlçe Modu">
+      <button class="ns-btn" id="ns-btn-district" onclick="document.getElementById('btn-district').click()" data-tip="District Mode">
         <span class="ns-icon">⊞</span>
-        <span class="ns-label">İlçe</span>
+        <span class="ns-label">District</span>
       </button>
     </div>
 
@@ -233,24 +233,24 @@
 
     <!-- Araçlar Grubu -->
     <div class="ns-group">
-      <div class="ns-group-label">Araçlar</div>
-      <button class="ns-btn" id="ns-btn-loc" onclick="document.getElementById('loc-btn').click()" data-tip="Konumum">
+      <div class="ns-group-label">Tools</div>
+      <button class="ns-btn" id="ns-btn-loc" onclick="document.getElementById('loc-btn').click()" data-tip="My Location">
         <span class="ns-icon">⌖</span>
-        <span class="ns-label">Konum</span>
+        <span class="ns-label">Location</span>
       </button>
-      <button class="ns-btn" id="ns-btn-compass" onclick="document.getElementById('btn-compass').click()" data-tip="Canlı Pusula">
+      <button class="ns-btn" id="ns-btn-compass" onclick="document.getElementById('btn-compass').click()" data-tip="Live Compass">
         <span class="ns-icon">◎</span>
-        <span class="ns-label">Pusula</span>
+        <span class="ns-label">Compass</span>
       </button>
-      <button class="ns-btn" id="ns-btn-follow" onclick="document.getElementById('btn-follow').click()" data-tip="Takip Et">
+      <button class="ns-btn" id="ns-btn-follow" onclick="document.getElementById('btn-follow').click()" data-tip="Follow">
         <span class="ns-icon">⟳</span>
-        <span class="ns-label">Takip</span>
+        <span class="ns-label">Follow</span>
       </button>
-      <button class="ns-btn" id="ns-btn-nearby" onclick="document.getElementById('btn-nearby').click()" data-tip="Yakındaki Şehirler">
+      <button class="ns-btn" id="ns-btn-nearby" onclick="document.getElementById('btn-nearby').click()" data-tip="Nearby Cities">
         <span class="ns-icon">◉</span>
-        <span class="ns-label">Yakın</span>
+        <span class="ns-label">Nearby</span>
       </button>
-      <button class="ns-btn" id="ns-btn-export" onclick="document.getElementById('btn-export').click()" data-tip="Export & Paylaş">
+      <button class="ns-btn" id="ns-btn-export" onclick="document.getElementById('btn-export').click()" data-tip="Export & Share">
         <span class="ns-icon">↗</span>
         <span class="ns-label">Export</span>
       </button>
@@ -278,19 +278,19 @@
     </a>
     <div class="creator-block creator-block-sidebar">
       <p class="creator-kicker">This app was built by</p>
-      <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
-      <p class="creator-context">For the wider editorial context of Koklere Donus: <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
+      <a class="creator-name" data-surface="sidebar_creator_name" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=sidebar_identity" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
+      <p class="creator-context">For the wider editorial context of Koklere Donus: <a data-surface="sidebar_creator_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=sidebar_identity" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
     </div>
 
     <!-- Sidebar Toggle -->
-    <button class="ns-toggle" id="ns-toggle" onclick="toggleNavSidebar()" data-tip="Menüyü Daralt">
+    <button class="ns-toggle" id="ns-toggle" onclick="toggleNavSidebar()" data-tip="Collapse Menu">
       <span class="ns-icon">«</span>
     </button>
   </div>
 </nav>
 <div class="mob-bottom-bar" id="mob-bottom-bar">
-  <input id="mob-quick-city" type="text" placeholder="Şehir ara..." autocomplete="off"/>
-  <button class="primary" onclick="mobQuickSearch()">Ara</button>
+  <input id="mob-quick-city" type="text" placeholder="Search city..." autocomplete="off"/>
+  <button class="primary" onclick="mobQuickSearch()">Search</button>
   <button onclick="useMyLocation()"></button>
   <div class="city-smart-dd" id="mob-city-smart-dd"></div>
 </div>
@@ -302,50 +302,50 @@
     <div class="mob-drawer-head">
       <div class="mob-brand-chip">
         <span class="mob-brand-icon"><img src="/assets/img/qible.svg" alt="Qible logo"></span>
-        <span>Kıble Dedektörü</span>
+        <span>Qibla Detector</span>
       </div>
       <button class="mob-drawer-close" onclick="closeMobDrawer()">×</button>
     </div>
 
     <div class="mob-search-row">
       <span class="mob-search-icon">⌕</span>
-      <input id="mob-city-input" type="text" placeholder="Şehir veya cami ara"/>
-      <button onclick="mobSearch()">Ara</button>
+      <input id="mob-city-input" type="text" placeholder="Search city or mosque"/>
+      <button onclick="mobSearch()">Search</button>
       <div class="city-smart-dd" id="mob-drawer-city-smart-dd"></div>
     </div>
 
     <div class="mob-drawer-scroll">
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Harita</div>
-        <button class="mob-drawer-btn active" id="mob-btn-dark" onclick="switchLayer('dark');closeMobDrawer()"><span class="mob-nav-ico">◐</span><span>Koyu</span></button>
-        <button class="mob-drawer-btn" id="mob-btn-sat" onclick="switchLayer('satellite');closeMobDrawer()"><span class="mob-nav-ico">◫</span><span>Uydu</span></button>
-        <button class="mob-drawer-btn" id="mob-btn-osm" onclick="switchLayer('osm');closeMobDrawer()"><span class="mob-nav-ico">▦</span><span>Harita</span></button>
-        <button class="mob-drawer-btn" id="mob-btn-district" onclick="document.getElementById('btn-district').click();closeMobDrawer()"><span class="mob-nav-ico">⊞</span><span>İlçe</span></button>
+        <div class="mob-drawer-section-lbl">Map</div>
+        <button class="mob-drawer-btn active" id="mob-btn-dark" onclick="switchLayer('dark');closeMobDrawer()"><span class="mob-nav-ico">◐</span><span>Dark</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-sat" onclick="switchLayer('satellite');closeMobDrawer()"><span class="mob-nav-ico">◫</span><span>Satellite</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-osm" onclick="switchLayer('osm');closeMobDrawer()"><span class="mob-nav-ico">▦</span><span>Map</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-district" onclick="document.getElementById('btn-district').click();closeMobDrawer()"><span class="mob-nav-ico">⊞</span><span>District</span></button>
       </div>
 
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Analiz</div>
-        <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Isı</span></button>
-        <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Skor</span></button>
-        <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"><span class="mob-nav-ico">⇄</span><span>Karşılaştır</span></button>
-        <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"><span class="mob-nav-ico">◷</span><span>Tarih</span></button>
-        <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"><span class="mob-nav-ico">☰</span><span>Sıralama</span></button>
+        <div class="mob-drawer-section-lbl">Analysis</div>
+        <button class="mob-drawer-btn" id="mob-btn-heat" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Heat</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-score" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Score</span></button>
+        <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"><span class="mob-nav-ico">⇄</span><span>Compare</span></button>
+        <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"><span class="mob-nav-ico">◷</span><span>History</span></button>
+        <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"><span class="mob-nav-ico">☰</span><span>Ranking</span></button>
       </div>
 
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Eylemler</div>
-        <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()"><span class="mob-nav-ico">⌖</span><span>Konumum</span></button>
-        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Pusula</span></button>
-        <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()"><span class="mob-nav-ico">⟳</span><span>Takip</span></button>
-        <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()"><span class="mob-nav-ico">◉</span><span>Yakın</span></button>
+        <div class="mob-drawer-section-lbl">Actions</div>
+        <button class="mob-drawer-btn" onclick="useMyLocation();closeMobDrawer()"><span class="mob-nav-ico">⌖</span><span>My location</span></button>
+        <button class="mob-drawer-btn" onclick="openCompass();closeMobDrawer()"><span class="mob-nav-ico">◎</span><span>Compass</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-follow" onclick="toggleFollowLock();closeMobDrawer()"><span class="mob-nav-ico">⟳</span><span>Follow</span></button>
+        <button class="mob-drawer-btn" onclick="loadNearbyCitySuggestions();closeMobDrawer()"><span class="mob-nav-ico">◉</span><span>Nearby</span></button>
         <button class="mob-drawer-btn" onclick="openExport();closeMobDrawer()"><span class="mob-nav-ico">↗</span><span>Export</span></button>
       </div>
 
       <div class="mob-drawer-section">
-        <div class="mob-drawer-section-lbl">Sistem</div>
-        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Gelir</span></button>
+        <div class="mob-drawer-section-lbl">System</div>
+        <button class="mob-drawer-btn" onclick="openBiz();closeMobDrawer()"><span class="mob-nav-ico">◈</span><span>Revenue</span></button>
         <button class="mob-drawer-btn" onclick="openLab();closeMobDrawer()"><span class="mob-nav-ico">◧</span><span>Lab</span></button>
-        <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor Mod</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-outdoor" onclick="toggleOutdoorMode();closeMobDrawer()"><span class="mob-nav-ico">☼</span><span>Outdoor mode</span></button>
       </div>
       <div class="mob-drawer-section">
         <div class="mob-drawer-section-lbl">Guides</div>
@@ -361,8 +361,8 @@
     </div>
     <div class="creator-block creator-block-drawer">
       <p class="creator-kicker">This app was built by</p>
-      <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
-      <p class="creator-context">For the wider editorial context of Koklere Donus: <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
+      <a class="creator-name" data-surface="drawer_creator_name" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=drawer_identity" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
+      <p class="creator-context">For the wider editorial context of Koklere Donus: <a data-surface="drawer_creator_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=drawer_identity" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
     </div>
   </div>
 </div>
@@ -413,19 +413,19 @@
         </button>
         <button class="exp-dl-btn" onclick="exportReport()">
           <span class="exp-dl-icon"></span>
-          <span class="exp-dl-label">HTML Rapor</span>
-          <span class="exp-dl-desc">Yeni sekmede aç</span>
+          <span class="exp-dl-label">HTML Report</span>
+          <span class="exp-dl-desc">Open in new tab</span>
         </button>
         <button class="exp-dl-btn" onclick="shareScoreCard()">
           <span class="exp-dl-icon"></span>
-          <span class="exp-dl-label">Skor Kartı</span>
-          <span class="exp-dl-desc">Görsel üret & paylaş</span>
+          <span class="exp-dl-label">Score Card</span>
+          <span class="exp-dl-desc">Generate visual & share</span>
         </button>
       </div>
     </div>
 
-    <div class="exp-footer">
-      Veri kaynağı: OpenStreetMap katkıcıları · ODbL lisansı
+    <div class="exp-footer" id="exp-footer-copy">
+      Data source: OpenStreetMap contributors · ODbL license · Powered by Qible · Built by Guzin Goksu · guzingoksu.com
     </div>
   </div>
 </div>
@@ -519,7 +519,7 @@
 <div class="cmps-overlay" id="cmps-overlay" onclick="compassOverlayClick(event)">
   <div class="cmps-modal">
     <div class="cmps-header">
-      <div class="cmps-title"> Canlı Pusula</div>
+      <div class="cmps-title"> Live Compass</div>
       <button class="cmps-close" onclick="closeCompass()"></button>
     </div>
     <div class="cmps-body">
@@ -527,8 +527,8 @@
       <div class="cmps-rows" id="cmps-rows"></div>
       <div class="cmps-actions">
         <button class="btn btn-sm" onclick="requestCompassPermission()">Sensör İzni</button>
-        <button class="btn btn-sm" onclick="refreshCompassLocation()">Konumu Yenile</button>
-        <button class="btn btn-sm" id="btn-map-sync" onclick="toggleMapCompassSync()">Haritayı Döndür</button>
+        <button class="btn btn-sm" onclick="refreshCompassLocation()">Refresh location</button>
+        <button class="btn btn-sm" id="btn-map-sync" onclick="toggleMapCompassSync()">Rotate map</button>
       </div>
     </div>
   </div>
@@ -552,40 +552,43 @@
 <div class="ks-overlay" id="ks-overlay" onclick="ksOverlayClick(event)">
   <div class="ks-modal">
     <div class="ks-title">
-      ⌨ Klavye Kısayolları
+      ⌨ Keyboard Shortcuts
       <button class="ks-close-btn" onclick="closeShortcuts()"></button>
     </div>
     <div class="ks-grid">
-      <div class="ks-row"><span class="ks-key">/</span><span class="ks-desc">Şehir arama</span></div>
-      <div class="ks-row"><span class="ks-key">Enter</span><span class="ks-desc">Ara / Onayla</span></div>
-      <div class="ks-row"><span class="ks-key">Esc</span><span class="ks-desc">Panel / Modal kapat</span></div>
-      <div class="ks-row"><span class="ks-key">?</span><span class="ks-desc">Bu yardım ekranı</span></div>
-      <div class="ks-row"><span class="ks-key">H</span><span class="ks-desc">Isı haritası</span></div>
-      <div class="ks-row"><span class="ks-key">S</span><span class="ks-desc">Skor kartı</span></div>
-      <div class="ks-row"><span class="ks-key">T</span><span class="ks-desc">Tarihsel analiz</span></div>
-      <div class="ks-row"><span class="ks-key">L</span><span class="ks-desc">Sıralama tablosu</span></div>
-      <div class="ks-row"><span class="ks-key">Q</span><span class="ks-desc">QA & lab paneli</span></div>
-      <div class="ks-row"><span class="ks-key">O</span><span class="ks-desc">Canlı pusula</span></div>
-      <div class="ks-row"><span class="ks-key">P</span><span class="ks-desc">Gelir / paket modalı</span></div>
-      <div class="ks-row"><span class="ks-key">G</span><span class="ks-desc">Konumuma git</span></div>
-      <div class="ks-row"><span class="ks-key">←</span><span class="ks-desc">Önceki cami</span></div>
-      <div class="ks-row"><span class="ks-key">→</span><span class="ks-desc">Sonraki cami</span></div>
-      <div class="ks-row"><span class="ks-key">+/-</span><span class="ks-desc">Tolerans artır/azalt</span></div>
-      <div class="ks-row"><span class="ks-key">D</span><span class="ks-desc">Detay paneli kapat</span></div>
+      <div class="ks-row"><span class="ks-key">/</span><span class="ks-desc">Search city</span></div>
+      <div class="ks-row"><span class="ks-key">Enter</span><span class="ks-desc">Search / confirm</span></div>
+      <div class="ks-row"><span class="ks-key">Esc</span><span class="ks-desc">Close panel / modal</span></div>
+      <div class="ks-row"><span class="ks-key">?</span><span class="ks-desc">Open this help</span></div>
+      <div class="ks-row"><span class="ks-key">H</span><span class="ks-desc">Heatmap</span></div>
+      <div class="ks-row"><span class="ks-key">S</span><span class="ks-desc">Score card</span></div>
+      <div class="ks-row"><span class="ks-key">T</span><span class="ks-desc">Historical analysis</span></div>
+      <div class="ks-row"><span class="ks-key">L</span><span class="ks-desc">Ranking table</span></div>
+      <div class="ks-row"><span class="ks-key">Q</span><span class="ks-desc">QA & lab panel</span></div>
+      <div class="ks-row"><span class="ks-key">O</span><span class="ks-desc">Live compass</span></div>
+      <div class="ks-row"><span class="ks-key">P</span><span class="ks-desc">Revenue / package modal</span></div>
+      <div class="ks-row"><span class="ks-key">G</span><span class="ks-desc">Go to my location</span></div>
+      <div class="ks-row"><span class="ks-key">←</span><span class="ks-desc">Previous mosque</span></div>
+      <div class="ks-row"><span class="ks-key">→</span><span class="ks-desc">Next mosque</span></div>
+      <div class="ks-row"><span class="ks-key">+/-</span><span class="ks-desc">Increase / decrease tolerance</span></div>
+      <div class="ks-row"><span class="ks-key">D</span><span class="ks-desc">Close detail panel</span></div>
     </div>
-    <div class="ks-footer">Tüm kısayollar — metin girişi aktifken devre dışı</div>
+    <div class="ks-footer">All shortcuts are disabled while text input is focused</div>
   </div>
 </div>
 
 <div class="stats-bar">
-  <div class="stat"><div class="dot gold"></div><div class="stat-num" id="s-total">—</div><div class="stat-lbl">Cami</div></div>
-  <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Doğru</div></div>
-  <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Sapma</div></div>
-  <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">Veri Yok</div></div>
+  <div class="stat"><div class="dot gold"></div><div class="stat-num" id="s-total">—</div><div class="stat-lbl">Mosques</div></div>
+  <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Aligned</div></div>
+  <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Deviation</div></div>
+  <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">No Data</div></div>
+  <div class="stat stat-trust"><div class="dot green"></div><div class="stat-num" id="s-pct">—</div><div class="stat-lbl" id="s-pct-lbl">Accuracy %</div></div>
+  <div class="stat stat-trust"><div class="dot blue"></div><div class="stat-num" id="s-covered">—</div><div class="stat-lbl" id="s-covered-lbl">Mosques with Data</div></div>
+  <div class="cache-info provenance-chip" id="data-source-chip">Source: OpenStreetMap</div>
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
   <div class="district-pill" id="district-pill">
     <span id="district-pill-text">—</span>
-    <button id="district-pill-clear" title="İlçe filtresini temizle"></button>
+    <button id="district-pill-clear" title="Clear district filter"></button>
   </div>
 </div>
 <div class="mode-pills">
@@ -596,7 +599,7 @@
   </div>
 </div>
 <div class="tolerance-pill">
-  <div class="tol">Tolerans:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
+  <div class="tol">Tolerance:<input type="range" id="tol" min="5" max="45" value="15"><span id="tol-val">15°</span></div>
 </div>
 
 <div class="main">
@@ -604,9 +607,9 @@
     <div class="floating-search">
       <div class="search-box">
         <button class="mob-pill-logo" type="button" aria-label="Ana sayfa" onclick="resetToHome()"><img src="/assets/img/qible.svg" alt="Qible logo"></button>
-        <input id="city-input" list="city-suggest-list" type="text" placeholder="Şehir / cami ara..." value=""/>
+      <input id="city-input" list="city-suggest-list" type="text" placeholder="Search city / mosque..." value=""/>
         <datalist id="city-suggest-list"></datalist>
-        <button class="btn" id="search-btn" data-tip="Şehir ara [Enter]">Ara</button>
+        <button class="btn" id="search-btn" data-tip="Search city [Enter]">Search</button>
         <button class="mob-pill-menu" type="button" aria-label="Menü" onclick="openMobDrawer()"></button>
         <div class="city-smart-dd" id="city-smart-dd"></div>
       </div>
@@ -622,30 +625,30 @@
         </div>
       </div>
     </div>
-    <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Bu alanı tara</button>
-    <button class="live-vp-badge live-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Canlı veri durumu">
+    <button class="search-area-btn" id="search-area-btn" type="button" onclick="refreshSearchArea()">Search this area</button>
+    <button class="live-vp-badge live-badge idle" id="live-vp-badge" type="button" aria-live="polite" aria-label="Live data status">
       <span class="live-vp-icon-wrap">
         <span class="vp-dot" id="vp-dot"></span>
       </span>
       <span class="live-vp-copy">
-        <span id="vp-label">Canlı hazır</span>
+        <span id="vp-label">Live ready</span>
         <span id="vp-meta">Cache: 0 tile</span>
       </span>
     </button>
     <div class="map-fab">
-      <button class="map-fab-btn" onclick="document.getElementById('loc-btn').click()" title="Konumum" aria-label="Konumum">⌖</button>
-      <button class="map-fab-btn secondary" onclick="document.getElementById('btn-compass').click()" title="Pusula" aria-label="Pusula">◎</button>
+      <button class="map-fab-btn" onclick="document.getElementById('loc-btn').click()" title="My location" aria-label="My location">⌖</button>
+      <button class="map-fab-btn secondary" onclick="document.getElementById('btn-compass').click()" title="Compass" aria-label="Compass">◎</button>
     </div>
     <div class="mob-layer-stack" id="mob-layer-stack">
-      <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Koyu harita"> Koyu</button>
-      <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Uydu harita"> Uydu</button>
-      <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standart harita"> Harita</button>
+      <button class="mob-layer-btn active" id="mob-fab-dark" onclick="switchLayer('dark')" aria-label="Dark map"> Dark</button>
+      <button class="mob-layer-btn" id="mob-fab-sat" onclick="switchLayer('satellite')" aria-label="Satellite map"> Satellite</button>
+      <button class="mob-layer-btn" id="mob-fab-osm" onclick="switchLayer('osm')" aria-label="Standard map"> Map</button>
     </div>
-    <button class="compass-fab" id="compass-fab" onclick="toggleLiveMapCompass()" aria-label="Canlı pusula modu"></button>
+    <button class="compass-fab" id="compass-fab" onclick="toggleLiveMapCompass()" aria-label="Live compass mode"></button>
     <!-- Mini non-blocking loader -->
     <div class="mini-loader" id="mini-loader">
       <div class="mini-spin"></div>
-      <span id="mini-text">Yükleniyor...</span>
+      <span id="mini-text">Loading...</span>
     </div>
     <!-- Kıble animation info panel -->
     <div class="qibla-panel" id="qibla-panel">
@@ -655,7 +658,7 @@
       <div class="qp-row"><span class="qp-k">Kabe</span><span class="qp-v" id="qp-dist">—</span></div>
       <div class="qp-anim" id="qp-anim-status">● Kıble çizgisi çiziliyor...</div>
     </div>
-    <div class="district-hover-chip" id="district-hover-chip">İlçe modu: harita üzerinde gezdirin</div>
+    <div class="district-hover-chip" id="district-hover-chip">District mode: move over the map</div>
 
     <!-- Score Card Panel -->
     <div class="score-card" id="score-card">
@@ -665,68 +668,68 @@
         <canvas id="sc-donut" width="110" height="110"></canvas>
         <div class="sc-score-center">
           <div class="sc-pct" id="sc-pct">—</div>
-          <div class="sc-pct-lbl">doğruluk</div>
+          <div class="sc-pct-lbl">accuracy</div>
         </div>
       </div>
       <div class="sc-grade" id="sc-grade"></div>
       <div class="sc-stats">
         <div class="sc-stat-row">
           <span class="sc-dot" style="background:#4ade80"></span>
-          <span class="sc-stat-lbl">Doğru yön</span>
+          <span class="sc-stat-lbl">Aligned</span>
           <span class="sc-stat-val" id="sc-ok">—</span>
         </div>
         <div class="sc-stat-row">
           <span class="sc-dot" style="background:#f87171"></span>
-          <span class="sc-stat-lbl">Sapma var</span>
+          <span class="sc-stat-lbl">Deviation present</span>
           <span class="sc-stat-val" id="sc-bad">—</span>
         </div>
         <div class="sc-stat-row">
           <span class="sc-dot" style="background:#fbbf24"></span>
-          <span class="sc-stat-lbl">Veri yok</span>
+          <span class="sc-stat-lbl">No data</span>
           <span class="sc-stat-val" id="sc-unk">—</span>
         </div>
         <div class="sc-stat-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:6px;">
-          <span class="sc-stat-lbl" style="color:var(--muted)">Ort. sapma</span>
+          <span class="sc-stat-lbl" style="color:var(--muted)">Avg. deviation</span>
           <span class="sc-stat-val" id="sc-avg">—</span>
         </div>
         <div class="sc-stat-row">
-          <span class="sc-stat-lbl" style="color:var(--muted)">Maks. sapma</span>
+          <span class="sc-stat-lbl" style="color:var(--muted)">Max. deviation</span>
           <span class="sc-stat-val" id="sc-max">—</span>
         </div>
         <div class="sc-stat-row">
-          <span class="sc-stat-lbl" style="color:var(--muted)">Min. sapma</span>
+          <span class="sc-stat-lbl" style="color:var(--muted)">Min. deviation</span>
           <span class="sc-stat-val" id="sc-min">—</span>
         </div>
       </div>
       <div class="sc-best-worst">
-        <div class="sc-bw-label">En İyi ↑</div>
+        <div class="sc-bw-label">Best ↑</div>
         <div class="sc-bw-name" id="sc-best">—</div>
-        <div class="sc-bw-label" style="margin-top:6px">En Kötü ↓</div>
+        <div class="sc-bw-label" style="margin-top:6px">Worst ↓</div>
         <div class="sc-bw-name" id="sc-worst" style="color:var(--red)">—</div>
       </div>
-      <div class="sc-tolerance">Tolerans: <span id="sc-tol-val">15°</span> ile hesaplandı</div>
+      <div class="sc-tolerance">Calculated with tolerance: <span id="sc-tol-val">15°</span></div>
     </div>
   </div>
   <div class="sidebar">
     <div class="sb-head" id="sb-head-handle">
-      <span>CAMİ LİSTESİ</span>
+      <span>MOSQUE LIST</span>
       <span class="sb-count" id="sb-count"></span>
     </div>
     <div class="sb-snap-panels">
       <div class="sb-mini-panel" id="sb-mini-panel">
-        <div class="sb-mini-title">Genel Skor</div>
+        <div class="sb-mini-title">Overall Score</div>
         <div class="sb-mini-city" id="sb-mini-city">—</div>
         <div class="sb-mini-score" id="sb-mini-score">—</div>
-        <div class="sb-mini-sub" id="sb-mini-sub">Veri bekleniyor</div>
+        <div class="sb-mini-sub" id="sb-mini-sub">Waiting for data</div>
       </div>
       <div class="sb-half-panel" id="sb-half-panel">
-        <div class="sb-mini-title">İstatistik & Radar</div>
+        <div class="sb-mini-title">Stats & Radar</div>
         <div class="sb-half-grid">
           <div class="sb-half-metrics">
-            <div class="sb-half-row"><span>Toplam</span><b id="sb-m-total">—</b></div>
-            <div class="sb-half-row"><span>Doğruluk</span><b id="sb-m-pct">—</b></div>
-            <div class="sb-half-row"><span>Ort. Sapma</span><b id="sb-m-avg">—</b></div>
-            <div class="sb-half-row"><span>Maks Sapma</span><b id="sb-m-max">—</b></div>
+            <div class="sb-half-row"><span>Total</span><b id="sb-m-total">—</b></div>
+            <div class="sb-half-row"><span>Accuracy</span><b id="sb-m-pct">—</b></div>
+            <div class="sb-half-row"><span>Avg. deviation</span><b id="sb-m-avg">—</b></div>
+            <div class="sb-half-row"><span>Max. deviation</span><b id="sb-m-max">—</b></div>
           </div>
           <canvas id="sb-radar" width="108" height="108"></canvas>
         </div>
@@ -735,11 +738,11 @@
     <div class="ms-wrap" id="ms-wrap">
       <div class="ms-box">
         <span class="ms-icon"></span>
-        <input id="mosque-search" type="text" placeholder="Cami adı ara..." autocomplete="off" spellcheck="false"/>
+        <input id="mosque-search" type="text" placeholder="Search mosque name..." autocomplete="off" spellcheck="false"/>
         <button id="ms-clear" onclick="clearMosqueSearch()"></button>
       </div>
       <div class="ms-scope">
-        <span class="ms-scope-lbl"><b>Bu alanda ara</b> (harita görünümü)</span>
+        <span class="ms-scope-lbl"><b>Search in this area</b> (map viewport)</span>
         <label class="ms-switch" for="ms-scope-only">
           <input id="ms-scope-only" type="checkbox" checked/>
           <span class="ms-switch-track"></span>
@@ -749,29 +752,29 @@
     </div>
     <div class="ms-filter-banner" id="ms-banner">
       <span id="ms-banner-text"></span>
-      <button onclick="clearMosqueSearch()"> Filtreyi Kaldır</button>
+      <button onclick="clearMosqueSearch()"> Clear Filter</button>
     </div>
-    <div class="pull-refresh" id="sb-pull-indicator">Bırakınca yenilenecek</div>
+    <div class="pull-refresh" id="sb-pull-indicator">Release to refresh</div>
     <div class="mosque-list" id="mosque-list">
-      <div class="empty"><div class="empty-icon"></div><div>Bir şehir arayın</div></div>
+      <div class="empty"><div class="empty-icon"></div><div>Search for a city</div></div>
     </div>
     <div class="legend">
-      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Açıklama</div>
-      <div class="leg-row"><div class="leg-line" style="background:#4ade80"></div><span>Kıble yönünde</span></div>
-      <div class="leg-row"><div class="leg-line" style="background:#f87171"></div><span>Sapma var</span></div>
-      <div class="leg-row"><div class="leg-line" style="background:transparent;border-top:1px dashed #c9a84c;height:0;width:22px"></div><span>Gerçek kıble yönü</span></div>
-      <div class="leg-row"><div class="leg-line" style="background:rgba(201,168,76,.6)"></div><span>Bina kıble duvarı</span></div>
-      <div class="leg-row"><div class="leg-line" style="background:#7c6ad8"></div><span>Binanın gerçek baktığı yön</span></div>
-      <div class="leg-row"><div class="leg-line" style="background:transparent;border-top:2px dashed #c9a84c;height:0;width:22px"></div><span>Kabe'ye büyük daire (doğru)</span></div>
+      <div style="font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px;">Legend</div>
+      <div class="leg-row"><div class="leg-line" style="background:#4ade80"></div><span>Aligned with qibla</span></div>
+      <div class="leg-row"><div class="leg-line" style="background:#f87171"></div><span>Deviation present</span></div>
+      <div class="leg-row"><div class="leg-line" style="background:transparent;border-top:1px dashed #c9a84c;height:0;width:22px"></div><span>True qibla direction</span></div>
+      <div class="leg-row"><div class="leg-line" style="background:rgba(201,168,76,.6)"></div><span>Building qibla wall</span></div>
+      <div class="leg-row"><div class="leg-line" style="background:#7c6ad8"></div><span>Building facing direction</span></div>
+      <div class="leg-row"><div class="leg-line" style="background:transparent;border-top:2px dashed #c9a84c;height:0;width:22px"></div><span>Great-circle path to the Kaaba</span></div>
     </div>
   </div>
 </div>
 
 <div class="overlay" id="overlay">
   <div class="spinner"></div>
-  <div class="ov-text" id="ov-text">Yükleniyor...</div>
+  <div class="ov-text" id="ov-text">Loading...</div>
   <div class="ov-sub" id="ov-sub"></div>
-  <button class="ov-cancel" id="ov-cancel" type="button" onclick="cancelActiveSearch()">İptal</button>
+  <button class="ov-cancel" id="ov-cancel" type="button" onclick="cancelActiveSearch()">Cancel</button>
 </div>
 <div class="toast" id="toast"></div>
 <script src="/vendor/leaflet/leaflet.js"></script>
@@ -801,7 +804,7 @@
       <span class="dp-ribbon-val" id="dp-qibla-val">—</span>
     </div>
     <div class="dp-ribbon-item">
-      <span class="dp-ribbon-lbl">Bina Yönü</span>
+      <span class="dp-ribbon-lbl">Building Axis</span>
       <span class="dp-ribbon-val" id="dp-axis-val">—</span>
     </div>
     <div class="dp-ribbon-item">
@@ -816,13 +819,13 @@
 
   <!-- Photo -->
   <div class="dp-photo-wrap" id="dp-photo-wrap" style="display:none">
-    <img class="dp-photo" id="dp-photo" alt="Cami fotoğrafı"/>
+    <img class="dp-photo" id="dp-photo" alt="Mosque photo"/>
     <div class="dp-photo-credit" id="dp-photo-credit"></div>
   </div>
 
   <!-- Interior evidence -->
   <div class="dp-section" id="dp-interior-section">
-    <div class="dp-section-title">İç Mekan Kanıtı</div>
+    <div class="dp-section-title">Interior Evidence</div>
     <div class="dp-int-gallery" id="dp-int-gallery"></div>
     <div class="dp-int-meta" id="dp-int-meta"></div>
     <div class="dp-int-form">
@@ -839,10 +842,10 @@
       <button class="dp-action-btn" onclick="saveInteriorEvidence()">İç Mekan Yönünü Kaydet</button>
     </div>
     <div class="dp-int-form">
-      <label>Manuel Aks Düzeltme (Harita Üzerinde 2 Nokta)</label>
-      <button class="dp-action-btn" id="dp-manual-start" onclick="startManualAxisCapture()">Haritada Aks Çiz</button>
-      <button class="dp-action-btn" onclick="cancelManualAxisCapture()">İptal</button>
-      <div class="dp-int-meta" id="dp-manual-status">Hazır</div>
+      <label>Manual Axis Correction (2 Points on Map)</label>
+      <button class="dp-action-btn" id="dp-manual-start" onclick="startManualAxisCapture()">Draw Axis on Map</button>
+      <button class="dp-action-btn" onclick="cancelManualAxisCapture()">Cancel</button>
+      <div class="dp-int-meta" id="dp-manual-status">Ready</div>
     </div>
     <div class="dp-int-ev-list" id="dp-int-ev-list"></div>
   </div>
@@ -857,12 +860,12 @@
   </div>
 
   <div class="dp-section" id="dp-identity-section">
-    <div class="dp-section-title">Cami Künyesi</div>
+    <div class="dp-section-title">Mosque Identity</div>
     <div class="dp-kunye" id="dp-kunye"></div>
   </div>
 
   <div class="dp-section">
-    <div class="dp-section-title">Açıklanabilirlik</div>
+    <div class="dp-section-title">Explainability</div>
     <div class="dp-tags" id="dp-explain"></div>
   </div>
 
@@ -889,7 +892,7 @@
   <div class="lb-modal" id="lb-modal">
 
     <div class="lb-header">
-      <div class="lb-title"> Küresel Kıble Sıralaması</div>
+      <div class="lb-title"> Global Qibla Ranking</div>
       <div class="lb-header-right">
         <span class="lb-updated" id="lb-updated"></span>
         <button class="lb-close" onclick="closeLeaderboard()"></button>
@@ -921,11 +924,11 @@
         <button class="lb-filter"        data-region="other"   onclick="lbSetRegion('other')"> Diğer</button>
       </div>
       <div class="lb-sort-row">
-        <span class="lb-sort-label">Sırala:</span>
-        <button class="lb-sort active" data-sort="pct"   onclick="lbSetSort('pct')">Doğruluk %</button>
-        <button class="lb-sort"        data-sort="count" onclick="lbSetSort('count')">Cami Sayısı</button>
-        <button class="lb-sort"        data-sort="avg"   onclick="lbSetSort('avg')">Ort. Sapma</button>
-        <button class="lb-sort"        data-sort="name"  onclick="lbSetSort('name')">Şehir Adı</button>
+        <span class="lb-sort-label">Sort:</span>
+        <button class="lb-sort active" data-sort="pct"   onclick="lbSetSort('pct')">Accuracy %</button>
+        <button class="lb-sort"        data-sort="count" onclick="lbSetSort('count')">Mosque Count</button>
+        <button class="lb-sort"        data-sort="avg"   onclick="lbSetSort('avg')">Avg. Deviation</button>
+        <button class="lb-sort"        data-sort="name"  onclick="lbSetSort('name')">City Name</button>
       </div>
     </div>
 
@@ -940,7 +943,7 @@
         <span class="lbt-bar" id="lb-h-bar">Doğruluk</span>
         <span class="lbt-pct" id="lb-h-pct">%</span>
         <span class="lbt-not" id="lb-h-note">Not</span>
-        <span class="lbt-count" id="lb-h-count">Cami</span>
+        <span class="lbt-count" id="lb-h-count">Mosques</span>
         <span class="lbt-avg" id="lb-h-avg">Ort.Sap.</span>
         <span class="lbt-date">Analiz</span>
         <span class="lbt-act"></span>
@@ -959,7 +962,7 @@
 <div class="hist-overlay" id="hist-overlay" onclick="histOverlayClick(event)">
   <div class="hist-modal" id="hist-modal">
     <div class="hist-header">
-      <div class="hist-title"> Tarihsel Dönem Analizi</div>
+      <div class="hist-title"> Historical Period Analysis</div>
       <button class="hist-close" onclick="closeHistoryMode()"></button>
     </div>
 
@@ -970,7 +973,7 @@
       <button class="hist-chip early" onclick="filterPeriod('early')" data-period="early"> Erken Cum. <span class="hist-chip-sub">1923–50</span></button>
       <button class="hist-chip mid" onclick="filterPeriod('mid')" data-period="mid"> Orta <span class="hist-chip-sub">1951–2000</span></button>
       <button class="hist-chip modern" onclick="filterPeriod('modern')" data-period="modern"> Modern <span class="hist-chip-sub">2001+</span></button>
-      <button class="hist-chip unknown" onclick="filterPeriod('unknown')" data-period="unknown"> Tarihi Bilinmiyor</button>
+      <button class="hist-chip unknown" onclick="filterPeriod('unknown')" data-period="unknown"> Unknown Date</button>
     </div>
 
     <!-- Summary cards row -->
@@ -978,7 +981,7 @@
 
     <!-- Bar chart canvas -->
     <div class="hist-chart-wrap">
-      <div class="hist-section-label">Döneme Göre Doğruluk Karşılaştırması</div>
+      <div class="hist-section-label">Accuracy Comparison by Period</div>
       <canvas id="hist-chart" height="140"></canvas>
     </div>
 
@@ -1007,7 +1010,7 @@
     </div>
 
     <div class="hist-footer">
-      OSM <code>start_date</code> / <code>building:start_date</code> tag verisi · Tarihi olmayan camiler "bilinmiyor" kategorisinde
+      OSM <code>start_date</code> / <code>building:start_date</code> tag data · Mosques without date data are grouped under "unknown"
     </div>
   </div>
 </div>
@@ -1016,7 +1019,7 @@
 <div class="cmp-overlay" id="cmp-overlay" onclick="cmpOverlayClick(event)">
   <div class="cmp-modal" id="cmp-modal">
     <div class="cmp-header">
-      <div class="cmp-title"> Şehir Karşılaştırması</div>
+      <div class="cmp-title"> City Comparison</div>
       <button class="cmp-close" onclick="closeCompare()"></button>
     </div>
     <div class="cmp-inputs">
@@ -1026,7 +1029,7 @@
           <input id="cmp-a-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
           <select id="cmp-a-level">
             <option value="city">Şehir</option>
-            <option value="district">İlçe</option>
+            <option value="district">District</option>
           </select>
         </div>
         <div class="cmp-search-row">
@@ -1043,7 +1046,7 @@
           <input id="cmp-b-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
           <select id="cmp-b-level">
             <option value="city">Şehir</option>
-            <option value="district">İlçe</option>
+            <option value="district">District</option>
           </select>
         </div>
         <div class="cmp-search-row">
@@ -1056,7 +1059,7 @@
     </div>
     <div class="cmp-progress-wrap" id="cmp-progress-wrap" style="display:none">
       <div class="cmp-progress-bar" id="cmp-progress-bar"></div>
-      <div class="cmp-progress-label" id="cmp-progress-label">Yükleniyor...</div>
+      <div class="cmp-progress-label" id="cmp-progress-label">Loading...</div>
     </div>
     <div class="cmp-results" id="cmp-results" style="display:none">
       <div class="cmp-score-row">
@@ -1082,7 +1085,7 @@
         </div>
       </div>
       <div class="cmp-bars-section">
-        <div class="cmp-section-label">Metrik Karşılaştırması</div>
+        <div class="cmp-section-label">Metric Comparison</div>
         <div id="cmp-bars"></div>
       </div>
       <div class="cmp-table-section">
@@ -1090,7 +1093,17 @@
         <div id="cmp-table"></div>
       </div>
     </div>
-    <div class="cmp-footer">Tolerans: <span id="cmp-tol">15°</span> · OSM verisi</div>
+    <div class="cmp-footer">Tolerance: <span id="cmp-tol">15°</span> · OSM data</div>
+  </div>
+</div>
+
+<div class="project-context" id="project-context">
+  <div class="project-context-kicker" id="project-context-kicker">Why it matters</div>
+  <div class="project-context-title" id="project-context-title">The mihrab direction is not just a design detail; it is the visible trace of ritual orientation.</div>
+  <p class="project-context-copy" id="project-context-copy">Qible measures how far mosque orientation deviates from true qibla using open data, making the question legible in architectural, historical, and devotional terms.</p>
+  <div class="project-context-links">
+    <a id="project-context-method" href="/en/how-qibla-is-calculated/">Read the methodology</a>
+    <a id="project-context-editorial" data-surface="project_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=project_context" target="_blank" rel="noopener noreferrer">Koklere Donus</a>
   </div>
 </div>
 
@@ -1102,8 +1115,8 @@
   <a id="seo-link-sources" href="/en/data-sources/">Data sources</a>
   <div class="creator-block creator-block-seo">
     <p class="creator-kicker">This app was built by</p>
-    <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
-    <p class="creator-context">For the wider editorial context of Koklere Donus: <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
+    <a class="creator-name" data-surface="seo_creator_name" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=seo_identity" target="_blank" rel="noopener noreferrer">Guzin Goksu</a>
+    <p class="creator-context">For the wider editorial context of Koklere Donus: <a data-surface="seo_creator_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=seo_identity" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
   </div>
 </div>
 

@@ -248,6 +248,23 @@ function gaTrack(eventName, params = {}) {
   } catch {}
 }
 
+function trackEditorialOutboundClicks() {
+  document.addEventListener('click', (event) => {
+    const link = event.target?.closest?.('a[href*="guzingoksu.com"]');
+    if (!link) return;
+    const surface = link.dataset.surface
+      || (link.closest('.project-context') ? 'project_context' : '')
+      || (link.closest('.creator-block-sidebar') ? 'sidebar_creator' : '')
+      || (link.closest('.creator-block-drawer') ? 'drawer_creator' : '')
+      || (link.closest('.creator-block-seo') ? 'seo_creator' : '')
+      || 'editorial_link';
+    gaTrack('editorial_outbound_click', {
+      surface,
+      href: link.getAttribute('href') || ''
+    });
+  }, { passive: true });
+}
+
 function makeAbortError(msg = 'Arama iptal edildi') {
   const err = new Error(msg);
   err.name = 'AbortError';
@@ -375,10 +392,14 @@ function updateDistrictUi() {
     if (!districtState.enabled) {
       chip.classList.remove('show');
     } else if (districtState.hoverName) {
-      chip.textContent = `İlçe: ${districtState.hoverName} (seçmek için tıkla)`;
+      chip.textContent = currentLang === 'en'
+        ? `District: ${districtState.hoverName} (tap to select)`
+        : `İlçe: ${districtState.hoverName} (seçmek için tıkla)`;
       chip.classList.add('show');
     } else {
-      chip.textContent = 'İlçe modu: harita üzerinde gezdirin';
+      chip.textContent = currentLang === 'en'
+        ? 'District mode: move over the map'
+        : 'İlçe modu: harita üzerinde gezdirin';
       chip.classList.add('show');
     }
   }
@@ -387,7 +408,9 @@ function updateDistrictUi() {
   const txt = document.getElementById('district-pill-text');
   if (pill && txt) {
     if (districtState.selectedName) {
-      txt.textContent = `İlçe: ${districtState.selectedName}`;
+      txt.textContent = currentLang === 'en'
+        ? `District: ${districtState.selectedName}`
+        : `İlçe: ${districtState.selectedName}`;
       pill.classList.add('show');
     } else {
       txt.textContent = '—';
@@ -585,6 +608,7 @@ async function geoCacheSet(cellKey, elements, mode = 'full') {
 
 async function bootstrap() {
   ensureImageAltAttributes(document);
+  trackEditorialOutboundClicks();
   initGeoCacheDb();
   loadNameEnrichCache();
   loadMosqueIdentityCache();
@@ -760,7 +784,12 @@ function toggleDistrictMode() {
   districtState.enabled = !districtState.enabled;
   districtState.hoverName = '';
   updateDistrictUi();
-  toast(districtState.enabled ? 'İlçe modu aktif: harita üzerinde gezdirip tıklayın' : 'İlçe modu kapatıldı', 2200);
+  toast(
+    districtState.enabled
+      ? (currentLang === 'en' ? 'District mode active: move over the map and tap' : 'İlçe modu aktif: harita üzerinde gezdirip tıklayın')
+      : (currentLang === 'en' ? 'District mode disabled' : 'İlçe modu kapatıldı'),
+    2200
+  );
 }
 
 async function onDistrictMouseMove(e) {
@@ -2461,11 +2490,40 @@ const I18N_STATIC = {
     revenue: 'Gelir',
     lab: 'Lab',
     outdoor: 'Outdoor',
+    heat: 'Isı',
+    score: 'Skor',
     guidesCity: 'Şehir rehberleri',
     guidesMethod: 'Kıble nasıl hesaplanır?',
     guidesAbout: 'Hakkında',
     creatorKicker: 'Bu uygulama',
     creatorContext: 'tarafından geliştirildi. Köklere Dönüş için',
+    accuracyPct: 'Doğruluk %',
+    mosquesWithData: 'Verili Cami',
+    dataSource: 'Kaynak: OpenStreetMap',
+    exportCredit: 'Veri kaynağı: OpenStreetMap katkıcıları · ODbL lisansı · Powered by Qible · Geliştirici: Güzin Göksu · guzingoksu.com',
+    scoreAccuracy: 'doğruluk',
+    scoreAligned: 'Doğru yön',
+    scoreDeviation: 'Sapma var',
+    scoreNoData: 'Veri yok',
+    scoreAvg: 'Ort. sapma',
+    scoreMax: 'Maks. sapma',
+    scoreMin: 'Min. sapma',
+    scoreBest: 'En İyi ↑',
+    scoreWorst: 'En Kötü ↓',
+    scoreTolerancePrefix: 'Tolerans:',
+    scoreToleranceSuffix: 'ile hesaplandı',
+    sidebarMiniScore: 'Genel Skor',
+    sidebarMiniWaiting: 'Veri bekleniyor',
+    sidebarHalfTitle: 'İstatistik & Radar',
+    sidebarTotal: 'Toplam',
+    sidebarAccuracy: 'Doğruluk',
+    sidebarAvg: 'Ort. Sapma',
+    sidebarMax: 'Maks Sapma',
+    projectContextKicker: 'Neden önemli?',
+    projectContextTitle: 'Mihrap yönü sadece mimari detay değil, ibadet yöneliminin görünen izidir.',
+    projectContextCopy: 'Qible, camilerin gerçek kıble yönünden sapmasını açık veriden hesaplayarak bu soruyu mimarlık, tarih ve ibadet bağlamında görünür hale getirir.',
+    projectContextMethod: 'Metodolojiyi oku',
+    projectContextEditorial: 'Köklere Dönüş',
     seoGuidesTitle: 'Kıble Rehberleri',
     seoGuidesLink: 'Şehir bazlı kıble yönü rehberleri',
     seoMethodLink: 'Kıble nasıl hesaplanır?',
@@ -2506,11 +2564,40 @@ const I18N_STATIC = {
     revenue: 'Revenue',
     lab: 'Lab',
     outdoor: 'Outdoor',
+    heat: 'Heat',
+    score: 'Score',
     guidesCity: 'City guides',
     guidesMethod: 'How qibla is calculated?',
     guidesAbout: 'About',
     creatorKicker: 'This app was built by',
     creatorContext: 'For the wider editorial context of Koklere Donus:',
+    accuracyPct: 'Accuracy %',
+    mosquesWithData: 'Mosques with Data',
+    dataSource: 'Source: OpenStreetMap',
+    exportCredit: 'Data source: OpenStreetMap contributors · ODbL license · Powered by Qible · Built by Guzin Goksu · guzingoksu.com',
+    scoreAccuracy: 'accuracy',
+    scoreAligned: 'Aligned',
+    scoreDeviation: 'Deviation',
+    scoreNoData: 'No data',
+    scoreAvg: 'Avg. deviation',
+    scoreMax: 'Max. deviation',
+    scoreMin: 'Min. deviation',
+    scoreBest: 'Best ↑',
+    scoreWorst: 'Worst ↓',
+    scoreTolerancePrefix: 'Tolerance:',
+    scoreToleranceSuffix: 'calculated with',
+    sidebarMiniScore: 'Score Overview',
+    sidebarMiniWaiting: 'Waiting for data',
+    sidebarHalfTitle: 'Stats & Radar',
+    sidebarTotal: 'Total',
+    sidebarAccuracy: 'Accuracy',
+    sidebarAvg: 'Avg. deviation',
+    sidebarMax: 'Max. deviation',
+    projectContextKicker: 'Why it matters',
+    projectContextTitle: 'The mihrab direction is not just a design detail; it is the visible trace of ritual orientation.',
+    projectContextCopy: 'Qible measures how far mosque orientation deviates from true qibla using open data, making the question legible in architectural, historical, and devotional terms.',
+    projectContextMethod: 'Read the methodology',
+    projectContextEditorial: 'Koklere Donus',
     seoGuidesTitle: 'Qibla Guides',
     seoGuidesLink: 'City-based qibla direction guides',
     seoMethodLink: 'How qibla is calculated?',
@@ -2577,10 +2664,11 @@ const TR_EN_REPLACERS = [
   [/Skor kartı/g, 'Score card'],
   [/Şehir Analizi/g, 'City Analysis'],
   [/İl\/State Sayımı/g, 'Province/State Count'],
-  [/Sırala/g, 'Sort'],
+  [/Sıralama/g, 'Ranking'],
+  [/Sırala:/g, 'Sort:'],
+  [/\bSırala\b/g, 'Sort'],
   [/Doğruluk/g, 'Accuracy'],
   [/Karşılaştır/g, 'Compare'],
-  [/Sıralama/g, 'Ranking'],
   [/Konum/g, 'Location'],
   [/Pusula/g, 'Compass'],
   [/Takip/g, 'Follow'],
@@ -2724,6 +2812,18 @@ function applyI18nStaticUi() {
   setText('#btn-sat', t.layerSatellite);
   setText('#btn-osm', t.layerMap);
   setText('#btn-district', ` ${t.district}`);
+  setText('#btn-heat', t.heat);
+  setText('#btn-score', t.score);
+  setText('#btn-compare', currentLang === 'en' ? 'Compare' : 'Karşılaştır');
+  setText('#btn-history', currentLang === 'en' ? 'History' : 'Tarih');
+  setText('#btn-lb', currentLang === 'en' ? 'Ranking' : 'Sıralama');
+  setText('#loc-btn', currentLang === 'en' ? 'Location' : 'Konum');
+  setText('#btn-compass', t.compass);
+  setText('#btn-follow', t.follow);
+  setText('#btn-nearby', t.nearby);
+  setText('#btn-biz', t.revenue);
+  setText('#btn-lab', t.lab);
+  setText('#btn-outdoor', t.outdoor);
   setText('#ns-btn-dark .ns-label', t.layerDark);
   setText('#ns-btn-sat .ns-label', t.layerSatellite);
   setText('#ns-btn-osm .ns-label', t.layerMap);
@@ -2735,6 +2835,8 @@ function applyI18nStaticUi() {
   setText('#ns-btn-export .ns-label', t.export);
   setText('#ns-btn-lab .ns-label', t.lab);
   setText('#ns-btn-outdoor .ns-label', t.outdoor);
+  setText('#ns-btn-heat .ns-label', t.heat);
+  setText('#ns-btn-score .ns-label', t.score);
   setText('#ns-link-guides .ns-label', t.sidebarGuides);
   setText('#ns-link-method .ns-label', t.guidesMethod);
   setText('#ns-link-about .ns-label', t.guidesAbout);
@@ -2747,6 +2849,8 @@ function applyI18nStaticUi() {
   setText('#mob-btn-sat span:last-child', t.layerSatellite);
   setText('#mob-btn-osm span:last-child', t.layerMap);
   setText('#mob-btn-district span:last-child', t.district);
+  setText('#mob-btn-heat span:last-child', t.heat);
+  setText('#mob-btn-score span:last-child', t.score);
   setText('#mob-btn-follow span:last-child', t.follow);
   setText('#mob-btn-outdoor span:last-child', t.outdoor);
   setText('#mob-link-guides span:last-child', t.guidesCity);
@@ -2767,6 +2871,36 @@ function applyI18nStaticUi() {
   setText('#seo-link-method', t.seoMethodLink);
   setText('#seo-link-about', t.seoAboutLink);
   setText('#seo-link-sources', t.seoSourcesLink);
+  setText('#s-pct-lbl', t.accuracyPct);
+  setText('#s-covered-lbl', t.mosquesWithData);
+  setText('#data-source-chip', t.dataSource);
+  setText('#exp-footer-copy', t.exportCredit);
+  setText('.sc-pct-lbl', t.scoreAccuracy);
+  setTextAt('.sc-stat-lbl', 0, t.scoreAligned);
+  setTextAt('.sc-stat-lbl', 1, t.scoreDeviation);
+  setTextAt('.sc-stat-lbl', 2, t.scoreNoData);
+  setTextAt('.sc-stat-lbl', 3, t.scoreAvg);
+  setTextAt('.sc-stat-lbl', 4, t.scoreMax);
+  setTextAt('.sc-stat-lbl', 5, t.scoreMin);
+  setTextAt('.sc-bw-label', 0, t.scoreBest);
+  setTextAt('.sc-bw-label', 1, t.scoreWorst);
+  const scTolerance = document.querySelector('.sc-tolerance');
+  if (scTolerance) {
+    const tolText = document.getElementById('sc-tol-val')?.textContent || '15°';
+    scTolerance.innerHTML = `${t.scoreTolerancePrefix} <span id="sc-tol-val">${tolText}</span> ${t.scoreToleranceSuffix}`;
+  }
+  setTextAt('.sb-mini-title', 0, t.sidebarMiniScore);
+  setText('#sb-mini-sub', t.sidebarMiniWaiting);
+  setTextAt('.sb-mini-title', 1, t.sidebarHalfTitle);
+  setTextAt('.sb-half-row span', 0, t.sidebarTotal);
+  setTextAt('.sb-half-row span', 1, t.sidebarAccuracy);
+  setTextAt('.sb-half-row span', 2, t.sidebarAvg);
+  setTextAt('.sb-half-row span', 3, t.sidebarMax);
+  setText('#project-context-kicker', t.projectContextKicker);
+  setText('#project-context-title', t.projectContextTitle);
+  setText('#project-context-copy', t.projectContextCopy);
+  setText('#project-context-method', t.projectContextMethod);
+  setText('#project-context-editorial', t.projectContextEditorial);
   const scopeLabel = document.querySelector('.ms-scope-lbl b');
   if (scopeLabel) scopeLabel.textContent = t.scopeSearch;
   const mosqueListEl = document.querySelector('.sb-head-left span') || document.querySelector('#sb-head span');
@@ -3628,9 +3762,11 @@ function pickLocalizedMosqueNames(m, tags = {}) {
 function makePopup(m){
   const tags = m.tags || {};
   const names = pickLocalizedMosqueNames(m, tags);
-  const s=m.status==='correct'?'<span style="color:#4ade80"> Doğru yön</span>':
-          m.status==='wrong'?'<span style="color:#f87171"> Sapma var</span>':
-          '<span style="color:#fbbf24"> Veri yok</span>';
+  const s=m.status==='correct'
+    ? `<span style="color:#4ade80"> ${currentLang === 'en' ? 'Aligned' : 'Doğru yön'}</span>`
+    : m.status==='wrong'
+      ? `<span style="color:#f87171"> ${currentLang === 'en' ? 'Deviation present' : 'Sapma var'}</span>`
+      : `<span style="color:#fbbf24"> ${currentLang === 'en' ? 'No data' : 'Veri yok'}</span>`;
   const meth=
     m.method==='edge-analysis'?'Kenar analizi':
     m.method==='osm-tag'?'OSM etiketi':
@@ -3643,14 +3779,14 @@ function makePopup(m){
   window._popupRegistry = window._popupRegistry || {};
   window._popupRegistry[getMosqueKey(m)] = m;
   return`<div class="p-name">${escHtml(names.primary)}</div>
-    <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${s}</span></div>
-    <div class="p-row"><span class="p-k">Güven</span><span class="p-v">${m.confidence ?? '—'}/100</span></div>
-    <div class="p-row"><span class="p-k">Kıble açısı</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
-    ${m.axis!==null?`<div class="p-row"><span class="p-k">Bina yönü</span><span class="p-v">${m.axis.toFixed(1)}°</span></div>`:''}
-    <div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</span></div>
-    ${m.convertedFrom?.converted?`<div class="p-row"><span class="p-k">Yapı geçmişi</span><span class="p-v" style="color:#fbbf24">Dönüştürülmüş olabilir</span></div>`:''}
-    <div class="p-row"><span class="p-k">Kabe mesafesi</span><span class="p-v">${dist} km</span></div>
-    <div class="p-method">Yöntem: ${meth}</div>`;
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Status' : 'Durum'}</span><span class="p-v">${s}</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Confidence' : 'Güven'}</span><span class="p-v">${m.confidence ?? '—'}/100</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Qibla angle' : 'Kıble açısı'}</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
+    ${m.axis!==null?`<div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Building axis' : 'Bina yönü'}</span><span class="p-v">${m.axis.toFixed(1)}°</span></div>`:''}
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Deviation' : 'Sapma'}</span><span class="p-v">${m.diff!==null?m.diff.toFixed(1)+'°':'—'}</span></div>
+    ${m.convertedFrom?.converted?`<div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Building history' : 'Yapı geçmişi'}</span><span class="p-v" style="color:#fbbf24">${currentLang === 'en' ? 'May be converted' : 'Dönüştürülmüş olabilir'}</span></div>`:''}
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Distance to Kaaba' : 'Kabe mesafesi'}</span><span class="p-v">${dist} km</span></div>
+    <div class="p-method">${currentLang === 'en' ? 'Method' : 'Yöntem'}: ${meth}</div>`;
 }
 
 // Store last clicked for popup button
@@ -3706,12 +3842,21 @@ function animateCounter(el, target) {
 function updateStats(){
   const vis = getVisibleMosques(0.1);
   if (vis.length) {
+    const ok = vis.filter(m=>m.status==='correct').length;
+    const withData = vis.filter(m => m.diff !== null).length;
+    const pct = withData ? Math.round((ok / withData) * 100) : null;
     animateCounter(document.getElementById('s-total'), vis.length);
-    animateCounter(document.getElementById('s-ok'),    vis.filter(m=>m.status==='correct').length);
-    animateCounter(document.getElementById('s-bad'),   vis.filter(m=>m.status==='wrong').length);
-    animateCounter(document.getElementById('s-unk'),   vis.filter(m=>m.status==='unknown').length);
+    animateCounter(document.getElementById('s-ok'), ok);
+    animateCounter(document.getElementById('s-bad'), vis.filter(m=>m.status==='wrong').length);
+    animateCounter(document.getElementById('s-unk'), vis.filter(m=>m.status==='unknown').length);
+    animateCounter(document.getElementById('s-covered'), withData);
+    const pctEl = document.getElementById('s-pct');
+    if (pctEl) pctEl.textContent = pct !== null ? `${pct}%` : '—';
   } else {
-    ['s-total','s-ok','s-bad','s-unk'].forEach(id=>document.getElementById(id).textContent='—');
+    ['s-total','s-ok','s-bad','s-unk','s-covered','s-pct'].forEach(id=>{
+      const el = document.getElementById(id);
+      if (el) el.textContent='—';
+    });
   }
   updateSidebarSnapPanels();
 }
@@ -3896,7 +4041,7 @@ async function toggleHeatmap() {
   try {
     await loadLeafletHeat();
   } catch {
-    toast('Isı haritası yüklenemedi',4000); return;
+    toast(currentLang === 'en' ? 'Heatmap could not be loaded' : 'Isı haritası yüklenemedi',4000); return;
   }
   heatVisible=true;
   btn.classList.add('active');
@@ -6149,7 +6294,7 @@ async function toggleLiveMapCompass() {
     applyMapHeadingRotation(null);
     if (!isCompassModalOpen()) stopCompass();
     updateCompassFabUi();
-    toast('Canlı pusula modu kapatıldı', 1600);
+    toast(currentLang === 'en' ? 'Live compass mode disabled' : 'Canlı pusula modu kapatıldı', 1600);
     return;
   }
   const granted = await requestCompassPermission();
@@ -6163,7 +6308,7 @@ async function toggleLiveMapCompass() {
   uiState.mapSyncWithCompass = true;
   document.getElementById('btn-map-sync')?.classList.add('active');
   updateCompassFabUi();
-  toast('Canlı pusula modu aktif', 1600);
+  toast(currentLang === 'en' ? 'Live compass mode enabled' : 'Canlı pusula modu aktif', 1600);
 }
 
 async function loadNearbyCitySuggestions(showToastMsg = true) {
@@ -7005,14 +7150,20 @@ function applyPeriodColors() {
 function makeHistoryPopup(m) {
   const col = getPeriodColor(m.period);
   const period = PERIODS[m.period];
-  const yearStr = m.year ? m.year + ' yılı' : 'Tarih bilinmiyor';
-  const statusStr = m.status==='correct'?' Doğru':m.status==='wrong'?' Sapma':' Veri yok';
+  const yearStr = m.year
+    ? (currentLang === 'en' ? `${m.year}` : `${m.year} yılı`)
+    : (currentLang === 'en' ? 'Unknown date' : 'Tarih bilinmiyor');
+  const statusStr = m.status==='correct'
+    ? ` ${currentLang === 'en' ? 'Aligned' : 'Doğru'}`
+    : m.status==='wrong'
+      ? ` ${currentLang === 'en' ? 'Deviation' : 'Sapma'}`
+      : ` ${currentLang === 'en' ? 'No data' : 'Veri yok'}`;
   return `<div class="p-name">${escHtml(m.name)}</div>
-    <div class="p-row"><span class="p-k">Dönem</span><span style="color:${col};font-weight:700">${period.label}</span></div>
-    <div class="p-row"><span class="p-k">İnşaat</span><span class="p-v">${yearStr}</span></div>
-    <div class="p-row"><span class="p-k">Durum</span><span class="p-v">${statusStr}</span></div>
-    <div class="p-row"><span class="p-k">Kıble</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
-    ${m.diff!==null?`<div class="p-row"><span class="p-k">Sapma</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}`;
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Period' : 'Dönem'}</span><span style="color:${col};font-weight:700">${period.label}</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Construction' : 'İnşaat'}</span><span class="p-v">${yearStr}</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Status' : 'Durum'}</span><span class="p-v">${statusStr}</span></div>
+    <div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Qibla' : 'Kıble'}</span><span class="p-v">${m.qibla.toFixed(1)}°</span></div>
+    ${m.diff!==null?`<div class="p-row"><span class="p-k">${currentLang === 'en' ? 'Deviation' : 'Sapma'}</span><span class="p-v">${m.diff.toFixed(1)}°</span></div>`:''}`;
 }
 
 // Compute per-period stats
@@ -7479,19 +7630,26 @@ function renderExportSummary() {
   const withData = all.filter(m => m.diff !== null);
   const correct  = withData.filter(m => m.diff <= tol);
   const pct = withData.length ? Math.round(correct.length/withData.length*100) : null;
+  const labels = currentLang === 'en'
+    ? { total:'Total Mosques', accuracy:'Accuracy', covered:'Mosques with Data', city:'City' }
+    : { total:'Toplam Cami', accuracy:'Doğruluk', covered:'Verili Cami', city:'Şehir' };
 
   document.getElementById('exp-summary').innerHTML = `
     <div class="exp-sum-card">
       <div class="exp-sum-val">${all.length}</div>
-      <div class="exp-sum-lbl">Toplam Cami</div>
+      <div class="exp-sum-lbl">${labels.total}</div>
     </div>
     <div class="exp-sum-card">
       <div class="exp-sum-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'rgba(255,255,255,.50)'}">${pct!==null?pct+'%':'—'}</div>
-      <div class="exp-sum-lbl">Doğruluk</div>
+      <div class="exp-sum-lbl">${labels.accuracy}</div>
+    </div>
+    <div class="exp-sum-card">
+      <div class="exp-sum-val">${withData.length}</div>
+      <div class="exp-sum-lbl">${labels.covered}</div>
     </div>
     <div class="exp-sum-card">
       <div class="exp-sum-val">${currentCity||'—'}</div>
-      <div class="exp-sum-lbl">Şehir</div>
+      <div class="exp-sum-lbl">${labels.city}</div>
     </div>
   `;
 }
@@ -7622,6 +7780,48 @@ function exportReport() {
   const avg = withData.length ? withData.reduce((s,m)=>s+m.diff,0)/withData.length : null;
   const grade = pct===null?'—':pct>=85?'A':pct>=65?'B':pct>=45?'C':'D';
   const gradeCol = {A:'#4ade80',B:'#a3e635',C:'#fbbf24',D:'#f87171','—':'rgba(255,255,255,.50)'}[grade];
+  const isEn = currentLang === 'en';
+  const copy = isEn ? {
+    lang: 'en',
+    title: 'Qibla Analysis Report',
+    subtitleDate: 'en-GB',
+    tolerance: 'Tolerance',
+    total: 'Total Mosques',
+    accuracy: 'Accuracy',
+    grade: 'Grade',
+    avg: 'Avg. Deviation',
+    worstTitle: '15 Mosques with the Highest Deviation',
+    bestTitle: '10 Best-Aligned Mosques',
+    mosqueName: 'Mosque Name',
+    qibla: 'Qibla',
+    axis: 'Building Axis',
+    deviation: 'Deviation',
+    status: 'Status',
+    statusBad: 'Deviation',
+    statusGood: 'Aligned',
+    footer: 'Data source: OpenStreetMap contributors · ODbL license',
+    credit: 'Powered by Qible · Built by Guzin Goksu · guzingoksu.com'
+  } : {
+    lang: 'tr',
+    title: 'Kıble Analiz Raporu',
+    subtitleDate: 'tr-TR',
+    tolerance: 'Tolerans',
+    total: 'Toplam Cami',
+    accuracy: 'Doğruluk',
+    grade: 'Not',
+    avg: 'Ort. Sapma',
+    worstTitle: 'En Fazla Sapma Gösteren 15 Cami',
+    bestTitle: 'En İyi 10 Cami (Kıbleye En Yakın)',
+    mosqueName: 'Cami Adı',
+    qibla: 'Kıble',
+    axis: 'Bina Yönü',
+    deviation: 'Sapma',
+    status: 'Durum',
+    statusBad: 'Sapma',
+    statusGood: 'Doğru',
+    footer: 'Veri kaynağı: OpenStreetMap katkıcıları · ODbL lisansı',
+    credit: 'Powered by Qible · Geliştirici: Güzin Göksu · guzingoksu.com'
+  };
 
   // Worst 15
   const worst = [...withData].sort((a,b)=>b.diff-a.diff).slice(0,15);
@@ -7629,8 +7829,8 @@ function exportReport() {
   const best  = [...withData].sort((a,b)=>a.diff-b.diff).slice(0,10);
 
   const html = `<!DOCTYPE html>
-<html lang="tr"><head><meta charset="UTF-8">
-<title>Kıble Analiz Raporu — ${currentCity}</title>
+<html lang="${copy.lang}"><head><meta charset="UTF-8">
+<title>${copy.title} — ${currentCity}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Segoe UI',sans-serif;background:#164773;color:#e8e4d8;padding:32px;max-width:900px;margin:0 auto;}
@@ -7647,44 +7847,45 @@ td{padding:7px 10px;border-bottom:1px solid rgba(42,42,58,.4);color:#e8e4d8;}
 .ok{color:#4ade80;font-weight:700;} .bad{color:#f87171;font-weight:700;} .unk{color:#fbbf24;}
 .grade{display:inline-block;padding:2px 10px;border-radius:10px;font-weight:700;background:rgba(255,255,255,.07);}
 footer{margin-top:32px;padding-top:12px;border-top:1px solid #6a9ec9;font-size:10px;color:rgba(255,255,255,.50);}
+footer strong{color:rgba(255,255,255,.82);}
 </style></head><body>
-<h1> Kıble Analiz Raporu</h1>
-<div class="subtitle">${currentCity} · ${new Date().toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'})} · Tolerans: ${tol}°</div>
+<h1> ${copy.title}</h1>
+<div class="subtitle">${currentCity} · ${new Date().toLocaleDateString(copy.subtitleDate,{day:'numeric',month:'long',year:'numeric'})} · ${copy.tolerance}: ${tol}°</div>
 
 <div class="cards">
-  <div class="card"><div class="card-val">${all.length}</div><div class="card-lbl">Toplam Cami</div></div>
-  <div class="card"><div class="card-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'rgba(255,255,255,.50)'}">${pct!==null?pct+'%':'—'}</div><div class="card-lbl">Doğruluk</div></div>
-  <div class="card"><div class="card-val" style="color:${gradeCol}">${grade}</div><div class="card-lbl">Not</div></div>
-  <div class="card"><div class="card-val">${avg!==null?avg.toFixed(1)+'°':'—'}</div><div class="card-lbl">Ort. Sapma</div></div>
+  <div class="card"><div class="card-val">${all.length}</div><div class="card-lbl">${copy.total}</div></div>
+  <div class="card"><div class="card-val" style="color:${pct!==null?(pct>=70?'#4ade80':pct>=40?'#fbbf24':'#f87171'):'rgba(255,255,255,.50)'}">${pct!==null?pct+'%':'—'}</div><div class="card-lbl">${copy.accuracy}</div></div>
+  <div class="card"><div class="card-val" style="color:${gradeCol}">${grade}</div><div class="card-lbl">${copy.grade}</div></div>
+  <div class="card"><div class="card-val">${avg!==null?avg.toFixed(1)+'°':'—'}</div><div class="card-lbl">${copy.avg}</div></div>
 </div>
 
-<h2>En Fazla Sapma Gösteren 15 Cami</h2>
+<h2>${copy.worstTitle}</h2>
 <table>
-  <thead><tr><th>#</th><th>Cami Adı</th><th>Kıble</th><th>Bina Yönü</th><th>Sapma</th><th>Durum</th></tr></thead>
+  <thead><tr><th>#</th><th>${copy.mosqueName}</th><th>${copy.qibla}</th><th>${copy.axis}</th><th>${copy.deviation}</th><th>${copy.status}</th></tr></thead>
   <tbody>${worst.map((m,i)=>`<tr>
     <td>${i+1}</td>
     <td>${escHtml(m.name)}</td>
     <td>${m.qibla.toFixed(1)}°</td>
     <td>${m.axis!==null?m.axis.toFixed(1)+'°':'—'}</td>
     <td class="bad">${m.diff.toFixed(1)}°</td>
-    <td class="bad"> Sapma</td>
+    <td class="bad"> ${copy.statusBad}</td>
   </tr>`).join('')}</tbody>
 </table>
 
-<h2>En İyi 10 Cami (Kıbleye En Yakın)</h2>
+<h2>${copy.bestTitle}</h2>
 <table>
-  <thead><tr><th>#</th><th>Cami Adı</th><th>Kıble</th><th>Bina Yönü</th><th>Sapma</th><th>Durum</th></tr></thead>
+  <thead><tr><th>#</th><th>${copy.mosqueName}</th><th>${copy.qibla}</th><th>${copy.axis}</th><th>${copy.deviation}</th><th>${copy.status}</th></tr></thead>
   <tbody>${best.map((m,i)=>`<tr>
     <td>${i+1}</td>
     <td>${escHtml(m.name)}</td>
     <td>${m.qibla.toFixed(1)}°</td>
     <td>${m.axis!==null?m.axis.toFixed(1)+'°':'—'}</td>
     <td class="ok">${m.diff.toFixed(1)}°</td>
-    <td class="ok"> Doğru</td>
+    <td class="ok"> ${copy.statusGood}</td>
   </tr>`).join('')}</tbody>
 </table>
 
-<footer>Veri: OpenStreetMap katkıcıları · ODbL · Kıble Dedektörü ile üretildi · ${new Date().toISOString()}</footer>
+<footer>${copy.footer} · ${new Date().toISOString()}<br><strong>${copy.credit}</strong></footer>
 </body></html>`;
 
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
@@ -7725,25 +7926,40 @@ function buildScoreCardCanvas() {
   ctx.fillText(`Average deviation: ${avg != null ? avg.toFixed(1)+'°' : '—'}`, 80, 634);
   ctx.fillStyle = '#6b7280';
   ctx.font = '400 26px "Manrope", monospace';
-  ctx.fillText(new Date().toLocaleString('tr-TR'), 80, 990);
+  ctx.fillText(new Date().toLocaleString(currentLang === 'en' ? 'en-US' : 'tr-TR'), 80, 990);
   return cv;
 }
 
 async function shareScoreCard() {
-  if (!mosqueDB.size) { toast('Paylaşım için önce veri yükleyin', 2200); return; }
+  if (!mosqueDB.size) {
+    toast(currentLang === 'en' ? 'Load data before sharing' : 'Paylaşım için önce veri yükleyin', 2200);
+    return;
+  }
   const cv = buildScoreCardCanvas();
   const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
-  if (!blob) { toast('Skor kartı üretilemedi', 2200); return; }
+  if (!blob) {
+    toast(currentLang === 'en' ? 'Score card could not be generated' : 'Skor kartı üretilemedi', 2200);
+    return;
+  }
   const file = new File([blob], `qibla-score-${slugify(currentCity)}-${dateStr()}.png`, {type:'image/png'});
   if (navigator.share && navigator.canShare && navigator.canShare({ files:[file] })) {
     try {
-      await navigator.share({ title:`Qibla Score - ${currentCity}`, text:`${currentCity} kıble skoru`, files:[file] });
-      toast('Skor kartı paylaşıldı', 1800);
+      await navigator.share({
+        title:`Qibla Score - ${currentCity}`,
+        text: currentLang === 'en' ? `${currentCity} qibla score` : `${currentCity} kıble skoru`,
+        files:[file]
+      });
+      toast(currentLang === 'en' ? 'Score card shared' : 'Skor kartı paylaşıldı', 1800);
       return;
     } catch {}
   }
   download(blob, file.name, 'image/png');
-  toast('Skor kartı indirildi (paylaşım fallback)', 2300);
+  toast(
+    currentLang === 'en'
+      ? 'Score card downloaded (share fallback)'
+      : 'Skor kartı indirildi (paylaşım fallback)',
+    2300
+  );
 }
 
 // ── Helpers
@@ -8762,20 +8978,22 @@ async function renderInteriorSection(m, tags) {
   const list = getInteriorEvidenceList(m);
   const manualRec = getManualAxisRecord(m);
   meta.textContent = list.length
-    ? `Kaydedilmiş iç mekan kanıtı: ${list.length} · Son güncelleme: ${new Date(list[list.length-1].ts).toLocaleString('tr-TR')}`
-    : 'Henüz iç mekan yön kanıtı kaydedilmedi.';
+    ? (currentLang === 'en'
+        ? `Saved interior evidence: ${list.length} · Last update: ${new Date(list[list.length-1].ts).toLocaleString('en-US')}`
+        : `Kaydedilmiş iç mekan kanıtı: ${list.length} · Son güncelleme: ${new Date(list[list.length-1].ts).toLocaleString('tr-TR')}`)
+    : (currentLang === 'en' ? 'No interior direction evidence has been recorded yet.' : 'Henüz iç mekan yön kanıtı kaydedilmedi.');
 
   evList.innerHTML = list.length
     ? list.map((ev, idx) => `
       <div class="dp-int-ev-row">
         <div class="dp-int-ev-main">
-          ${Number(ev.axis).toFixed(1)}° · Güven ${(Number(ev.confidence||0)*100|0)}%
-          <div class="dp-int-ev-sub">${escHtml(ev.note || ev.sourceUrl || 'manuel giriş')}</div>
+          ${Number(ev.axis).toFixed(1)}° · ${currentLang === 'en' ? 'Confidence' : 'Güven'} ${(Number(ev.confidence||0)*100|0)}%
+          <div class="dp-int-ev-sub">${escHtml(ev.note || ev.sourceUrl || (currentLang === 'en' ? 'manual entry' : 'manuel giriş'))}</div>
         </div>
-        <button class="dp-int-ev-del" onclick="removeInteriorEvidence(${idx})">Sil</button>
+        <button class="dp-int-ev-del" onclick="removeInteriorEvidence(${idx})">${currentLang === 'en' ? 'Delete' : 'Sil'}</button>
       </div>
     `).join('')
-    : '<div class="dp-int-meta">Kanıt listesi boş.</div>';
+    : `<div class="dp-int-meta">${currentLang === 'en' ? 'Evidence list is empty.' : 'Kanıt listesi boş.'}</div>`;
 
   if (manualRec?.axis != null) {
     const mod = manualRec.moderation || {};
@@ -8783,18 +9001,22 @@ async function renderInteriorSection(m, tags) {
     row.className = 'dp-int-ev-row';
     row.innerHTML = `
       <div class="dp-int-ev-main">
-        Manuel aks: ${Number(manualRec.axis).toFixed(1)}° · AI: ${(mod.status || 'none').toUpperCase()}
-        <div class="dp-int-ev-sub">Skor: ${mod.score!=null ? (mod.score*100|0)+'%' : '—'} · ${new Date(manualRec.ts || Date.now()).toLocaleString('tr-TR')}</div>
+        ${currentLang === 'en' ? 'Manual axis' : 'Manuel aks'}: ${Number(manualRec.axis).toFixed(1)}° · AI: ${(mod.status || 'none').toUpperCase()}
+        <div class="dp-int-ev-sub">${currentLang === 'en' ? 'Score' : 'Skor'}: ${mod.score!=null ? (mod.score*100|0)+'%' : '—'} · ${new Date(manualRec.ts || Date.now()).toLocaleString(currentLang === 'en' ? 'en-US' : 'tr-TR')}</div>
       </div>
-      <button class="dp-int-ev-del" onclick="deleteManualAxis()">Sil</button>
+      <button class="dp-int-ev-del" onclick="deleteManualAxis()">${currentLang === 'en' ? 'Delete' : 'Sil'}</button>
     `;
     evList.appendChild(row);
   }
   if (manualRec?.axis != null) {
     const mod = manualRec.moderation || {};
-    setManualStatus(`Kayıtlı: ${Number(manualRec.axis).toFixed(1)}° · AI ${String(mod.status || 'none').toUpperCase()}`);
+    setManualStatus(
+      currentLang === 'en'
+        ? `Saved: ${Number(manualRec.axis).toFixed(1)}° · AI ${String(mod.status || 'none').toUpperCase()}`
+        : `Kayıtlı: ${Number(manualRec.axis).toFixed(1)}° · AI ${String(mod.status || 'none').toUpperCase()}`
+    );
   } else {
-    setManualStatus('Hazır');
+    setManualStatus(currentLang === 'en' ? 'Ready' : 'Hazır');
   }
 }
 
@@ -8846,7 +9068,7 @@ function deleteManualAxis() {
   applyAxisFusion(m);
   renderAll();
   populateDetailPanel(m);
-  toast('Manuel aks kaydı silindi', 2000);
+  toast(currentLang === 'en' ? 'Manual axis record deleted' : 'Manuel aks kaydı silindi', 2000);
 }
 
 function renderExplainability(m) {
@@ -8957,15 +9179,15 @@ function cancelManualAxisCapture() {
   manualCapture.active = false;
   map.off('click', onManualMapClick);
   clearManualCaptureVisuals();
-  setManualStatus('İptal edildi');
+  setManualStatus(currentLang === 'en' ? 'Cancelled' : 'İptal edildi');
 }
 
 function startManualAxisCapture() {
   const m = window._lastClickedMosque;
-  if (!m || !map) { toast('Önce bir cami seçin', 2000); return; }
+  if (!m || !map) { toast(currentLang === 'en' ? 'Select a mosque first' : 'Önce bir cami seçin', 2000); return; }
   cancelManualAxisCapture();
   manualCapture.active = true;
-  setManualStatus('Haritada 1. noktayı seçin');
+  setManualStatus(currentLang === 'en' ? 'Select the 1st point on the map' : 'Haritada 1. noktayı seçin');
   map.on('click', onManualMapClick);
 }
 
@@ -8976,7 +9198,7 @@ function onManualMapClick(e) {
   const mk = L.circleMarker(p, { radius:6, color:'#fff', weight:1.5, fillColor:'#c9a84c', fillOpacity:1 }).addTo(map);
   manualCapture.markers.push(mk);
   if (manualCapture.points.length === 1) {
-    setManualStatus('2. noktayı seçin');
+    setManualStatus(currentLang === 'en' ? 'Select the 2nd point' : '2. noktayı seçin');
     return;
   }
   const [a,b] = manualCapture.points;
@@ -8985,12 +9207,17 @@ function onManualMapClick(e) {
   const axis = toAxis180(brg);
   const m = window._lastClickedMosque;
   const mod = applyManualAxisSubmission(m, axis, 'map-2point');
-  setManualStatus(`AI: ${mod.status.toUpperCase()} · skor ${(mod.score*100|0)}% · aks ${axis.toFixed(1)}°`);
+  setManualStatus(`AI: ${mod.status.toUpperCase()} · ${currentLang === 'en' ? 'score' : 'skor'} ${(mod.score*100|0)}% · ${currentLang === 'en' ? 'axis' : 'aks'} ${axis.toFixed(1)}°`);
   manualCapture.active = false;
   map.off('click', onManualMapClick);
   renderAll();
   populateDetailPanel(m);
-  toast(`Manuel aks ${mod.status === 'accepted' ? 'kabul edildi' : mod.status === 'pending' ? 'incelemeye alındı' : 'reddedildi'}`, 2800);
+  toast(
+    currentLang === 'en'
+      ? `Manual axis ${mod.status === 'accepted' ? 'accepted' : mod.status === 'pending' ? 'sent for review' : 'rejected'}`
+      : `Manuel aks ${mod.status === 'accepted' ? 'kabul edildi' : mod.status === 'pending' ? 'incelemeye alındı' : 'reddedildi'}`,
+    2800
+  );
 }
 
 function compassOverlayClick(e) {
@@ -9134,7 +9361,7 @@ function dispose3D() {
 
 async function open3D() {
   const m = window._lastClickedMosque;
-  if (!m) { toast('Önce bir cami seçin', 2200); return; }
+  if (!m) { toast(currentLang === 'en' ? 'Select a mosque first' : 'Önce bir cami seçin', 2200); return; }
   document.getElementById('m3d-overlay').classList.add('show');
   await loadThree();
   render3DScene(m);
@@ -9210,12 +9437,12 @@ function render3DScene(m) {
   mkLine(iAxis, 0x4ade80, 100, 11);
 
   side.innerHTML = `
-    <div class="lab-row"><span class="lab-k">Cami</span><span class="lab-v">${escHtml(m.name)}</span></div>
-    <div class="lab-row"><span class="lab-k">Kıble</span><span class="lab-v">${m.qibla.toFixed(2)}°</span></div>
-    <div class="lab-row"><span class="lab-k">Nihai aks</span><span class="lab-v">${m.axis!=null?m.axis.toFixed(2)+'°':'—'}</span></div>
-    <div class="lab-row"><span class="lab-k">İç aks</span><span class="lab-v">${iAxis!=null?iAxis.toFixed(2)+'°':'—'}</span></div>
-    <div class="lab-row"><span class="lab-k">Sapma</span><span class="lab-v">${m.diff!=null?m.diff.toFixed(2)+'°':'—'}</span></div>
-    <div class="lab-row"><span class="lab-k">Güven</span><span class="lab-v">${m.confidence ?? '—'}/100</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Mosque' : 'Cami'}</span><span class="lab-v">${escHtml(m.name)}</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Qibla' : 'Kıble'}</span><span class="lab-v">${m.qibla.toFixed(2)}°</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Final axis' : 'Nihai aks'}</span><span class="lab-v">${m.axis!=null?m.axis.toFixed(2)+'°':'—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Interior axis' : 'İç aks'}</span><span class="lab-v">${iAxis!=null?iAxis.toFixed(2)+'°':'—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Deviation' : 'Sapma'}</span><span class="lab-v">${m.diff!=null?m.diff.toFixed(2)+'°':'—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${currentLang === 'en' ? 'Confidence' : 'Güven'}</span><span class="lab-v">${m.confidence ?? '—'}/100</span></div>
   `;
 
   const tick = () => {
@@ -9717,7 +9944,7 @@ async function lbAnalyseCity(city) {
       });
     }
 
-    pb.style.width = '90%'; pl.textContent = 'Skor hesaplanıyor...';
+    pb.style.width = '90%'; pl.textContent = currentLang === 'en' ? 'Calculating score...' : 'Skor hesaplanıyor...';
     const st = computeStats(tempDB);
 
     // Detect country & region from nominatim display_name

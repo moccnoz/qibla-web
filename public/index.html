@@ -333,8 +333,8 @@
 
       <div class="mob-drawer-section">
         <div class="mob-drawer-section-lbl">Analiz</div>
-        <button class="mob-drawer-btn" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Isı</span></button>
-        <button class="mob-drawer-btn" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Skor</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-heat" onclick="toggleHeatmap();closeMobDrawer()"><span class="mob-nav-ico">◍</span><span>Isı</span></button>
+        <button class="mob-drawer-btn" id="mob-btn-score" onclick="toggleScoreCard();closeMobDrawer()"><span class="mob-nav-ico">◌</span><span>Skor</span></button>
         <button class="mob-drawer-btn" onclick="openCompare();closeMobDrawer()"><span class="mob-nav-ico">⇄</span><span>Karşılaştır</span></button>
         <button class="mob-drawer-btn" onclick="toggleHistoryMode();closeMobDrawer()"><span class="mob-nav-ico">◷</span><span>Tarih</span></button>
         <button class="mob-drawer-btn" onclick="openLeaderboard();closeMobDrawer()"><span class="mob-nav-ico">☰</span><span>Sıralama</span></button>
@@ -433,8 +433,8 @@
       </div>
     </div>
 
-    <div class="exp-footer">
-      Veri kaynağı: OpenStreetMap katkıcıları · ODbL lisansı
+    <div class="exp-footer" id="exp-footer-copy">
+      Veri kaynağı: OpenStreetMap katkıcıları · ODbL lisansı · Powered by Qible · Geliştirici: Güzin Göksu · guzingoksu.com
     </div>
   </div>
 </div>
@@ -591,6 +591,9 @@
   <div class="stat"><div class="dot green"></div><div class="stat-num" id="s-ok">—</div><div class="stat-lbl">Doğru</div></div>
   <div class="stat"><div class="dot red"></div><div class="stat-num" id="s-bad">—</div><div class="stat-lbl">Sapma</div></div>
   <div class="stat"><div class="dot amber"></div><div class="stat-num" id="s-unk">—</div><div class="stat-lbl">Veri Yok</div></div>
+  <div class="stat stat-trust"><div class="dot green"></div><div class="stat-num" id="s-pct">—</div><div class="stat-lbl" id="s-pct-lbl">Doğruluk %</div></div>
+  <div class="stat stat-trust"><div class="dot blue"></div><div class="stat-num" id="s-covered">—</div><div class="stat-lbl" id="s-covered-lbl">Verili Cami</div></div>
+  <div class="cache-info provenance-chip" id="data-source-chip">Kaynak: OpenStreetMap</div>
   <div class="cache-info">Cache: <span id="cache-count">0</span> tile</div>
   <div class="district-pill" id="district-pill">
     <span id="district-pill-text">—</span>
@@ -773,6 +776,15 @@
       <div class="leg-row"><div class="leg-line" style="background:#7c6ad8"></div><span>Binanın gerçek baktığı yön</span></div>
       <div class="leg-row"><div class="leg-line" style="background:transparent;border-top:2px dashed #c9a84c;height:0;width:22px"></div><span>Kabe'ye büyük daire (doğru)</span></div>
     </div>
+    <div class="project-context" id="project-context">
+      <div class="project-context-kicker" id="project-context-kicker">Neden önemli?</div>
+      <div class="project-context-title" id="project-context-title">Mihrap yönü sadece mimari detay değil, ibadet yöneliminin görünen izidir.</div>
+      <p class="project-context-copy" id="project-context-copy">Qible, camilerin gerçek kıble yönünden sapmasını açık veriden hesaplayarak bu soruyu mimarlık, tarih ve ibadet bağlamında görünür hale getirir.</p>
+      <div class="project-context-links">
+        <a id="project-context-method" href="/tr/kible-nasil-hesaplanir/">Metodolojiyi oku</a>
+        <a id="project-context-editorial" data-surface="project_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=project_context" target="_blank" rel="noopener noreferrer">Köklere Dönüş</a>
+      </div>
+    </div>
     <div class="seo-links">
       <div class="seo-links-title">Kıble Rehberleri</div>
       <a id="seo-link-guides" href="/tr/kible-yonu/">Şehir bazlı kıble yönü rehberleri</a>
@@ -781,8 +793,8 @@
       <a id="seo-link-sources" href="/tr/veri-kaynaklari/">Veri kaynakları</a>
       <div class="creator-block creator-block-seo">
         <p class="creator-kicker">Bu uygulama</p>
-        <a class="creator-name" href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">Güzin Göksu</a>
-        <p class="creator-context">tarafından geliştirildi. Kuran merkezli filolojik yazılar için <a href="https://www.guzingoksu.com" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
+        <a class="creator-name" data-surface="seo_creator_name" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=seo_identity" target="_blank" rel="noopener noreferrer">Güzin Göksu</a>
+        <p class="creator-context">tarafından geliştirildi. Kuran merkezli filolojik yazılar için <a data-surface="seo_creator_context" href="https://www.guzingoksu.com?utm_source=qible&utm_medium=app&utm_campaign=seo_identity" target="_blank" rel="noopener noreferrer">guzingoksu.com</a></p>
       </div>
     </div>
   </div>
