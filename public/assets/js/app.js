@@ -42,6 +42,7 @@ const MANUAL_AXIS_KEY = 'qibla-manual-axis-v1';
 const OUTDOOR_KEY = 'qibla-outdoor-v1';
 const GEO_PROMPT_KEY = 'qibla-geo-prompt-v1';
 const INTRO_DISMISSED_KEY = 'qibla-intro-dismissed-v1';
+const PROJECT_CONTEXT_DISMISSED_KEY = 'qible-project-context-dismissed-v1';
 const POPULARITY_KEY = 'qibla-popularity-v1';
 const VISIT_TRAFFIC_KEY = 'qibla-visit-traffic-v1';
 const CITY_SEARCH_HISTORY_KEY = 'qibla-city-history-v1';
@@ -726,6 +727,8 @@ function initMap() {
 
   // Close qibla panel on map click (not on marker)
   map.on('click', hideQiblaPanel);
+  map.on('click', () => hideProjectContext(true));
+  map.on('dragstart zoomstart', () => hideProjectContext(true));
   map.on('mousemove', onDistrictMouseMove);
   map.on('click', onDistrictMapClick);
   map.on('mouseout', () => {
@@ -2521,8 +2524,8 @@ const I18N_STATIC = {
     sidebarAvg: 'Ort. Sapma',
     sidebarMax: 'Maks Sapma',
     projectContextKicker: 'Neden önemli?',
-    projectContextTitle: 'Mihrap yönü sadece mimari detay değil, ibadet yöneliminin görünen izidir.',
-    projectContextCopy: 'Qible, camilerin gerçek kıble yönünden sapmasını açık veriden hesaplayarak bu soruyu mimarlık, tarih ve ibadet bağlamında görünür hale getirir.',
+    projectContextTitle: 'Kıble yönü her camide mutlak doğru olmayabilir, bu proje muhtemel sapmaları hesaplamak için geliştirildi.',
+    projectContextCopy: 'Qible, camilerin kıble doğrultusunu açık veriden ölçerek muhtemel yön sapmalarını görünür hale getirir.',
     projectContextMethod: 'Metodolojiyi oku',
     projectContextEditorial: 'Köklere Dönüş',
     seoGuidesTitle: 'Kıble Rehberleri',
@@ -2595,8 +2598,8 @@ const I18N_STATIC = {
     sidebarAvg: 'Avg. deviation',
     sidebarMax: 'Max. deviation',
     projectContextKicker: 'Why it matters',
-    projectContextTitle: 'The mihrab direction is not just a design detail; it is the visible trace of ritual orientation.',
-    projectContextCopy: 'Qible measures how far mosque orientation deviates from true qibla using open data, making the question legible in architectural, historical, and devotional terms.',
+    projectContextTitle: 'Qibla direction may not be perfectly correct in every mosque; this project was built to estimate possible deviations.',
+    projectContextCopy: 'Qible uses open data to surface likely qibla-direction misalignments across mosque structures.',
     projectContextMethod: 'Read the methodology',
     projectContextEditorial: 'Koklere Donus',
     seoGuidesTitle: 'Qibla Guides',
@@ -10398,8 +10401,29 @@ function bindAnimatedCountersIO(root = document) {
   });
 }
 
+function hideProjectContext(persist = true) {
+  const el = document.getElementById('project-context');
+  if (!el || el.classList.contains('is-hidden')) return;
+  el.classList.add('is-hidden');
+  if (persist) {
+    try { localStorage.setItem(PROJECT_CONTEXT_DISMISSED_KEY, '1'); } catch (_) {}
+  }
+}
+
+function initProjectContext() {
+  const el = document.getElementById('project-context');
+  if (!el) return;
+  try {
+    if (localStorage.getItem(PROJECT_CONTEXT_DISMISSED_KEY) === '1') {
+      el.classList.add('is-hidden');
+    }
+  } catch (_) {}
+  document.getElementById('project-context-close')?.addEventListener('click', () => hideProjectContext(true));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   bindAnimatedCountersIO(document);
+  initProjectContext();
 
   const observerTargets = [
     document.querySelector('.stats-bar'),

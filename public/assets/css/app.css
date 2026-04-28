@@ -3554,6 +3554,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .project-context {
+  position: relative;
   margin-top: 10px;
   padding: 14px 16px;
   border: 1px solid rgba(255,255,255,.08);
@@ -3562,6 +3563,33 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.project-context.is-hidden {
+  display: none;
+}
+
+.project-context-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.project-context-close:hover {
+  border-color: var(--accent);
+  color: var(--text-bright);
+  background: rgba(255,255,255,.07);
 }
 
 .project-context-kicker {
@@ -3578,6 +3606,7 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 700;
   color: var(--text-bright);
   max-width: 720px;
+  padding-right: 34px;
 }
 
 .project-context-copy {
