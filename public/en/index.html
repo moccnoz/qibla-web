@@ -372,39 +372,39 @@
   <div class="exp-modal">
 
     <div class="exp-header">
-      <div class="exp-title"> Export & Paylaşım</div>
+      <div class="exp-title"> Export & Share</div>
       <button class="exp-close" onclick="closeExport()"></button>
     </div>
 
     <!-- Share URL -->
     <div class="exp-section">
-      <div class="exp-section-title"> Paylaşılabilir URL</div>
+      <div class="exp-section-title"> Shareable URL</div>
       <div class="exp-url-row">
         <input class="exp-url-input" id="exp-url-input" type="text" readonly/>
-        <button class="exp-copy-btn" id="exp-copy-url" onclick="copyShareUrl()">Kopyala</button>
+        <button class="exp-copy-btn" id="exp-copy-url" onclick="copyShareUrl()">Copy</button>
       </div>
-      <div class="exp-url-hint">URL'de şehir adı, harita merkezi ve zoom seviyesi kaydedilir. Paylaşılan kişi aynı görünüme gider.</div>
+      <div class="exp-url-hint">The URL stores the city name, map center, and zoom level. Anyone you share it with lands on the same view.</div>
     </div>
 
     <!-- Summary -->
     <div class="exp-section">
-      <div class="exp-section-title"> Mevcut Veri Özeti</div>
+      <div class="exp-section-title"> Current Data Summary</div>
       <div class="exp-summary" id="exp-summary"></div>
     </div>
 
     <!-- Download buttons -->
     <div class="exp-section">
-      <div class="exp-section-title"> İndir</div>
+      <div class="exp-section-title"> Download</div>
       <div class="exp-dl-grid">
         <button class="exp-dl-btn" onclick="exportJSON()">
           <span class="exp-dl-icon">{ }</span>
           <span class="exp-dl-label">JSON</span>
-          <span class="exp-dl-desc">Tüm cami verisi</span>
+          <span class="exp-dl-desc">All mosque data</span>
         </button>
         <button class="exp-dl-btn" onclick="exportCSV()">
           <span class="exp-dl-icon">⊞</span>
           <span class="exp-dl-label">CSV</span>
-          <span class="exp-dl-desc">Excel uyumlu</span>
+          <span class="exp-dl-desc">Excel compatible</span>
         </button>
         <button class="exp-dl-btn" onclick="exportGeoJSON()">
           <span class="exp-dl-icon"></span>
@@ -434,58 +434,58 @@
 <div class="biz-overlay" id="biz-overlay" onclick="bizOverlayClick(event)">
   <div class="biz-modal">
     <div class="biz-header">
-      <div class="biz-title"> Gelir Kanalları (Üyeliksiz)</div>
+      <div class="biz-title"> Revenue Channels (No Subscription)</div>
       <button class="biz-close" onclick="closeBiz()"></button>
     </div>
 
     <div class="biz-section">
-      <div class="biz-section-title">Sponsor Alanları (Aylık)</div>
+      <div class="biz-section-title">Sponsor Placements (Monthly)</div>
       <div class="biz-grid">
         <div class="biz-card">
-          <div class="biz-card-name">Bronz Sponsor</div>
+          <div class="biz-card-name">Bronze Sponsor</div>
           <div class="biz-card-price">7.500 TL / ay</div>
-          <div class="biz-card-desc">Footer + modal içinde görünürlük</div>
+          <div class="biz-card-desc">Visibility in the footer and inside modals</div>
         </div>
         <div class="biz-card">
-          <div class="biz-card-name">Gümüş Sponsor</div>
+          <div class="biz-card-name">Silver Sponsor</div>
           <div class="biz-card-price">15.000 TL / ay</div>
-          <div class="biz-card-desc">Sidebar + şehir raporu ekranında görünürlük</div>
+          <div class="biz-card-desc">Visibility in the sidebar and city report view</div>
         </div>
         <div class="biz-card">
-          <div class="biz-card-name">Altın Sponsor</div>
+          <div class="biz-card-name">Gold Sponsor</div>
           <div class="biz-card-price">30.000 TL / ay</div>
-          <div class="biz-card-desc">Header rozeti + rapor sayfası sponsor etiketi</div>
+          <div class="biz-card-desc">Header badge and report page sponsor label</div>
         </div>
       </div>
       <div class="biz-cta-row">
-        <a class="biz-cta" href="mailto:sales@qibla-checker.app?subject=Sponsorluk%20Teklifi">Sponsorluk Talebi</a>
+        <a class="biz-cta" href="mailto:sales@qibla-checker.app?subject=Sponsorship%20Inquiry">Request Sponsorship</a>
       </div>
     </div>
 
     <div class="biz-section">
-      <div class="biz-section-title">Tek Seferlik Satış</div>
+      <div class="biz-section-title">One-Off Sales</div>
       <div class="biz-inline">
-        <span>Kurumsal PDF Rapor</span>
+        <span>Corporate PDF Report</span>
         <strong>2.500 TL</strong>
       </div>
       <div class="biz-inline">
-        <span>Toplu Şehir Analizi (10 şehir)</span>
+        <span>Bulk City Analysis (10 cities)</span>
         <strong>12.000 TL</strong>
       </div>
       <div class="biz-cta-row">
-        <a class="biz-cta primary" href="https://example.com/odeme-linki" target="_blank" rel="noopener">Ödeme Linki (Demo)</a>
-        <button class="biz-cta" onclick="openExport();closeBiz()">Önce Örnek Rapor Gör</button>
+        <a class="biz-cta primary" href="https://example.com/odeme-linki" target="_blank" rel="noopener">Payment Link (Demo)</a>
+        <button class="biz-cta" onclick="openExport();closeBiz()">View Sample Report First</button>
       </div>
     </div>
 
     <div class="biz-section">
-      <div class="biz-section-title">B2B / White-Label Talebi</div>
+      <div class="biz-section-title">B2B / White-Label Inquiry</div>
       <div class="biz-form">
-        <input id="biz-name" type="text" placeholder="Ad Soyad"/>
-        <input id="biz-company" type="text" placeholder="Kurum / Şirket"/>
-        <input id="biz-email" type="email" placeholder="E-posta"/>
-        <textarea id="biz-msg" placeholder="İhtiyaç: white-label, API, toplu analiz..."></textarea>
-        <button class="biz-cta primary" onclick="bizSendLead()">Teklif Maili Oluştur</button>
+        <input id="biz-name" type="text" placeholder="Full name"/>
+        <input id="biz-company" type="text" placeholder="Organization / Company"/>
+        <input id="biz-email" type="email" placeholder="Email"/>
+        <textarea id="biz-msg" placeholder="Need: white-label, API, bulk analysis..."></textarea>
+        <button class="biz-cta primary" onclick="bizSendLead()">Create Offer Email</button>
       </div>
     </div>
   </div>
@@ -495,20 +495,20 @@
 <div class="lab-overlay" id="lab-overlay" onclick="labOverlayClick(event)">
   <div class="lab-modal">
     <div class="lab-header">
-      <div class="lab-title"> QA & İçgörü Laboratuvarı</div>
+      <div class="lab-title"> QA & Insights Lab</div>
       <button class="lab-close" onclick="closeLab()"></button>
     </div>
     <div class="lab-grid">
       <div class="lab-card">
-        <div class="lab-card-title">Şehir İçgörüsü</div>
+        <div class="lab-card-title">City Insight</div>
         <div id="lab-insights"></div>
       </div>
       <div class="lab-card">
-        <div class="lab-card-title">Kalite Kuyruğu</div>
+        <div class="lab-card-title">Quality Queue</div>
         <div id="lab-queue"></div>
       </div>
       <div class="lab-card">
-        <div class="lab-card-title">Sürüm Geçmişi</div>
+        <div class="lab-card-title">Version History</div>
         <div id="lab-snapshots"></div>
       </div>
     </div>
@@ -526,7 +526,7 @@
       <canvas id="cmps-canvas" width="260" height="260"></canvas>
       <div class="cmps-rows" id="cmps-rows"></div>
       <div class="cmps-actions">
-        <button class="btn btn-sm" onclick="requestCompassPermission()">Sensör İzni</button>
+        <button class="btn btn-sm" onclick="requestCompassPermission()">Sensor Permission</button>
         <button class="btn btn-sm" onclick="refreshCompassLocation()">Refresh location</button>
         <button class="btn btn-sm" id="btn-map-sync" onclick="toggleMapCompassSync()">Rotate map</button>
       </div>
@@ -538,7 +538,7 @@
 <div class="m3d-overlay" id="m3d-overlay" onclick="m3dOverlayClick(event)">
   <div class="m3d-modal">
     <div class="m3d-header">
-      <div class="m3d-title"> 3D Yön Analizi (Deneysel)</div>
+      <div class="m3d-title"> 3D Direction Analysis (Experimental)</div>
       <button class="m3d-close" onclick="close3D()"></button>
     </div>
     <div class="m3d-wrap">
@@ -650,13 +650,13 @@
       <div class="mini-spin"></div>
       <span id="mini-text">Loading...</span>
     </div>
-    <!-- Kıble animation info panel -->
+    <!-- Qibla animation info panel -->
     <div class="qibla-panel" id="qibla-panel">
       <div class="qp-name" id="qp-name">—</div>
       <div class="qp-row"><span class="qp-k" style="color:#c9a84c">──</span><span class="qp-v" id="qp-angle" style="font-size:10px">—</span></div>
       <div class="qp-row"><span class="qp-k" style="color:#7c6ad8">──</span><span class="qp-v" id="qp-diff" style="font-size:10px">—</span></div>
       <div class="qp-row"><span class="qp-k">Kabe</span><span class="qp-v" id="qp-dist">—</span></div>
-      <div class="qp-anim" id="qp-anim-status">● Kıble çizgisi çiziliyor...</div>
+      <div class="qp-anim" id="qp-anim-status">● Drawing qibla line...</div>
     </div>
     <div class="district-hover-chip" id="district-hover-chip">District mode: move over the map</div>
 
@@ -800,7 +800,7 @@
   <div class="dp-ribbon" id="dp-ribbon">
     <div class="dp-ribbon-item" id="dp-status-badge"></div>
     <div class="dp-ribbon-item">
-      <span class="dp-ribbon-lbl">Kıble</span>
+      <span class="dp-ribbon-lbl">Qibla</span>
       <span class="dp-ribbon-val" id="dp-qibla-val">—</span>
     </div>
     <div class="dp-ribbon-item">
@@ -808,7 +808,7 @@
       <span class="dp-ribbon-val" id="dp-axis-val">—</span>
     </div>
     <div class="dp-ribbon-item">
-      <span class="dp-ribbon-lbl">Sapma</span>
+      <span class="dp-ribbon-lbl">Deviation</span>
       <span class="dp-ribbon-val" id="dp-diff-val">—</span>
     </div>
     <div class="dp-ribbon-item">
@@ -829,17 +829,17 @@
     <div class="dp-int-gallery" id="dp-int-gallery"></div>
     <div class="dp-int-meta" id="dp-int-meta"></div>
     <div class="dp-int-form">
-      <label for="dp-int-axis">Namaz saf/mihrab yönü (0–179°)</label>
+      <label for="dp-int-axis">Prayer row / mihrab direction (0–179°)</label>
       <input id="dp-int-axis" type="range" min="0" max="179" value="90" oninput="document.getElementById('dp-int-axis-val').textContent=this.value+'°'"/>
       <div class="dp-int-axis-val" id="dp-int-axis-val">90°</div>
       <select id="dp-int-conf">
-        <option value="0.55">Düşük güven</option>
-        <option value="0.75" selected>Orta güven</option>
-        <option value="0.9">Yüksek güven</option>
+        <option value="0.55">Low confidence</option>
+        <option value="0.75" selected>Medium confidence</option>
+        <option value="0.9">High confidence</option>
       </select>
       <input id="dp-int-url" type="text" placeholder="Kaynak URL (opsiyonel)"/>
-      <input id="dp-int-note" type="text" placeholder="Not (örn: mihrab açıkça görünüyor)"/>
-      <button class="dp-action-btn" onclick="saveInteriorEvidence()">İç Mekan Yönünü Kaydet</button>
+      <input id="dp-int-note" type="text" placeholder="Note (e.g. the mihrab is clearly visible)"/>
+      <button class="dp-action-btn" onclick="saveInteriorEvidence()">Save Interior Direction</button>
     </div>
     <div class="dp-int-form">
       <label>Manual Axis Correction (2 Points on Map)</label>
@@ -852,7 +852,7 @@
 
   <!-- Qibla mini diagram -->
   <div class="dp-section">
-    <div class="dp-section-title">Kıble Analizi</div>
+    <div class="dp-section-title">Qibla Analysis</div>
     <div class="dp-qibla-row">
       <canvas id="dp-compass" width="120" height="120"></canvas>
       <div class="dp-qibla-stats" id="dp-qibla-stats"></div>
@@ -878,7 +878,7 @@
 
   <!-- OSM Tags -->
   <div class="dp-section">
-    <div class="dp-section-title" id="dp-tags-title">OSM Etiketleri</div>
+    <div class="dp-section-title" id="dp-tags-title">OSM Tags</div>
     <div class="dp-tags" id="dp-tags"></div>
   </div>
 
@@ -902,26 +902,26 @@
     <!-- Controls bar -->
     <div class="lb-controls">
       <div class="lb-add-wrap">
-        <input id="lb-city-input" type="text" placeholder="Şehir ekle... (örn: Konya, Cairo, Lahore)" autocomplete="off"/>
-        <button id="lb-add-btn" onclick="lbAddCity()">+ Analiz Et</button>
+        <input id="lb-city-input" type="text" placeholder="Add city... (e.g. Konya, Cairo, Lahore)" autocomplete="off"/>
+        <button id="lb-add-btn" onclick="lbAddCity()">+ Analyze</button>
       </div>
       <div class="lb-mode-row">
         <span class="lb-sort-label">Mode:</span>
-        <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')"> Şehir Analizi</button>
-        <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')"> İl/State Sayımı</button>
+        <button class="lb-mode active" data-mode="qibla" onclick="lbSetDataset('qibla')"> City Analysis</button>
+        <button class="lb-mode" data-mode="admin" onclick="lbSetDataset('admin')"> Province/State Count</button>
       </div>
       <div class="lb-progress-wrap" id="lb-progress-wrap" style="display:none">
         <div class="lb-progress-bar" id="lb-progress-bar"></div>
-        <span class="lb-progress-label" id="lb-progress-label">Analiz ediliyor...</span>
+        <span class="lb-progress-label" id="lb-progress-label">Analyzing...</span>
       </div>
       <div class="lb-filters">
         <button class="lb-filter active" data-region="all"   onclick="lbSetRegion('all')"> All</button>
-        <button class="lb-filter"        data-region="turkey" onclick="lbSetRegion('turkey')"> Türkiye</button>
-        <button class="lb-filter"        data-region="mideast" onclick="lbSetRegion('mideast')"> Orta Doğu</button>
-        <button class="lb-filter"        data-region="asia"    onclick="lbSetRegion('asia')"> Güney Asya</button>
-        <button class="lb-filter"        data-region="africa"  onclick="lbSetRegion('africa')"> Afrika</button>
-        <button class="lb-filter"        data-region="europe"  onclick="lbSetRegion('europe')"> Avrupa</button>
-        <button class="lb-filter"        data-region="other"   onclick="lbSetRegion('other')"> Diğer</button>
+        <button class="lb-filter"        data-region="turkey" onclick="lbSetRegion('turkey')"> Turkey</button>
+        <button class="lb-filter"        data-region="mideast" onclick="lbSetRegion('mideast')"> Middle East</button>
+        <button class="lb-filter"        data-region="asia"    onclick="lbSetRegion('asia')"> South Asia</button>
+        <button class="lb-filter"        data-region="africa"  onclick="lbSetRegion('africa')"> Africa</button>
+        <button class="lb-filter"        data-region="europe"  onclick="lbSetRegion('europe')"> Europe</button>
+        <button class="lb-filter"        data-region="other"   onclick="lbSetRegion('other')"> Other</button>
       </div>
       <div class="lb-sort-row">
         <span class="lb-sort-label">Sort:</span>
@@ -939,20 +939,20 @@
     <div class="lb-table-wrap">
       <div class="lb-table-head">
         <span class="lbt-rank">#</span>
-        <span class="lbt-city" id="lb-h-city">Şehir</span>
-        <span class="lbt-bar" id="lb-h-bar">Doğruluk</span>
+        <span class="lbt-city" id="lb-h-city">City</span>
+        <span class="lbt-bar" id="lb-h-bar">Accuracy</span>
         <span class="lbt-pct" id="lb-h-pct">%</span>
         <span class="lbt-not" id="lb-h-note">Not</span>
         <span class="lbt-count" id="lb-h-count">Mosques</span>
-        <span class="lbt-avg" id="lb-h-avg">Ort.Sap.</span>
-        <span class="lbt-date">Analiz</span>
+        <span class="lbt-avg" id="lb-h-avg">Avg.Dev.</span>
+        <span class="lbt-date">Analysis</span>
         <span class="lbt-act"></span>
       </div>
       <div id="lb-rows"></div>
     </div>
 
     <div class="lb-footer">
-      Veriler <strong>OpenStreetMap</strong> · Şehir merkezi 8km yarıçapı · localStorage'da saklanır
+      Data from <strong>OpenStreetMap</strong> · 8 km radius from city center · stored in localStorage
       <button class="lb-clear-btn" onclick="lbClearAll()"> Clear All</button>
     </div>
   </div>
@@ -985,7 +985,7 @@
       <canvas id="hist-chart" height="140"></canvas>
     </div>
 
-    <!-- Scatter: inşaat yılı vs sapma -->
+    <!-- Scatter: construction year vs deviation -->
     <div class="hist-scatter-wrap">
       <div class="hist-section-label">Construction Year × Qibla Deviation <span style="color:#6b6b7a;font-size:9px">(mosques with data)</span></div>
       <canvas id="hist-scatter" height="160"></canvas>
@@ -1024,34 +1024,34 @@
     </div>
     <div class="cmp-inputs">
       <div class="cmp-city-col">
-        <div class="cmp-city-label" style="color:#60a5fa">Şehir A</div>
+        <div class="cmp-city-label" style="color:#60a5fa">City A</div>
         <div class="cmp-search-row">
-          <input id="cmp-a-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
+          <input id="cmp-a-input" type="text" placeholder="Enter city/district name..." autocomplete="off"/>
           <select id="cmp-a-level">
-            <option value="city">Şehir</option>
+            <option value="city">City</option>
             <option value="district">District</option>
           </select>
         </div>
         <div class="cmp-search-row">
-          <button class="btn" id="cmp-a-fetch-btn" onclick="fetchCompareSide('a')">Yükle</button>
-          <button class="btn btn-sm" id="cmp-a-clear-btn" onclick="clearCompareSide('a')">Kaldır</button>
+          <button class="btn" id="cmp-a-fetch-btn" onclick="fetchCompareSide('a')">Load</button>
+          <button class="btn btn-sm" id="cmp-a-clear-btn" onclick="clearCompareSide('a')">Clear</button>
         </div>
         <div class="cmp-city-current" id="cmp-a-name">—</div>
         <div class="cmp-city-status" id="cmp-a-status"></div>
       </div>
       <div class="cmp-vs">VS</div>
       <div class="cmp-city-col">
-        <div class="cmp-city-label" style="color:#f472b6">Şehir B</div>
+        <div class="cmp-city-label" style="color:#f472b6">City B</div>
         <div class="cmp-search-row">
-          <input id="cmp-b-input" type="text" placeholder="Şehir/ilçe adı girin..." autocomplete="off"/>
+          <input id="cmp-b-input" type="text" placeholder="Enter city/district name..." autocomplete="off"/>
           <select id="cmp-b-level">
-            <option value="city">Şehir</option>
+            <option value="city">City</option>
             <option value="district">District</option>
           </select>
         </div>
         <div class="cmp-search-row">
-          <button class="btn" id="cmp-b-fetch-btn" onclick="fetchCompareSide('b')">Yükle</button>
-          <button class="btn btn-sm" id="cmp-b-clear-btn" onclick="clearCompareSide('b')">Kaldır</button>
+          <button class="btn" id="cmp-b-fetch-btn" onclick="fetchCompareSide('b')">Load</button>
+          <button class="btn btn-sm" id="cmp-b-clear-btn" onclick="clearCompareSide('b')">Clear</button>
         </div>
         <div class="cmp-city-current" id="cmp-b-name">—</div>
         <div class="cmp-city-status" id="cmp-b-status"></div>
@@ -1089,7 +1089,7 @@
         <div id="cmp-bars"></div>
       </div>
       <div class="cmp-table-section">
-        <div class="cmp-section-label">Özet Tablo</div>
+        <div class="cmp-section-label">Summary Table</div>
         <div id="cmp-table"></div>
       </div>
     </div>

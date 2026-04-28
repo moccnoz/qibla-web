@@ -627,17 +627,17 @@ async function bootstrap() {
   document.getElementById('btn-outdoor')?.classList.toggle('active', uiState.outdoor);
   document.getElementById('mob-btn-outdoor')?.classList.toggle('active', uiState.outdoor);
   setLang(langSaved, true);
-  setOv(true,'Harita yükleniyor...','Leaflet.js başlatılıyor');
+  setOv(true, currentLang === 'en' ? 'Loading map...' : 'Harita yükleniyor...', currentLang === 'en' ? 'Initializing Leaflet.js' : 'Leaflet.js başlatılıyor');
   if (!window.L || !window.L.map) {
     setOv(false);
-    toast(' Harita kütüphanesi bulunamadı (lokal dosya eksik)', 9000);
+    toast(currentLang === 'en' ? ' Map library missing (local file missing)' : ' Harita kütüphanesi bulunamadı (lokal dosya eksik)', 9000);
     return;
   }
   try {
     initMap();
   } catch (e) {
     setOv(false);
-    toast(' Başlatma hatası: ' + (e?.message || 'bilinmeyen'), 9000);
+    toast((currentLang === 'en' ? ' Initialization error: ' : ' Başlatma hatası: ') + (e?.message || (currentLang === 'en' ? 'unknown' : 'bilinmeyen')), 9000);
     console.error(e);
   }
 }
@@ -674,7 +674,7 @@ function initMap() {
   map.on('dragstart', () => {
     if (followState.enabled) {
       stopFollowLock(true);
-      toast('Takip kilidi manuel kaydırma ile kapatıldı', 2200);
+      toast(currentLang === 'en' ? 'Follow lock disabled by manual panning' : 'Takip kilidi manuel kaydırma ile kapatıldı', 2200);
     }
   });
 
@@ -854,21 +854,21 @@ async function onDistrictMapClick(e) {
   const t = e?.originalEvent?.target;
   if (t && t.classList && t.classList.contains('leaflet-interactive')) return;
   if (!districtState.hoverName) {
-    toast('Bu noktada ilçe algılanamadı, biraz hareket ettirip tekrar deneyin', 2400);
+    toast(currentLang === 'en' ? 'No district was detected at this point. Move slightly and try again.' : 'Bu noktada ilçe algılanamadı, biraz hareket ettirip tekrar deneyin', 2400);
     return;
   }
   const name = districtState.hoverName;
   const city = districtState.hoverContextCity;
   const country = districtState.hoverContextCountry;
-  showMini(`İlçe sınırı yükleniyor: ${name}`);
+  showMini(currentLang === 'en' ? `Loading district boundary: ${name}` : `İlçe sınırı yükleniyor: ${name}`);
   try {
     const geo = await fetchDistrictPolygonByName(name, city, country);
-    if (!geo) throw new Error('İlçe sınırı bulunamadı');
+    if (!geo) throw new Error(currentLang === 'en' ? 'District boundary not found' : 'İlçe sınırı bulunamadı');
     setDistrictSelection(name, geo);
     renderAll();
-    toast(`İlçe seçildi: ${name}`, 2400);
+    toast(currentLang === 'en' ? `District selected: ${name}` : `İlçe seçildi: ${name}`, 2400);
   } catch (err) {
-    toast(`İlçe seçilemedi: ${err?.message || 'bilinmeyen hata'}`, 3200);
+    toast(currentLang === 'en' ? `District selection failed: ${err?.message || 'unknown error'}` : `İlçe seçilemedi: ${err?.message || 'bilinmeyen hata'}`, 3200);
   }
   hideMini();
 }
@@ -921,7 +921,7 @@ function hideSearchAreaButton() {
   btn.classList.remove('loading');
   btn.classList.remove('armed');
   btn.disabled = false;
-  btn.textContent = 'Bu alanı tara';
+  btn.textContent = currentLang === 'en' ? 'Search this area' : 'Bu alanı tara';
   searchAreaArmed = false;
 }
 
@@ -947,7 +947,7 @@ async function refreshSearchArea() {
   if (btn) {
     btn.classList.add('show', 'loading');
     btn.disabled = true;
-    btn.textContent = 'Taranıyor...';
+    btn.textContent = currentLang === 'en' ? 'Scanning...' : 'Taranıyor...';
   }
   const bounds = map.getBounds();
   const cells = boundsToGridCells(bounds);
@@ -958,7 +958,7 @@ async function refreshSearchArea() {
   searchAreaAnchor = map.getCenter();
   try {
     await loadViewport();
-    toast('Bu alan güncellendi', 1400);
+    toast(currentLang === 'en' ? 'This area was refreshed' : 'Bu alan güncellendi', 1400);
   } catch {}
   hideSearchAreaButton();
 }
@@ -1021,7 +1021,7 @@ async function loadViewport(opts = {}) {
   const batchSize = Number.isFinite(opts.batchSize) ? Math.max(1, opts.batchSize | 0) : 10;
   const concurrency = Number.isFinite(opts.concurrency) ? Math.max(1, opts.concurrency | 0) : 2;
   const batch = newCells.slice(0, batchSize);
-  showMini(`${batch.length}/${newCells.length} alan yükleniyor...`);
+  showMini(currentLang === 'en' ? `Loading ${batch.length}/${newCells.length} areas...` : `${batch.length}/${newCells.length} alan yükleniyor...`);
   showSkeletonList();
 
   try {
@@ -1548,6 +1548,7 @@ function cancelAnimation() {
 }
 
 function animateQibla(m) {
+  const isEn = currentLang === 'en';
   // ── Cancel any running animation immediately
   cancelAnimation();
   animLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
@@ -1558,10 +1559,10 @@ function animateQibla(m) {
 
   // ── Info panel
   document.getElementById('qp-name').textContent       = m.name;
-  document.getElementById('qp-angle').textContent      = m.qibla.toFixed(2)+'°  (gerçek kıble)';
-  document.getElementById('qp-diff').textContent       = m.diff!==null ? m.diff.toFixed(1)+'° sapma' : '—';
-  document.getElementById('qp-dist').textContent       = dist+' km uzakta';
-  document.getElementById('qp-anim-status').textContent = '● Çiziliyor...';
+  document.getElementById('qp-angle').textContent      = m.qibla.toFixed(2) + (isEn ? '°  (true qibla)' : '°  (gerçek kıble)');
+  document.getElementById('qp-diff').textContent       = m.diff!==null ? (isEn ? `${m.diff.toFixed(1)}° deviation` : `${m.diff.toFixed(1)}° sapma`) : '—';
+  document.getElementById('qp-dist').textContent       = isEn ? `${dist} km away` : `${dist} km uzakta`;
+  document.getElementById('qp-anim-status').textContent = isEn ? '● Drawing...' : '● Çiziliyor...';
   document.getElementById('qibla-panel').classList.add('show');
 
   // ── Pre-compute points
@@ -1637,7 +1638,7 @@ function animateQibla(m) {
         L.polygon([[last[0],last[1]],[aL.lat,aL.lng],[aR.lat,aR.lng]],
           {color:'#7c6ad8',fillColor:'#7c6ad8',weight:0,fillOpacity:.95}).addTo(map)
       );
-      document.getElementById('qp-anim-status').textContent = ' Gerçek yön — şimdi kıble...';
+      document.getElementById('qp-anim-status').textContent = isEn ? ' True axis — now qibla...' : ' Gerçek yön — şimdi kıble...';
       _animTimer = setTimeout(phase2, 250);
     });
   }
@@ -1656,8 +1657,8 @@ function animateQibla(m) {
         L.polygon([[last[0],last[1]],[aL.lat,aL.lng],[aR.lat,aR.lng]],
           {color:'#c9a84c',fillColor:'#c9a84c',weight:0,fillOpacity:.95}).addTo(map)
       );
-      const diffStr = m.diff!==null ? `${m.diff.toFixed(1)}° sapma` : 'veri yok';
-      document.getElementById('qp-anim-status').textContent = ` Tamamlandı — ${diffStr}`;
+      const diffStr = m.diff!==null ? (isEn ? `${m.diff.toFixed(1)}° deviation` : `${m.diff.toFixed(1)}° sapma`) : (isEn ? 'no data' : 'veri yok');
+      document.getElementById('qp-anim-status').textContent = isEn ? ` Completed — ${diffStr}` : ` Tamamlandı — ${diffStr}`;
       if (hasAxis) drawDiffArc(m);
     });
   }
@@ -2606,6 +2607,273 @@ const I18N_STATIC = {
   }
 };
 
+function uiCopy() {
+  const isEn = currentLang === 'en';
+  return isEn ? {
+    statusCorrect: 'Aligned',
+    statusWrong: 'Deviation',
+    statusUnknown: 'No Data',
+    yesLikely: 'Yes (likely)',
+    no: 'No',
+    detailMethod: 'Calculation method',
+    detailKaaba: 'Kaaba direction (great-circle)',
+    detailBaseAxis: 'Building axis (raw)',
+    detailFinalAxis: 'Final axis',
+    detailDeviation: 'Qibla deviation',
+    detailFusion: 'Fusion reliability',
+    detailModel: 'Model confidence',
+    detailInteriorCount: 'Interior evidence count',
+    detailConverted: 'Converted structure',
+    detailAssessment: 'Assessment',
+    detailBuildDate: 'Construction date',
+    assessPerfect: 'Excellent (<5°)',
+    assessAcceptable: 'Acceptable',
+    assessFix: 'Needs correction',
+    methodEdge: 'Edge Analysis (PCA)',
+    methodHybrid: 'Hybrid (Building + Interior)',
+    methodInterior: 'Interior Evidence',
+    methodFused: 'Fused',
+    tagsNotFound: 'No tags found',
+    tagsTitle: (n) => `OSM Tags (${n})`,
+    wikiRead: (lang) => `Read on Wikipedia (${lang}) →`,
+    interiorSearching: 'Searching interior images...',
+    interiorNotFound: 'No automatic interior image was found. You can add manual evidence with a URL.',
+    interiorGalleryAlt: (name, i) => `${name || 'Mosque'} interior photo ${i + 1}`,
+    interiorSaved: (count, ts) => `Saved interior evidence: ${count} · Last update: ${new Date(ts).toLocaleString('en-US')}`,
+    interiorNone: 'No interior direction evidence has been recorded yet.',
+    confidence: 'Confidence',
+    manualEntry: 'manual entry',
+    delete: 'Delete',
+    evidenceEmpty: 'Evidence list is empty.',
+    manualAxis: 'Manual axis',
+    score: 'Score',
+    ready: 'Ready',
+    interiorSavedToast: 'Interior evidence saved, analysis updated',
+    interiorRemovedToast: 'Interior evidence removed',
+    explainBadges: 'Quality badges',
+    explainMethod: 'Final method',
+    explainFusion: 'Fusion reliability',
+    explainGeom: 'Geometry complexity',
+    explainEvidence: 'Evidence count',
+    explainRawAxis: 'Raw axis',
+    explainInteriorAxis: 'Interior axis',
+    explainConversionHint: 'Conversion hint',
+    explainAiModeration: 'AI manual moderation',
+    explainConversionProof: 'Conversion evidence',
+    explainAiNotes: 'AI notes',
+    showOnMap: 'Show on Map',
+    findName: 'Find Name',
+    viewOnOsm: 'View on OSM',
+    editOnOsm: 'Edit on OSM',
+    copyCoords: 'Copy Coordinates',
+    coordsCopied: 'Coordinates copied',
+    resolvingName: 'Comparing name sources...',
+    nameUpdated: (name) => `Name updated: ${name}`,
+    nameVerified: (name) => `Name verified: ${name}`,
+    nameNotFound: 'No precise name was found in external sources',
+    nameResolveFailed: (msg) => `Name resolution failed: ${msg}`,
+    sensorDenied: 'Sensor permission not granted',
+    sensorFailed: 'Sensor permission could not be obtained',
+    compassDevice: 'Device heading',
+    compassQibla: 'Qibla heading',
+    compassDiff: 'Live difference',
+    compassSync: 'Map sync',
+    compassLoc: 'Location',
+    on: 'On',
+    off: 'Off',
+    totalMosques: 'Total mosques',
+    dataCoverage: 'Data coverage',
+    avgDeviation: 'Avg. deviation',
+    lowConfidence: 'Low confidence',
+    likelyConverted: 'Likely converted',
+    unnamed: 'Unnamed',
+    manualPending: 'Manual pending',
+    queueEmpty: 'Queue is empty',
+    noHistory: 'No history',
+    leadSubject: 'Qibla Detector B2B / White-Label Inquiry',
+    leadName: 'Full name',
+    leadCompany: 'Organization',
+    leadEmail: 'Email',
+    leadNeed: 'Need',
+    leadNote: 'Note: created from the web form.',
+    copied: 'Copied',
+    copy: 'Copy',
+    jsonDownloaded: 'JSON downloaded',
+    csvDownloaded: 'CSV downloaded — open it in Excel',
+    geojsonDownloaded: 'GeoJSON downloaded',
+    reportOpened: 'Report opened in a new tab',
+    leaderboardProvincePlaceholder: 'Type province/state... (e.g. Konya Province, Turkey)',
+    leaderboardCityPlaceholder: 'Add city... (e.g. Konya, Cairo, Lahore)',
+    leaderboardFetchCount: '+ Fetch Count',
+    leaderboardAnalyze: '+ Analyze',
+    leaderboardSearchingBoundary: (q) => `Searching boundary for "${q}"...`,
+    leaderboardBoundaryFound: 'Boundary found, fetching count...',
+    leaderboardBoundaryMissing: 'Province/state not found',
+    leaderboardBoundaryUnreadable: 'Area boundary could not be read',
+    leaderboardCountResult: (name, total) => `${name}: ${total.toLocaleString()} records`,
+    leaderboardCountDone: (name, total) => `${name} count completed: ${total.toLocaleString()}`,
+    leaderboardCountError: (msg) => `Province count error: ${msg}`,
+    lbRegionCol: 'Province/Region',
+    lbDensity: 'Density',
+    lbType: 'Type',
+    lbMosquePrayer: 'Mosque+Prayer Room',
+    lbSource: 'Source',
+    lbCity: 'City',
+    lbAccuracy: 'Accuracy',
+    lbNote: 'Note',
+    lbMosque: 'Mosques',
+    lbAvgShort: 'Avg.Dev.',
+    lbTotalRegions: 'Province/Region',
+    lbTotalMosquesPrayer: 'Total Mosque+Prayer Room',
+    lbTopRegion: 'Top Region',
+    lbAvgRegionCount: 'Avg. Regional Count',
+    lbAnalysed: 'Analyzed',
+    lbTotalMosques: 'Total Mosques',
+    lbAvgAccuracy: 'Avg. Accuracy',
+    lbUpdated: (date) => `Last update: ${new Date(date).toLocaleDateString('en-US')}`,
+    lbEmptyCity: 'No cities yet — add one from above!',
+    lbEmptyRegion: 'No cities found in this region',
+    lbExample: 'Example: Istanbul, Cairo, Karachi, Jakarta',
+    lbAdminType: 'Province/State',
+    locatingCoords: 'Fetching coordinates...',
+    loadingMosques: 'Loading mosques...',
+    processingMosques: (n) => `Processing ${n} mosques...`,
+    addedToRanking: (city, pctText) => `${city} added to ranking — ${pctText}`,
+    dataInsufficient: 'insufficient data'
+  } : {
+    statusCorrect: 'Doğru Yön',
+    statusWrong: 'Sapma Var',
+    statusUnknown: 'Veri Yok',
+    yesLikely: 'Evet (olası)',
+    no: 'Hayır',
+    detailMethod: 'Hesaplama yöntemi',
+    detailKaaba: 'Kabe yönü (büyük daire)',
+    detailBaseAxis: 'Bina ekseni (ham)',
+    detailFinalAxis: 'Nihai eksen',
+    detailDeviation: 'Kıble sapması',
+    detailFusion: 'Füzyon güveni',
+    detailModel: 'Model güven puanı',
+    detailInteriorCount: 'İç kanıt adedi',
+    detailConverted: 'Dönüştürülmüş yapı',
+    detailAssessment: 'Değerlendirme',
+    detailBuildDate: 'İnşaat tarihi',
+    assessPerfect: 'Mükemmel (<5°)',
+    assessAcceptable: 'Kabul edilebilir',
+    assessFix: 'Düzeltilmeli',
+    methodEdge: 'Kenar Analizi (PCA)',
+    methodHybrid: 'Hibrit (Bina + İç Mekan)',
+    methodInterior: 'İç Mekan Kanıtı',
+    methodFused: 'Birleşik',
+    tagsNotFound: 'Etiket bulunamadı',
+    tagsTitle: (n) => `OSM Etiketleri (${n})`,
+    wikiRead: (lang) => `Wikipedia'da oku (${lang}) →`,
+    interiorSearching: 'İç mekan görselleri aranıyor...',
+    interiorNotFound: 'Otomatik iç mekan görseli bulunamadı. URL ile manuel kanıt ekleyebilirsiniz.',
+    interiorGalleryAlt: (name, i) => `${name || 'Cami'} iç mekan fotoğrafı ${i + 1}`,
+    interiorSaved: (count, ts) => `Kaydedilmiş iç mekan kanıtı: ${count} · Son güncelleme: ${new Date(ts).toLocaleString('tr-TR')}`,
+    interiorNone: 'Henüz iç mekan yön kanıtı kaydedilmedi.',
+    confidence: 'Güven',
+    manualEntry: 'manuel giriş',
+    delete: 'Sil',
+    evidenceEmpty: 'Kanıt listesi boş.',
+    manualAxis: 'Manuel aks',
+    score: 'Skor',
+    ready: 'Hazır',
+    interiorSavedToast: 'İç mekan kanıtı kaydedildi, analiz güncellendi',
+    interiorRemovedToast: 'İç mekan kanıtı kaldırıldı',
+    explainBadges: 'Kalite Rozetleri',
+    explainMethod: 'Nihai yöntem',
+    explainFusion: 'Füzyon güveni',
+    explainGeom: 'Geometri karmaşıklığı',
+    explainEvidence: 'Kanıt sayısı',
+    explainRawAxis: 'Ham eksen',
+    explainInteriorAxis: 'İç eksen',
+    explainConversionHint: 'Dönüşüm ipucu',
+    explainAiModeration: 'AI manuel moderasyon',
+    explainConversionProof: 'Dönüşüm kanıtı',
+    explainAiNotes: 'AI notları',
+    showOnMap: 'Haritada Göster',
+    findName: 'İsmi Bul',
+    viewOnOsm: "OSM'de Gör",
+    editOnOsm: "OSM'de Düzenle",
+    copyCoords: 'Koordinat Kopyala',
+    coordsCopied: 'Koordinat kopyalandı',
+    resolvingName: 'İsim kaynakları karşılaştırılıyor...',
+    nameUpdated: (name) => `İsim güncellendi: ${name}`,
+    nameVerified: (name) => `İsim doğrulandı: ${name}`,
+    nameNotFound: 'Ek kaynaklarda kesin isim bulunamadı',
+    nameResolveFailed: (msg) => `İsim çözümleme başarısız: ${msg}`,
+    sensorDenied: 'Sensör izni verilmedi',
+    sensorFailed: 'Sensör izni alınamadı',
+    compassDevice: 'Cihaz yönü',
+    compassQibla: 'Kıble yönü',
+    compassDiff: 'Anlık fark',
+    compassSync: 'Harita senkronu',
+    compassLoc: 'Konum',
+    on: 'Açık',
+    off: 'Kapalı',
+    totalMosques: 'Toplam cami',
+    dataCoverage: 'Veri kapsama',
+    avgDeviation: 'Ort. sapma',
+    lowConfidence: 'Düşük güven',
+    likelyConverted: 'Dönüştürülmüş olası',
+    unnamed: 'İsimsiz',
+    manualPending: 'Manuel beklemede',
+    queueEmpty: 'Kuyruk boş',
+    noHistory: 'Geçmiş yok',
+    leadSubject: 'Kıble Dedektörü B2B / White-Label Talebi',
+    leadName: 'Ad Soyad',
+    leadCompany: 'Kurum',
+    leadEmail: 'E-posta',
+    leadNeed: 'İhtiyaç',
+    leadNote: 'Not: Talep web formundan oluşturuldu.',
+    copied: 'Kopyalandı',
+    copy: 'Kopyala',
+    jsonDownloaded: 'JSON indirildi',
+    csvDownloaded: "CSV indirildi — Excel'de açabilirsiniz",
+    geojsonDownloaded: 'GeoJSON indirildi',
+    reportOpened: 'Rapor yeni sekmede açıldı',
+    leaderboardProvincePlaceholder: 'İl/Eyalet yaz... (örn: Konya Province, Türkiye)',
+    leaderboardCityPlaceholder: 'Şehir ekle... (örn: Konya, Cairo, Lahore)',
+    leaderboardFetchCount: '+ Sayımı Çek',
+    leaderboardAnalyze: '+ Analiz Et',
+    leaderboardSearchingBoundary: (q) => `"${q}" sınırı aranıyor...`,
+    leaderboardBoundaryFound: 'Sınır bulundu, sayı çekiliyor...',
+    leaderboardBoundaryMissing: 'İl/eyalet bulunamadı',
+    leaderboardBoundaryUnreadable: 'Alan sınırı okunamadı',
+    leaderboardCountResult: (name, total) => `${name}: ${total.toLocaleString()} kayıt`,
+    leaderboardCountDone: (name, total) => `${name} sayımı tamamlandı: ${total.toLocaleString()}`,
+    leaderboardCountError: (msg) => `İl sayımı hatası: ${msg}`,
+    lbRegionCol: 'İl/Bölge',
+    lbDensity: 'Yoğunluk',
+    lbType: 'Tür',
+    lbMosquePrayer: 'Cami+Mescit',
+    lbSource: 'Kaynak',
+    lbCity: 'Şehir',
+    lbAccuracy: 'Doğruluk',
+    lbNote: 'Not',
+    lbMosque: 'Cami',
+    lbAvgShort: 'Ort.Sap.',
+    lbTotalRegions: 'İl/Bölge',
+    lbTotalMosquesPrayer: 'Toplam Cami+Mescit',
+    lbTopRegion: 'En Yüksek Bölge',
+    lbAvgRegionCount: 'Ort. Bölge Sayısı',
+    lbAnalysed: 'Analiz Edildi',
+    lbTotalMosques: 'Toplam Cami',
+    lbAvgAccuracy: 'Ort. Doğruluk',
+    lbUpdated: (date) => `Son güncelleme: ${new Date(date).toLocaleDateString('tr-TR')}`,
+    lbEmptyCity: 'Henüz şehir yok — yukarıdan bir şehir ekleyin!',
+    lbEmptyRegion: 'Bu bölgede şehir bulunamadı',
+    lbExample: 'Örnek: İstanbul, Cairo, Karachi, Jakarta',
+    lbAdminType: 'İl/State',
+    locatingCoords: 'Koordinatlar alınıyor...',
+    loadingMosques: 'Camiler yükleniyor...',
+    processingMosques: (n) => `${n} cami işleniyor...`,
+    addedToRanking: (city, pctText) => `${city} sıralamaya eklendi — ${pctText}`,
+    dataInsufficient: 'veri yetersiz'
+  };
+}
+
 const TR_EN_REPLACERS = [
   [/Kıble Dedektörü/g, 'Qibla Detector'],
   [/\bAra\b/g, 'Search'],
@@ -3131,13 +3399,14 @@ function deriveOttomanRulerByYear(y) {
 }
 
 function deriveHistoricalPeriod(year) {
+  const isEn = currentLang === 'en';
   if (!Number.isFinite(year)) return { period:'', ruler:'' };
-  if (year >= 1923) return { period:'Cumhuriyet Dönemi', ruler:'Türkiye Cumhuriyeti' };
+  if (year >= 1923) return { period: isEn ? 'Republic Period' : 'Cumhuriyet Dönemi', ruler: isEn ? 'Republic of Turkey' : 'Türkiye Cumhuriyeti' };
   if (year >= 1299 && year <= 1922) {
-    return { period:'Osmanlı Dönemi', ruler: deriveOttomanRulerByYear(year) || 'Osmanlı İmparatorluğu' };
+    return { period: isEn ? 'Ottoman Period' : 'Osmanlı Dönemi', ruler: deriveOttomanRulerByYear(year) || (isEn ? 'Ottoman Empire' : 'Osmanlı İmparatorluğu') };
   }
-  if (year >= 1071 && year < 1299) return { period:'Selçuklu / Beylikler Dönemi', ruler:'' };
-  return { period:'Erken İslam Dönemi', ruler:'' };
+  if (year >= 1071 && year < 1299) return { period: isEn ? 'Seljuk / Beylik Period' : 'Selçuklu / Beylikler Dönemi', ruler:'' };
+  return { period: isEn ? 'Early Islamic Period' : 'Erken İslam Dönemi', ruler:'' };
 }
 
 function cleanIdentityValue(v) {
@@ -3396,22 +3665,23 @@ function buildBaseMosqueIdentity(tags = {}) {
 }
 
 function renderMosqueIdentityRows(el, merged) {
+  const isEn = currentLang === 'en';
   const row = (k, v, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${escHtml(v || '')}</span></div>`;
   const rowHtml = (k, vHtml, cls = '') => `<div class="dp-kunye-row ${cls}"><span class="dp-kunye-k">${escHtml(k)}</span><span class="dp-kunye-v">${vHtml || ''}</span></div>`;
   const items = [
-    ['Yapım yılı', merged.yearText],
-    ['Mimar', merged.architect],
-    ['Banisi / Yaptıran', merged.patron],
-    ['Tarihsel dönem', merged.era],
-    ['Hükümdar dönemi', merged.ruler],
-    ['Mimari üslup', merged.style],
-    ['Mezhep / Din', merged.denomination],
-    ['İşletici / Vakıf', merged.operator],
-    ['Restorasyon', merged.restoration]
+    [isEn ? 'Construction year' : 'Yapım yılı', merged.yearText],
+    [isEn ? 'Architect' : 'Mimar', merged.architect],
+    [isEn ? 'Patron / Founder' : 'Banisi / Yaptıran', merged.patron],
+    [isEn ? 'Historical period' : 'Tarihsel dönem', merged.era],
+    [isEn ? 'Ruler / Reign' : 'Hükümdar dönemi', merged.ruler],
+    [isEn ? 'Architectural style' : 'Mimari üslup', merged.style],
+    [isEn ? 'Denomination / Religion' : 'Mezhep / Din', merged.denomination],
+    [isEn ? 'Operator / Foundation' : 'İşletici / Vakıf', merged.operator],
+    [isEn ? 'Restoration' : 'Restorasyon', merged.restoration]
   ].filter(([, v]) => String(v || '').trim());
 
   if (!items.length) {
-    el.innerHTML = row('Künye', currentLang === 'en' ? 'No verified data found' : 'Doğrulanmış veri bulunamadı');
+    el.innerHTML = row(isEn ? 'Identity' : 'Künye', isEn ? 'No verified data found' : 'Doğrulanmış veri bulunamadı');
     return;
   }
 
@@ -3757,7 +4027,7 @@ function pickLocalizedMosqueNames(m, tags = {}) {
   const primaryPool = currentLang === 'en'
     ? [...enCands, ...latinGeneric, ...trCands, ...generic, ...arCands]
     : [...trCands, ...latinGeneric, ...enCands, ...generic, ...arCands];
-  const primary = primaryPool[0] || m?.name || `İsimsiz Cami #${m?.id ?? '?'}`;
+  const primary = primaryPool[0] || m?.name || (currentLang === 'en' ? `Unnamed Mosque #${m?.id ?? '?'}` : `İsimsiz Cami #${m?.id ?? '?'}`);
 
   const arName = arCands.find(x => trLower(x) !== trLower(primary)) || '';
   return { primary, arName };
@@ -3775,11 +4045,11 @@ function makePopup(m){
       ? `<span style="color:#f87171"> ${currentLang === 'en' ? 'Deviation present' : 'Sapma var'}</span>`
       : `<span style="color:#fbbf24"> ${currentLang === 'en' ? 'No data' : 'Veri yok'}</span>`;
   const meth=
-    m.method==='edge-analysis'?'Kenar analizi':
-    m.method==='osm-tag'?'OSM etiketi':
-    m.method==='hybrid-interior'?'Hibrit (iç mekan+bina)':
-    m.method==='interior-only'?'İç mekan kanıtı':
-    m.method==='fused'?'Birleşik':
+    m.method==='edge-analysis'?(currentLang === 'en' ? 'Edge analysis' : 'Kenar analizi'):
+    m.method==='osm-tag'?(currentLang === 'en' ? 'OSM tag' : 'OSM etiketi'):
+    m.method==='hybrid-interior'?(currentLang === 'en' ? 'Hybrid (interior + building)' : 'Hibrit (iç mekan+bina)'):
+    m.method==='interior-only'?(currentLang === 'en' ? 'Interior evidence' : 'İç mekan kanıtı'):
+    m.method==='fused'?(currentLang === 'en' ? 'Fused' : 'Birleşik'):
     '—';
   const dist=greatCircleKm(m.lat,m.lng,KAABA.lat,KAABA.lng).toFixed(0);
   // Store mosque in global registry so popup button can find it by id
@@ -3952,7 +4222,7 @@ function rankVisibleMosquesByQuery(list, q) {
 
 function updateList(visible){
   const el=document.getElementById('mosque-list');
-  if(!visible.length){el.innerHTML='<div class="empty"><div class="empty-icon"></div><div>Cami bulunamadı</div></div>';document.getElementById('sb-count').textContent='';return;}
+  if(!visible.length){el.innerHTML=`<div class="empty"><div class="empty-icon"></div><div>${currentLang === 'en' ? 'No mosques found' : 'Cami bulunamadı'}</div></div>`;document.getElementById('sb-count').textContent='';return;}
   document.getElementById('sb-count').textContent=visible.length;
   const hasQuery = !!(mosqueFilter && mosqueFilter.trim().length > 1);
   const sorted = hasQuery
@@ -4593,7 +4863,7 @@ function showCityFocusDropdown(opts = {}) {
     .slice(0, 4)
     .map(x => x.m);
   if (!history.length && !nearbyMosques.length) {
-    dd.innerHTML = `<div class="ms-no-result">Arama geçmişiniz burada görünecek</div>`;
+    dd.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? 'Your search history will appear here' : 'Arama geçmişiniz burada görünecek'}</div>`;
     dd.classList.add('show');
     return;
   }
@@ -4624,7 +4894,7 @@ function showCityFocusDropdown(opts = {}) {
           <div class="ms-item-sub">${escHtml(rec.subtitle || 'Son arama')}</div>
         </div>
         <div class="ms-item-diff" style="color:var(--gold)">${Math.max(1, rec.count || 1)}x</div>
-        <button class="ms-item-del" type="button" title="Kaydı sil" aria-label="Kaydı sil">×</button>`;
+        <button class="ms-item-del" type="button" title="${currentLang === 'en' ? 'Delete entry' : 'Kaydı sil'}" aria-label="${currentLang === 'en' ? 'Delete entry' : 'Kaydı sil'}">×</button>`;
       const delBtn = div.querySelector('.ms-item-del');
       delBtn?.addEventListener('click', (e) => {
         e.preventDefault();
@@ -4642,7 +4912,7 @@ function showCityFocusDropdown(opts = {}) {
   if (nearbyMosques.length) {
     const hdr = document.createElement('div');
     hdr.className = 'ms-group-hdr';
-    hdr.innerHTML = `<span class="ms-group-ic">N</span>Haritadaki Yakın Camiler`;
+    hdr.innerHTML = `<span class="ms-group-ic">N</span>${currentLang === 'en' ? 'Nearby Mosques on the Map' : 'Haritadaki Yakın Camiler'}`;
     frag.appendChild(hdr);
     nearbyMosques.forEach(m => {
       const dist = getUserDistanceLabel(m);
@@ -4656,7 +4926,7 @@ function showCityFocusDropdown(opts = {}) {
           <div class="ms-item-name"><span class="ms-item-ic">M</span>${escHtml(m.name)}</div>
           <div class="ms-item-sub">${escHtml(getMosqueHierarchyLine(m))}</div>
         </div>
-        <div class="ms-item-diff" style="color:var(--gold)">${escHtml(dist || 'yakın')}</div>`;
+        <div class="ms-item-diff" style="color:var(--gold)">${escHtml(dist || (currentLang === 'en' ? 'nearby' : 'yakın'))}</div>`;
       div.onclick = () => {
         selectMosque(m);
         if (onSelect) onSelect(m);
@@ -5336,7 +5606,7 @@ function buildSearchResultGroups(ranked = [], q = '') {
     .slice(0, 6);
   if (history.length) {
     history.forEach(x => used.add(getMosqueKey(x.m)));
-    groups.push({ title:'Geçmiş Aramalar ve Analizler', items:history });
+    groups.push({ title: currentLang === 'en' ? 'Recent Searches and Analyses' : 'Geçmiş Aramalar ve Analizler', items:history });
   }
 
   if (userGeoState.enabled && Number.isFinite(userGeoState.lat) && Number.isFinite(userGeoState.lng)) {
@@ -5348,12 +5618,12 @@ function buildSearchResultGroups(ranked = [], q = '') {
       .slice(0, 3);
     if (nearby.length) {
       nearby.forEach(x => used.add(getMosqueKey(x.m)));
-      groups.push({ title:'Yakınınızdakiler', items:nearby });
+      groups.push({ title: currentLang === 'en' ? 'Nearby Results' : 'Yakınınızdakiler', items:nearby });
     }
   }
 
   const global = src.filter(x => !used.has(getMosqueKey(x.m)));
-  if (global.length) groups.push({ title:'Küresel Sonuçlar', items:global });
+  if (global.length) groups.push({ title: currentLang === 'en' ? 'Global Results' : 'Küresel Sonuçlar', items:global });
   return groups;
 }
 
@@ -5386,7 +5656,7 @@ function showMosqueDropdown(q) {
   probeUserGeoForSearch(q);
 
   if (!mosqueDB || !mosqueDB.size) {
-    dropdown.innerHTML = '<div class="ms-no-result">Henüz veri yüklenmedi — bir şehir arayın</div>';
+    dropdown.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? 'No data loaded yet — search for a city' : 'Henüz veri yüklenmedi — bir şehir arayın'}</div>`;
     dropdown.classList.add('show');
     return;
   }
@@ -5443,10 +5713,10 @@ function showMosqueDropdown(q) {
       const userDistance = getUserDistanceLabel(m);
       const rightBadge = userDistance ? `${userDistance} yakınınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
       const badges = [];
-      if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
-      if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
-      if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
-      if (group.title === 'Geçmiş Aramalar ve Analizler') badges.push('<span class="ms-badge near">Geçmiş</span>');
+      if (p >= 14) badges.push(`<span class="ms-badge pop">${currentLang === 'en' ? 'Popular' : 'Popüler'}</span>`);
+      if (d >= 10) badges.push(`<span class="ms-badge near">${currentLang === 'en' ? 'Nearby' : 'Yakında'}</span>`);
+      if (inView) badges.push(`<span class="ms-badge view">${currentLang === 'en' ? 'In this area' : 'Bu bölgede'}</span>`);
+      if (/Recent Searches and Analyses|Geçmiş Aramalar ve Analizler/.test(group.title)) badges.push(`<span class="ms-badge near">${currentLang === 'en' ? 'Recent' : 'Geçmiş'}</span>`);
       const div = document.createElement('div');
       div.className = 'ms-item';
       div.innerHTML = `
@@ -5600,7 +5870,7 @@ async function showCitySmartDropdown(q, opts = {}) {
   closeCitySmartDropdown(dd);
   if (!q || q.length < 2) { closeCitySmartDropdown(); return; }
   if (isLikelyMosqueQuery(q) && !mosqueDB.size) {
-    dd.innerHTML = `<div class="ms-no-result">Önce haritadan veri yüklenmeli</div>`;
+    dd.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? 'Load map data first' : 'Önce haritadan veri yüklenmeli'}</div>`;
     dd.classList.add('show');
     return;
   }
@@ -5612,7 +5882,7 @@ async function showCitySmartDropdown(q, opts = {}) {
     const seq = ++citySuggestSeq;
     const signal = citySuggestController.signal;
     const bounds = map?.getBounds?.()?.pad?.(0.08) || null;
-    dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" aranıyor...</div>`;
+    dd.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? `"${escHtml(q)}" is being searched...` : `"${escHtml(q)}" aranıyor...`}</div>`;
     dd.classList.add('show');
     let items = [];
     try {
@@ -5622,7 +5892,7 @@ async function showCitySmartDropdown(q, opts = {}) {
     }
     if (seq !== citySuggestSeq) return;
     if (!items.length) {
-      dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
+      dd.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? `No suggestions for "${escHtml(q)}"` : `"${escHtml(q)}" için öneri yok`}</div>`;
       dd.classList.add('show');
       return;
     }
@@ -5641,9 +5911,9 @@ async function showCitySmartDropdown(q, opts = {}) {
       else global.push(rec);
     }
     const groups = [
-      { title:'Geçmiş Aramalar ve Analizler', items:recents.slice(0,4) },
-      { title:'Yakınınızdakiler', items:nearby.slice(0,4) },
-      { title:'Küresel Sonuçlar', items:global.slice(0,8) }
+      { title: currentLang === 'en' ? 'Recent Searches and Analyses' : 'Geçmiş Aramalar ve Analizler', items:recents.slice(0,4) },
+      { title: currentLang === 'en' ? 'Nearby Results' : 'Yakınınızdakiler', items:nearby.slice(0,4) },
+      { title: currentLang === 'en' ? 'Global Results' : 'Küresel Sonuçlar', items:global.slice(0,8) }
     ].filter(g => g.items.length);
     groups.forEach((g) => {
       const groupId = citySuggestionGroupId(g.title);
@@ -5652,7 +5922,7 @@ async function showCitySmartDropdown(q, opts = {}) {
       hdr.innerHTML = `<span class="ms-group-ic">${groupId === 'history' ? 'H' : groupId === 'nearby' ? 'N' : 'G'}</span>${escHtml(g.title)}`;
       frag.appendChild(hdr);
       g.items.forEach((it) => {
-        const rightBadge = Number.isFinite(it.dist) ? `${getUserDistanceLabel(it)} yakınınızda` : '—';
+        const rightBadge = Number.isFinite(it.dist) ? `${getUserDistanceLabel(it)} ${currentLang === 'en' ? 'away' : 'yakınınızda'}` : '—';
         const dotCol = it.kind === 'mosque' ? '#4ade80' : '#60a5fa';
         const icon = citySuggestionIcon(it.kind, groupId);
         const div = document.createElement('div');
@@ -5684,7 +5954,7 @@ async function showCitySmartDropdown(q, opts = {}) {
     if (cur === q) showCitySmartDropdown(q, { inputEl, dropdownEl:dd, onSelect });
   });
   if (!ranked.length) {
-    dd.innerHTML = `<div class="ms-no-result">"${escHtml(q)}" için öneri yok</div>`;
+    dd.innerHTML = `<div class="ms-no-result">${currentLang === 'en' ? `No suggestions for "${escHtml(q)}"` : `"${escHtml(q)}" için öneri yok`}</div>`;
     dd.classList.add('show');
     triggerRemoteMosqueLookup(q, qNorm, bounds, { preferGlobal:true }).then(added => {
       const cur = inputEl?.value?.trim();
@@ -5708,10 +5978,10 @@ async function showCitySmartDropdown(q, opts = {}) {
       const userDistance = getUserDistanceLabel(m);
       const rightBadge = userDistance ? `${userDistance} yakınınızda` : (m.diff!==null ? m.diff.toFixed(1)+'°' : '—');
       const badges = [];
-      if (p >= 14) badges.push('<span class="ms-badge pop">Popüler</span>');
-      if (d >= 10) badges.push('<span class="ms-badge near">Yakında</span>');
-      if (inView) badges.push('<span class="ms-badge view">Bu bölgede</span>');
-      if (group.title === 'Geçmiş Aramalar ve Analizler') badges.push('<span class="ms-badge near">Geçmiş</span>');
+      if (p >= 14) badges.push(`<span class="ms-badge pop">${currentLang === 'en' ? 'Popular' : 'Popüler'}</span>`);
+      if (d >= 10) badges.push(`<span class="ms-badge near">${currentLang === 'en' ? 'Nearby' : 'Yakında'}</span>`);
+      if (inView) badges.push(`<span class="ms-badge view">${currentLang === 'en' ? 'In this area' : 'Bu bölgede'}</span>`);
+      if (/Recent Searches and Analyses|Geçmiş Aramalar ve Analizler/.test(group.title)) badges.push(`<span class="ms-badge near">${currentLang === 'en' ? 'Recent' : 'Geçmiş'}</span>`);
       const div = document.createElement('div');
       div.className = 'ms-item';
       div.dataset.kind = 'mosque';
@@ -5786,7 +6056,7 @@ function applyMosqueFilter(q) {
 
   const filtered = rankVisibleMosquesByQuery(visible, q);
 
-  document.getElementById('ms-banner-text').textContent = `"${q}" — ${filtered.length} sonuç`;
+  document.getElementById('ms-banner-text').textContent = currentLang === 'en' ? `"${q}" — ${filtered.length} results` : `"${q}" — ${filtered.length} sonuç`;
   banner.classList.add('show');
   updateList(filtered);
 }
@@ -5946,11 +6216,11 @@ async function doSearch(){
           const qNow = document.getElementById('mosque-search')?.value?.trim();
           if (qNow === v) showMosqueDropdown(v);
         });
-        toast(`"${v}" için ${local.length} cami listelendi`, 2200);
+        toast(currentLang === 'en' ? `${local.length} mosques listed for "${v}"` : `"${v}" için ${local.length} cami listelendi`, 2200);
         setOv(false);
         return;
       }
-      setOv(true, `"${v}" aranıyor...`, 'Cami verisi dış kaynaklarda taranıyor');
+      setOv(true, currentLang === 'en' ? `Searching "${v}"...` : `"${v}" aranıyor...`, currentLang === 'en' ? 'Scanning external sources for mosque data' : 'Cami verisi dış kaynaklarda taranıyor');
       const added = await triggerRemoteMosqueLookup(v, normalize(trLower(v)), map?.getBounds?.(), { preferGlobal:true });
       throwIfAborted(searchSignal);
       if (added > 0) {
@@ -5966,7 +6236,7 @@ async function doSearch(){
             const qNow = document.getElementById('mosque-search')?.value?.trim();
             if (qNow === v) showMosqueDropdown(v);
           });
-          toast(`"${v}" için ${found.length} cami listelendi`, 2400);
+          toast(currentLang === 'en' ? `${found.length} mosques listed for "${v}"` : `"${v}" için ${found.length} cami listelendi`, 2400);
           setOv(false);
           return;
         }
@@ -5974,7 +6244,7 @@ async function doSearch(){
       setOv(false);
     }
     if (direct) {
-      setOv(true, `"${v}" aranıyor...`, 'Doğrudan kayıt sorgusu');
+      setOv(true, currentLang === 'en' ? `Searching "${v}"...` : `"${v}" aranıyor...`, currentLang === 'en' ? 'Direct record lookup' : 'Doğrudan kayıt sorgusu');
       tileCache.clear(); updateCacheUI();
       mosqueDB.clear();
       renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
@@ -5989,21 +6259,22 @@ async function doSearch(){
         renderAll();
         triggerAggressiveNameEnrichment();
         setTimeout(() => handleMosqueClick(first), 120);
-        toast(`${mosqueDB.size} kayıt bulundu`, 2500);
+        toast(currentLang === 'en' ? `${mosqueDB.size} records found` : `${mosqueDB.size} kayıt bulundu`, 2500);
       } else {
-        toast('Doğrudan sorguda kayıt bulunamadı', 3500);
+        toast(currentLang === 'en' ? 'No records found in the direct lookup' : 'Doğrudan sorguda kayıt bulunamadı', 3500);
       }
       setOv(false);
       return;
     }
 
-    setOv(true,`"${v}" aranıyor...`,'Koordinatlar alınıyor');
+    const t = uiCopy();
+    setOv(true, currentLang === 'en' ? `Searching "${v}"...` : `"${v}" aranıyor...`, t.locatingCoords);
     const loc=await geocode(v, { signal:searchSignal });
     throwIfAborted(searchSignal);
     bumpCitySearchHistory({
       query: v,
       title: v,
-      subtitle: 'Şehir/Bölge araması',
+      subtitle: currentLang === 'en' ? 'City/region search' : 'Şehir/Bölge araması',
       kind: mosqueMode ? 'mosque' : 'place',
       lat: loc.lat,
       lng: loc.lng,
@@ -6027,7 +6298,7 @@ async function doSearch(){
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
     if(heatLayer){ try{map.removeLayer(heatLayer);}catch{} heatLayer=null; }
     // İlk viewport yüklemesi
-    setOv(true,`"${v}" yükleniyor...`,'Harita görünümündeki camiler alınıyor');
+    setOv(true, currentLang === 'en' ? `Loading "${v}"...` : `"${v}" yükleniyor...`, currentLang === 'en' ? 'Fetching mosques in the map view' : 'Harita görünümündeki camiler alınıyor');
     await loadViewport({
       signal: searchSignal,
       batchSize: 12,
@@ -6048,7 +6319,7 @@ async function doSearch(){
 
     // Fallback: görünümde hiç veri gelmezse şehir merkezi etrafında genişleyerek dene.
     if (!mosqueDB.size) {
-      setOv(true,`"${v}" için geniş arama...`,'Farklı etiketler ve daha geniş alan taranıyor');
+      setOv(true, currentLang === 'en' ? `Broader search for "${v}"...` : `"${v}" için geniş arama...`, currentLang === 'en' ? 'Scanning a wider area and alternative tags' : 'Farklı etiketler ve daha geniş alan taranıyor');
       const fallback = await fetchCityFallback(loc.lat, loc.lng, { signal:searchSignal });
       throwIfAborted(searchSignal);
       if (fallback.length) {
@@ -6069,10 +6340,10 @@ async function doSearch(){
 
     setOv(false);
     if (!mosqueDB.size) {
-      toast('Bu şehir için OSM üzerinde cami verisi bulunamadı. Yazımı/ülke adını kontrol edin.', 7000);
+      toast(currentLang === 'en' ? 'No mosque data was found on OSM for this city. Check the spelling or country name.' : 'Bu şehir için OSM üzerinde cami verisi bulunamadı. Yazımı/ülke adını kontrol edin.', 7000);
     } else {
       haptic(20);
-      toast(`${mosqueDB.size} cami kaydı yüklendi`, 2800);
+      toast(currentLang === 'en' ? `${mosqueDB.size} mosque records loaded` : `${mosqueDB.size} cami kaydı yüklendi`, 2800);
       saveSnapshot();
     }
     updateHashFromMap();
@@ -6082,7 +6353,7 @@ async function doSearch(){
       return;
     }
     setOv(false);
-    toast('Hata: '+e.message,7000);
+    toast((currentLang === 'en' ? 'Error: ' : 'Hata: ') + e.message,7000);
     console.error(e);
   } finally {
     if (activeSearchController === searchCtrl) {
@@ -6093,11 +6364,11 @@ async function doSearch(){
 }
 
 function geoErrorMessage(err) {
-  if (!err || typeof err.code !== 'number') return 'Konum alınamadı';
-  if (err.code === 1) return 'Konum izni kapalı. Tarayıcıdan konum iznini açın.';
-  if (err.code === 2) return 'Konum kaynağı bulunamadı (GPS/ağ).';
-  if (err.code === 3) return 'Konum isteği zaman aşımına uğradı.';
-  return 'Konum alınamadı';
+  if (!err || typeof err.code !== 'number') return currentLang === 'en' ? 'Location unavailable' : 'Konum alınamadı';
+  if (err.code === 1) return currentLang === 'en' ? 'Location permission is disabled. Enable it in the browser.' : 'Konum izni kapalı. Tarayıcıdan konum iznini açın.';
+  if (err.code === 2) return currentLang === 'en' ? 'Location source unavailable (GPS/network).' : 'Konum kaynağı bulunamadı (GPS/ağ).';
+  if (err.code === 3) return currentLang === 'en' ? 'Location request timed out.' : 'Konum isteği zaman aşımına uğradı.';
+  return currentLang === 'en' ? 'Location unavailable' : 'Konum alınamadı';
 }
 
 function getCurrentPositionAsync(options) {
@@ -6165,7 +6436,7 @@ async function useMyLocation(opts = {}){
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
     updateCacheUI();
     await loadViewport();
-    if (showToast && source === 'manual') toast('Konum tespit edildi', 1800);
+    if (showToast && source === 'manual') toast(currentLang === 'en' ? 'Location detected' : 'Konum tespit edildi', 1800);
     return true;
   } catch (err) {
     gaTrack('location_enable', {
@@ -6207,7 +6478,7 @@ async function resetToHome() {
     _hashUpdating = false;
     clearTimeout(vpDebounceTimer);
     scheduleViewportLoad(280);
-    toast('Ana sayfa sıfırlandı', 1800);
+    toast(currentLang === 'en' ? 'Home view reset' : 'Ana sayfa sıfırlandı', 1800);
   } catch {}
 }
 
@@ -6217,7 +6488,7 @@ function toggleOutdoorMode() {
   document.getElementById('btn-outdoor')?.classList.toggle('active', uiState.outdoor);
   document.getElementById('mob-btn-outdoor')?.classList.toggle('active', uiState.outdoor);
   safeStorageSet(OUTDOOR_KEY, uiState.outdoor ? '1' : '0');
-  toast(uiState.outdoor ? 'Outdoor mod aktif' : 'Outdoor mod kapatıldı', 1800);
+  toast(uiState.outdoor ? (currentLang === 'en' ? 'Outdoor mode enabled' : 'Outdoor mod aktif') : (currentLang === 'en' ? 'Outdoor mode disabled' : 'Outdoor mod kapatıldı'), 1800);
 }
 
 function updateFollowUi() {
@@ -6232,11 +6503,11 @@ function stopFollowLock(silent = false) {
   followState.watchId = null;
   followState.enabled = false;
   updateFollowUi();
-  if (!silent) toast('Takip kilidi kapatıldı', 1800);
+  if (!silent) toast(currentLang === 'en' ? 'Follow lock disabled' : 'Takip kilidi kapatıldı', 1800);
 }
 
 function startFollowLock() {
-  if (!navigator.geolocation) { toast('Konum desteği yok', 2200); return; }
+  if (!navigator.geolocation) { toast(currentLang === 'en' ? 'Location is not supported' : 'Konum desteği yok', 2200); return; }
   if (followState.enabled) return;
   followState.enabled = true;
   updateFollowUi();
@@ -6250,9 +6521,9 @@ function startFollowLock() {
     map.setView([lat, lng], z, { animate:false });
   }, () => {
     stopFollowLock(true);
-    toast('Takip için konum alınamadı', 2600);
+    toast(currentLang === 'en' ? 'Location could not be obtained for follow mode' : 'Takip için konum alınamadı', 2600);
   }, { enableHighAccuracy:true, maximumAge:5000, timeout:12000 });
-  toast('Takip kilidi aktif: manuel kaydırınca kapanır', 2200);
+  toast(currentLang === 'en' ? 'Follow lock active: manual panning disables it' : 'Takip kilidi aktif: manuel kaydırınca kapanır', 2200);
 }
 
 function toggleFollowLock() {
@@ -6265,7 +6536,7 @@ function toggleMapCompassSync() {
   if (!uiState.mapSyncWithCompass && uiState.liveMapCompass) uiState.liveMapCompass = false;
   document.getElementById('btn-map-sync')?.classList.toggle('active', uiState.mapSyncWithCompass);
   if (!uiState.mapSyncWithCompass) applyMapHeadingRotation(null);
-  toast(uiState.mapSyncWithCompass ? 'Pusula-harita senkronu aktif' : 'Pusula-harita senkronu kapalı', 1800);
+  toast(uiState.mapSyncWithCompass ? (currentLang === 'en' ? 'Compass-map sync enabled' : 'Pusula-harita senkronu aktif') : (currentLang === 'en' ? 'Compass-map sync disabled' : 'Pusula-harita senkronu kapalı'), 1800);
   updateCompassFabUi();
 }
 
@@ -6322,7 +6593,7 @@ async function loadNearbyCitySuggestions(showToastMsg = true) {
   const list = document.getElementById('city-suggest-list');
   if (!list) return;
   if (!navigator.geolocation) {
-    if (showToastMsg) toast('Yakın şehir önerileri için konum desteği yok', 2600);
+    if (showToastMsg) toast(currentLang === 'en' ? 'Location support is unavailable for nearby city suggestions' : 'Yakın şehir önerileri için konum desteği yok', 2600);
     return;
   }
   try {
@@ -6347,9 +6618,9 @@ async function loadNearbyCitySuggestions(showToastMsg = true) {
       }
     }
     list.innerHTML = out.slice(0, 10).map(x => `<option value="${escHtml(x)}"></option>`).join('');
-    if (showToastMsg) toast(out.length ? `Yakın şehir önerileri güncellendi (${out.length})` : 'Yakın şehir önerisi bulunamadı', 2300);
+    if (showToastMsg) toast(out.length ? (currentLang === 'en' ? `Nearby city suggestions updated (${out.length})` : `Yakın şehir önerileri güncellendi (${out.length})`) : (currentLang === 'en' ? 'No nearby city suggestions found' : 'Yakın şehir önerisi bulunamadı'), 2300);
   } catch {
-    if (showToastMsg) toast('Yakın şehir önerisi alınamadı', 2200);
+    if (showToastMsg) toast(currentLang === 'en' ? 'Nearby city suggestions could not be loaded' : 'Yakın şehir önerisi alınamadı', 2200);
   }
 }
 
@@ -6358,7 +6629,7 @@ async function refreshCurrentViewport() {
   if (uiState.pullRefreshing) return;
   uiState.pullRefreshing = true;
   const ind = document.getElementById('sb-pull-indicator');
-  if (ind) { ind.textContent = 'Yenileniyor...'; ind.classList.add('show','visible'); }
+  if (ind) { ind.textContent = currentLang === 'en' ? 'Refreshing...' : 'Yenileniyor...'; ind.classList.add('show','visible'); }
   tileCache.clear();
   updateCacheUI();
   await loadViewport();
@@ -6367,11 +6638,11 @@ async function refreshCurrentViewport() {
     setTimeout(() => {
       ind.classList.remove('visible');
       setTimeout(() => ind.classList.remove('show'), 180);
-      ind.textContent = 'Bırakınca yenilenecek';
+      ind.textContent = currentLang === 'en' ? 'Release to refresh' : 'Bırakınca yenilenecek';
     }, 380);
   }
   uiState.pullRefreshing = false;
-  toast('Veriler güncellendi', 1600);
+  toast(currentLang === 'en' ? 'Data refreshed' : 'Veriler güncellendi', 1600);
 }
 
 function initSidebarPullToRefresh() {
@@ -6391,7 +6662,7 @@ function initSidebarPullToRefresh() {
     if (dy > 8) {
       ind.classList.add('show');
       ind.classList.toggle('visible', dy > 34);
-      ind.textContent = dy > 76 ? 'Bırakınca yenilenecek' : 'Aşağı çek...';
+      ind.textContent = dy > 76 ? (currentLang === 'en' ? 'Release to refresh' : 'Bırakınca yenilenecek') : (currentLang === 'en' ? 'Pull down...' : 'Aşağı çek...');
     }
   }, {passive:true});
   listEl.addEventListener('touchend', async e => {
@@ -6402,7 +6673,7 @@ function initSidebarPullToRefresh() {
     else {
       ind.classList.remove('visible');
       setTimeout(() => ind.classList.remove('show'), 160);
-      ind.textContent = 'Bırakınca yenilenecek';
+      ind.textContent = currentLang === 'en' ? 'Release to refresh' : 'Bırakınca yenilenecek';
     }
   }, {passive:true});
 }
@@ -6530,7 +6801,9 @@ function cmpOverlayClick(e) {
 }
 
 function compareLevelLabel(level) {
-  return level === 'district' ? 'İlçe' : 'Şehir';
+  return level === 'district'
+    ? (currentLang === 'en' ? 'District' : 'İlçe')
+    : (currentLang === 'en' ? 'City' : 'Şehir');
 }
 
 function scoreCompareGeocode(item, query, level = 'city') {
@@ -6713,13 +6986,14 @@ async function fetchCompareSide(side) {
   const v = input?.value?.trim() || '';
   const level = levelEl?.value === 'district' ? 'district' : 'city';
   if (!v || !btn || !statusEl || !nameEl) return;
+  const t = uiCopy();
 
   const mapRef = side === 'a' ? compareDBA : compareDBB;
   btn.disabled = true;
-  statusEl.textContent = 'Koordinatlar alınıyor...';
+  statusEl.textContent = t.locatingCoords;
   document.getElementById('cmp-progress-wrap').style.display = 'block';
   document.getElementById('cmp-progress-bar').style.width = '10%';
-  document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · "${v}" aranıyor...`;
+  document.getElementById('cmp-progress-label').textContent = currentLang === 'en' ? `${side.toUpperCase()} · searching "${v}"...` : `${side.toUpperCase()} · "${v}" aranıyor...`;
   document.getElementById('cmp-results').style.display = 'none';
 
   try {
@@ -6728,18 +7002,18 @@ async function fetchCompareSide(side) {
     nameEl.textContent = place.label;
 
     document.getElementById('cmp-progress-bar').style.width = '35%';
-    document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · Toplam cami sayısı hesaplanıyor...`;
+    document.getElementById('cmp-progress-label').textContent = currentLang === 'en' ? `${side.toUpperCase()} · calculating total mosque count...` : `${side.toUpperCase()} · Toplam cami sayısı hesaplanıyor...`;
 
     const totalPromise = fetchAreaMosqueTotal(place).catch(() => null);
     const r = level === 'district' ? 0.022 : 0.036;
     const elements = await fetchBbox(place.lat-r, place.lng-r, place.lat+r, place.lng+r, { retries:1, timeoutMs:22000, backoffMs:650, minInterval:320 });
     document.getElementById('cmp-progress-bar').style.width = '75%';
-    document.getElementById('cmp-progress-label').textContent = `${side.toUpperCase()} · ${elements.length} kayıt işleniyor...`;
+    document.getElementById('cmp-progress-label').textContent = currentLang === 'en' ? `${side.toUpperCase()} · processing ${elements.length} records...` : `${side.toUpperCase()} · ${elements.length} kayıt işleniyor...`;
 
     processElementsToCompareMap(elements, mapRef);
     compareAreaTotals[side] = await totalPromise;
     compareLoaded[side] = true;
-    statusEl.textContent = ` ${compareLevelLabel(level)} yüklendi · analiz:${mapRef.size} · toplam:${compareAreaTotals[side] ?? '—'}`;
+    statusEl.textContent = currentLang === 'en' ? ` ${compareLevelLabel(level)} loaded · analyzed:${mapRef.size} · total:${compareAreaTotals[side] ?? '—'}` : ` ${compareLevelLabel(level)} yüklendi · analiz:${mapRef.size} · toplam:${compareAreaTotals[side] ?? '—'}`;
 
     document.getElementById('cmp-progress-bar').style.width = '100%';
     await new Promise(r => setTimeout(r, 280));
@@ -6747,8 +7021,8 @@ async function fetchCompareSide(side) {
     renderCompare();
   } catch (err) {
     document.getElementById('cmp-progress-wrap').style.display = 'none';
-    statusEl.textContent = ' Hata: ' + err.message;
-    toast('Karşılaştırma yüklenirken hata: ' + err.message, 5000);
+    statusEl.textContent = currentLang === 'en' ? ' Error: ' + err.message : ' Hata: ' + err.message;
+    toast(currentLang === 'en' ? 'Error while loading comparison: ' + err.message : 'Karşılaştırma yüklenirken hata: ' + err.message, 5000);
   }
   btn.disabled = false;
 }
@@ -6925,6 +7199,7 @@ function drawRadar(stA, stB) {
 // (called from recompute when modal is open)
 
 function renderCompare() {
+  const isEn = currentLang === 'en';
   if (!compareLoaded.a && !compareLoaded.b) {
     document.getElementById('cmp-results').style.display = 'none';
     return;
@@ -6947,11 +7222,11 @@ function renderCompare() {
   const badge = document.getElementById('cmp-winner-badge');
   if (stB && stA.pct !== null && stB.pct !== null) {
     const diff = stA.pct - stB.pct;
-    if (Math.abs(diff) <= 2)     { badge.textContent = ' Beraberlik';    badge.className = 'cmp-winner-badge tie'; }
-    else if (diff > 0)           { badge.textContent = ` ${nameA} önde`; badge.className = 'cmp-winner-badge a'; }
-    else                         { badge.textContent = ` ${nameB} önde`; badge.className = 'cmp-winner-badge b'; }
+    if (Math.abs(diff) <= 2)     { badge.textContent = isEn ? ' Tie' : ' Beraberlik';    badge.className = 'cmp-winner-badge tie'; }
+    else if (diff > 0)           { badge.textContent = isEn ? ` ${nameA} leads` : ` ${nameA} önde`; badge.className = 'cmp-winner-badge a'; }
+    else                         { badge.textContent = isEn ? ` ${nameB} leads` : ` ${nameB} önde`; badge.className = 'cmp-winner-badge b'; }
   } else {
-    badge.textContent = compareLoaded.a && !compareLoaded.b ? 'B bekleniyor →' : (!compareLoaded.a && compareLoaded.b ? 'A bekleniyor →' : '');
+    badge.textContent = compareLoaded.a && !compareLoaded.b ? (isEn ? 'Waiting for B →' : 'B bekleniyor →') : (!compareLoaded.a && compareLoaded.b ? (isEn ? 'Waiting for A →' : 'A bekleniyor →') : '');
     badge.className = 'cmp-winner-badge tie';
   }
 
@@ -6962,12 +7237,12 @@ function renderCompare() {
   const barsEl = document.getElementById('cmp-bars');
   barsEl.innerHTML = '';
   const metrics = [
-    { label:'Doğruluk %',   a:stA.pct,     b:stB?.pct,     unit:'%', higherBetter:true  },
-    { label:'Ort. Sapma',   a:stA.avg!==null?+stA.avg.toFixed(1):null, b:stB?.avg!==null?+stB.avg.toFixed(1):null, unit:'°', higherBetter:false },
-    { label:'Maks. Sapma',  a:stA.max!==null?+stA.max.toFixed(1):null, b:stB?.max!==null?+stB.max.toFixed(1):null, unit:'°', higherBetter:false },
-    { label:'Mükemmel <5°', a:stA.perfect,  b:stB?.perfect, unit:'', higherBetter:true  },
-    { label:'Analiz Cami',  a:stA.all,      b:stB?.all,     unit:'', higherBetter:null  },
-    { label:'Toplam Cami (OSM Alan)', a:compareAreaTotals.a, b:compareAreaTotals.b, unit:'', higherBetter:null  },
+    { label:isEn?'Accuracy %':'Doğruluk %',   a:stA.pct,     b:stB?.pct,     unit:'%', higherBetter:true  },
+    { label:isEn?'Avg. Deviation':'Ort. Sapma',   a:stA.avg!==null?+stA.avg.toFixed(1):null, b:stB?.avg!==null?+stB.avg.toFixed(1):null, unit:'°', higherBetter:false },
+    { label:isEn?'Max. Deviation':'Maks. Sapma',  a:stA.max!==null?+stA.max.toFixed(1):null, b:stB?.max!==null?+stB.max.toFixed(1):null, unit:'°', higherBetter:false },
+    { label:isEn?'Perfect <5°':'Mükemmel <5°', a:stA.perfect,  b:stB?.perfect, unit:'', higherBetter:true  },
+    { label:isEn?'Analyzed Mosques':'Analiz Cami',  a:stA.all,      b:stB?.all,     unit:'', higherBetter:null  },
+    { label:isEn?'Total Mosques (OSM Area)':'Toplam Cami (OSM Alan)', a:compareAreaTotals.a, b:compareAreaTotals.b, unit:'', higherBetter:null  },
   ];
   metrics.forEach(m => barsEl.appendChild(buildBarRow(m)));
 
@@ -6976,31 +7251,31 @@ function renderCompare() {
   const fmtPct = v => v!==null&&v!==undefined ? v+'%' : '—';
   const fmtDeg = v => v!==null&&v!==undefined ? v.toFixed(1)+'°' : '—';
   const rows = [
-    ['Bölge',          compareLoaded.a ? nameA : '—',              compareLoaded.b ? nameB : '—'],
-    ['Bölge Tipi',     comparePlaceMeta.a?.level === 'district' ? 'İlçe' : (compareLoaded.a ? 'Şehir' : '—'), comparePlaceMeta.b?.level === 'district' ? 'İlçe' : (compareLoaded.b ? 'Şehir' : '—')],
-    ['Toplam Cami (OSM Alan)', compareAreaTotals.a ?? '—', compareAreaTotals.b ?? '—'],
-    ['Analiz Cami',    stA.all,                  stB?.all    ?? '—'],
-    ['Veri Olan',      stA.withData,             stB?.withData ?? '—'],
-    ['Doğru Yön',      stA.correct,              stB?.correct  ?? '—'],
-    ['Sapma Var',      stA.wrong,                stB?.wrong    ?? '—'],
-    ['Veri Yok',       stA.unknown,              stB?.unknown  ?? '—'],
-    ['Doğruluk',       fmtPct(stA.pct),          fmtPct(stB?.pct)],
-    ['Not',            stA.grade,                stB?.grade    ?? '—'],
-    ['Ort. Sapma',     fmtDeg(stA.avg),          fmtDeg(stB?.avg)],
-    ['Medyan Sapma',   fmtDeg(stA.median),       fmtDeg(stB?.median)],
-    ['Min. Sapma',     fmtDeg(stA.min),          fmtDeg(stB?.min)],
-    ['Maks. Sapma',    fmtDeg(stA.max),          fmtDeg(stB?.max)],
-    ['Mükemmel (<5°)', stA.perfect,              stB?.perfect  ?? '—'],
+    [isEn?'Region':'Bölge', compareLoaded.a ? nameA : '—', compareLoaded.b ? nameB : '—'],
+    [isEn?'Region Type':'Bölge Tipi', comparePlaceMeta.a?.level === 'district' ? (isEn?'District':'İlçe') : (compareLoaded.a ? (isEn?'City':'Şehir') : '—'), comparePlaceMeta.b?.level === 'district' ? (isEn?'District':'İlçe') : (compareLoaded.b ? (isEn?'City':'Şehir') : '—')],
+    [isEn?'Total Mosques (OSM Area)':'Toplam Cami (OSM Alan)', compareAreaTotals.a ?? '—', compareAreaTotals.b ?? '—'],
+    [isEn?'Analyzed Mosques':'Analiz Cami', stA.all, stB?.all ?? '—'],
+    [isEn?'With Data':'Veri Olan', stA.withData, stB?.withData ?? '—'],
+    [isEn?'Aligned':'Doğru Yön', stA.correct, stB?.correct ?? '—'],
+    [isEn?'Deviation':'Sapma Var', stA.wrong, stB?.wrong ?? '—'],
+    [isEn?'No Data':'Veri Yok', stA.unknown, stB?.unknown ?? '—'],
+    [isEn?'Accuracy':'Doğruluk', fmtPct(stA.pct), fmtPct(stB?.pct)],
+    [isEn?'Grade':'Not', stA.grade, stB?.grade ?? '—'],
+    [isEn?'Avg. Deviation':'Ort. Sapma', fmtDeg(stA.avg), fmtDeg(stB?.avg)],
+    [isEn?'Median Deviation':'Medyan Sapma', fmtDeg(stA.median), fmtDeg(stB?.median)],
+    [isEn?'Min. Deviation':'Min. Sapma', fmtDeg(stA.min), fmtDeg(stB?.min)],
+    [isEn?'Max. Deviation':'Maks. Sapma', fmtDeg(stA.max), fmtDeg(stB?.max)],
+    [isEn?'Perfect (<5°)':'Mükemmel (<5°)', stA.perfect, stB?.perfect ?? '—'],
   ];
 
   // Highlight winner in each numeric row
-  const numericRows = new Set(['Toplam Cami','Veri Olan','Doğru Yön','Mükemmel (<5°)']);
-  const lowerBetterRows = new Set(['Ort. Sapma','Medyan Sapma','Min. Sapma','Maks. Sapma','Sapma Var']);
+  const numericRows = new Set([isEn?'Total Mosques (OSM Area)':'Toplam Cami', isEn?'With Data':'Veri Olan', isEn?'Aligned':'Doğru Yön', isEn?'Perfect (<5°)':'Mükemmel (<5°)']);
+  const lowerBetterRows = new Set([isEn?'Avg. Deviation':'Ort. Sapma', isEn?'Median Deviation':'Medyan Sapma', isEn?'Min. Deviation':'Min. Sapma', isEn?'Max. Deviation':'Maks. Sapma', isEn?'Deviation':'Sapma Var']);
 
   tbl.innerHTML = `<table class="cmp-tbl">
     <thead>
       <tr>
-        <th>Metrik</th>
+        <th>${isEn ? 'Metric' : 'Metrik'}</th>
         <th style="color:#60a5fa">A: ${escHtml(compareLoaded.a ? nameA : '—')}</th>
         <th style="color:#f472b6">B: ${escHtml(compareLoaded.b ? nameB : '—')}</th>
       </tr>
@@ -7601,6 +7876,7 @@ function labOverlayClick(e) {
 }
 
 function generateInsights() {
+  const t = uiCopy();
   const all = [...mosqueDB.values()];
   if (!all.length) return [];
   const withData = all.filter(m => m.diff != null);
@@ -7610,13 +7886,13 @@ function generateInsights() {
   const unnamed = all.filter(m => isPlaceholderMosqueName(m.name)).length;
   const manualPending = all.filter(m => getManualAxisRecord(m)?.moderation?.status === 'pending').length;
   return [
-    ['Toplam cami', all.length],
-    ['Veri kapsama', withData.length ? `${Math.round(withData.length/all.length*100)}%` : '0%'],
-    ['Ort. sapma', avg != null ? `${avg.toFixed(1)}°` : '—'],
-    ['Düşük güven', low],
-    ['Dönüştürülmüş olası', converted],
-    ['İsimsiz', unnamed],
-    ['Manuel beklemede', manualPending]
+    [t.totalMosques, all.length],
+    [t.dataCoverage, withData.length ? `${Math.round(withData.length/all.length*100)}%` : '0%'],
+    [t.avgDeviation, avg != null ? `${avg.toFixed(1)}°` : '—'],
+    [t.lowConfidence, low],
+    [t.likelyConverted, converted],
+    [t.unnamed, unnamed],
+    [t.manualPending, manualPending]
   ];
 }
 
@@ -7630,27 +7906,29 @@ function renderLab() {
     .sort((a,b) => (a.confidence || 0) - (b.confidence || 0))
     .slice(0, 20);
   const qEl = document.getElementById('lab-queue');
-  if (!queue.length) qEl.innerHTML = '<div class="lab-row"><span class="lab-k">Kuyruk boş</span><span class="lab-v"></span></div>';
+  const t = uiCopy();
+  if (!queue.length) qEl.innerHTML = `<div class="lab-row"><span class="lab-k">${t.queueEmpty}</span><span class="lab-v"></span></div>`;
   else qEl.innerHTML = queue.map(m => `<div class="lab-row"><span class="lab-k">${escHtml(m.name)}</span><span class="lab-v">${m.confidence || 0}/100</span></div>`).join('');
 
   const sEl = document.getElementById('lab-snapshots');
   const recent = snapshots.slice().reverse().slice(0, 12);
-  if (!recent.length) sEl.innerHTML = '<div class="lab-row"><span class="lab-k">Geçmiş yok</span><span class="lab-v">—</span></div>';
-  else sEl.innerHTML = recent.map(s => `<div class="lab-row"><span class="lab-k">${escHtml(s.city)} · ${new Date(s.ts).toLocaleDateString('tr-TR')}</span><span class="lab-v">${s.pct ?? '—'}%</span></div>`).join('');
+  if (!recent.length) sEl.innerHTML = `<div class="lab-row"><span class="lab-k">${t.noHistory}</span><span class="lab-v">—</span></div>`;
+  else sEl.innerHTML = recent.map(s => `<div class="lab-row"><span class="lab-k">${escHtml(s.city)} · ${new Date(s.ts).toLocaleDateString(currentLang === 'en' ? 'en-US' : 'tr-TR')}</span><span class="lab-v">${s.pct ?? '—'}%</span></div>`).join('');
 }
 
 function bizSendLead() {
+  const t = uiCopy();
   const name = document.getElementById('biz-name').value.trim();
   const company = document.getElementById('biz-company').value.trim();
   const email = document.getElementById('biz-email').value.trim();
   const msg = document.getElementById('biz-msg').value.trim();
-  const subject = encodeURIComponent('Kıble Dedektörü B2B / White-Label Talebi');
+  const subject = encodeURIComponent(t.leadSubject);
   const body = encodeURIComponent(
-    `Ad Soyad: ${name || '-'}\n` +
-    `Kurum: ${company || '-'}\n` +
-    `E-posta: ${email || '-'}\n` +
-    `\nİhtiyaç:\n${msg || '-'}\n` +
-    `\nNot: Talep web formundan oluşturuldu.`
+    `${t.leadName}: ${name || '-'}\n` +
+    `${t.leadCompany}: ${company || '-'}\n` +
+    `${t.leadEmail}: ${email || '-'}\n` +
+    `\n${t.leadNeed}:\n${msg || '-'}\n` +
+    `\n${t.leadNote}`
   );
   location.href = `mailto:sales@qibla-checker.app?subject=${subject}&body=${body}`;
 }
@@ -7685,12 +7963,13 @@ function renderExportSummary() {
 }
 
 function copyShareUrl() {
+  const t = uiCopy();
   const url = buildShareUrl();
   navigator.clipboard?.writeText(url).then(() => {
     const btn = document.getElementById('exp-copy-url');
-    btn.textContent = ' Kopyalandı';
+    btn.textContent = ` ${t.copied}`;
     btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'Kopyala'; btn.classList.remove('copied'); }, 2200);
+    setTimeout(() => { btn.textContent = t.copy; btn.classList.remove('copied'); }, 2200);
   }).catch(() => {
     // Fallback: select the input
     document.getElementById('exp-url-input').select();
@@ -7700,6 +7979,7 @@ function copyShareUrl() {
 
 // ── JSON export
 function exportJSON() {
+  const t = uiCopy();
   gaTrack('export_click', { format:'json', city: currentCity || '', total: mosqueDB.size });
   const data = {
     meta: {
@@ -7731,11 +8011,12 @@ function exportJSON() {
     `qibla-${slugify(currentCity)}-${dateStr()}.json`,
     'application/json'
   );
-  toast(' JSON indirildi', 3000);
+  toast(` ${t.jsonDownloaded}`, 3000);
 }
 
 // ── CSV export
 function exportCSV() {
+  const t = uiCopy();
   gaTrack('export_click', { format:'csv', city: currentCity || '', total: mosqueDB.size });
   const headers = ['id','name','lat','lng','qibla_angle','building_axis','deviation_deg',
                    'status','method','construction_year','period'];
@@ -7759,11 +8040,12 @@ function exportCSV() {
     `qibla-${slugify(currentCity)}-${dateStr()}.csv`,
     'text/csv;charset=utf-8'
   );
-  toast(' CSV indirildi — Excel\'de açabilirsiniz', 3000);
+  toast(` ${t.csvDownloaded}`, 3000);
 }
 
 // ── GeoJSON export
 function exportGeoJSON() {
+  const t = uiCopy();
   gaTrack('export_click', { format:'geojson', city: currentCity || '', total: mosqueDB.size });
   const geojson = {
     type: 'FeatureCollection',
@@ -7796,7 +8078,7 @@ function exportGeoJSON() {
     `qibla-${slugify(currentCity)}-${dateStr()}.geojson`,
     'application/geo+json'
   );
-  toast(' GeoJSON indirildi', 3000);
+  toast(` ${t.geojsonDownloaded}`, 3000);
 }
 
 // ── HTML Report (opens in new tab)
@@ -7922,7 +8204,7 @@ footer strong{color:rgba(255,255,255,.82);}
   const url  = URL.createObjectURL(blob);
   window.open(url, '_blank');
   setTimeout(()=>URL.revokeObjectURL(url), 60000);
-  toast(' Rapor yeni sekmede açıldı', 3000);
+  toast(` ${uiCopy().reportOpened}`, 3000);
 }
 
 function buildScoreCardCanvas() {
@@ -8520,8 +8802,9 @@ function populateDetailPanel(m) {
     `${m.lat.toFixed(5)}°N  ${m.lng.toFixed(5)}°E  ·  OSM ${m.osmType||'way'} #${m.id}`;
 
   // ── Status ribbon
+  const t = uiCopy();
   const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
-  const statusLabel = m.status==='correct'?' Doğru Yön':m.status==='wrong'?' Sapma Var':' Veri Yok';
+  const statusLabel = m.status==='correct' ? ` ${t.statusCorrect}` : m.status==='wrong' ? ` ${t.statusWrong}` : ` ${t.statusUnknown}`;
   document.getElementById('dp-status-badge').innerHTML =
     `<span class="dp-status-badge ${m.status}">${statusLabel}</span>`;
   document.getElementById('dp-qibla-val').textContent = m.qibla.toFixed(1)+'°';
@@ -8550,29 +8833,29 @@ function populateDetailPanel(m) {
 
   // ── Qibla stats
   const methLabel = {
-    'edge-analysis':'Kenar Analizi (PCA)',
+    'edge-analysis': t.methodEdge,
     'osm-tag':'OSM direction tag',
-    'hybrid-interior':'Hibrit (Bina + İç Mekan)',
-    'interior-only':'İç Mekan Kanıtı',
-    'fused':'Birleşik',
+    'hybrid-interior': t.methodHybrid,
+    'interior-only': t.methodInterior,
+    'fused': t.methodFused,
     'none':'—'
   }[m.method] || m.method;
   const buildDate = tags.start_date || tags['building:start_date'];
   const fusionRel = m.fusion?.reliability!=null ? Math.round(m.fusion.reliability*100)+'%' : '—';
   const interiorCount = m.fusion?.interiorCount || getInteriorEvidenceList(m).length;
-  const conv = m.convertedFrom?.converted ? 'Evet (olası)' : 'Hayır';
+  const conv = m.convertedFrom?.converted ? t.yesLikely : t.no;
   document.getElementById('dp-qibla-stats').innerHTML = `
-    <div class="dp-qs-row"><span class="dp-qs-k">Hesaplama yöntemi</span><span class="dp-qs-v">${escHtml(methLabel)}</span></div>
-    <div class="dp-qs-row"><span class="dp-qs-k">Kabe yönü (büyük daire)</span><span class="dp-qs-v">${m.qibla.toFixed(2)}°</span></div>
-    ${m.baseAxis!==null&&m.baseAxis!==undefined?`<div class="dp-qs-row"><span class="dp-qs-k">Bina ekseni (ham)</span><span class="dp-qs-v">${m.baseAxis.toFixed(2)}°</span></div>`:''}
-    ${m.axis!==null?`<div class="dp-qs-row"><span class="dp-qs-k">Nihai eksen</span><span class="dp-qs-v">${m.axis.toFixed(2)}°</span></div>`:''}
-    ${m.diff!==null?`<div class="dp-qs-row"><span class="dp-qs-k">Kıble sapması</span><span class="dp-qs-v" style="color:${col}">${m.diff.toFixed(2)}°</span></div>`:''}
-    <div class="dp-qs-row"><span class="dp-qs-k">Füzyon güveni</span><span class="dp-qs-v">${fusionRel}</span></div>
-    <div class="dp-qs-row"><span class="dp-qs-k">Model güven puanı</span><span class="dp-qs-v">${m.confidence ?? '—'}/100</span></div>
-    <div class="dp-qs-row"><span class="dp-qs-k">İç kanıt adedi</span><span class="dp-qs-v">${interiorCount}</span></div>
-    <div class="dp-qs-row"><span class="dp-qs-k">Dönüştürülmüş yapı</span><span class="dp-qs-v">${conv}</span></div>
-    ${m.diff!==null?`<div class="dp-qs-row"><span class="dp-qs-k">Değerlendirme</span><span class="dp-qs-v" style="color:${col}">${m.diff<=5?'Mükemmel (<5°)':m.diff<=tol?'Kabul edilebilir':'Düzeltilmeli'}</span></div>`:''}
-    ${buildDate?`<div class="dp-qs-row"><span class="dp-qs-k">İnşaat tarihi</span><span class="dp-qs-v">${escHtml(buildDate)}</span></div>`:''}
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailMethod}</span><span class="dp-qs-v">${escHtml(methLabel)}</span></div>
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailKaaba}</span><span class="dp-qs-v">${m.qibla.toFixed(2)}°</span></div>
+    ${m.baseAxis!==null&&m.baseAxis!==undefined?`<div class="dp-qs-row"><span class="dp-qs-k">${t.detailBaseAxis}</span><span class="dp-qs-v">${m.baseAxis.toFixed(2)}°</span></div>`:''}
+    ${m.axis!==null?`<div class="dp-qs-row"><span class="dp-qs-k">${t.detailFinalAxis}</span><span class="dp-qs-v">${m.axis.toFixed(2)}°</span></div>`:''}
+    ${m.diff!==null?`<div class="dp-qs-row"><span class="dp-qs-k">${t.detailDeviation}</span><span class="dp-qs-v" style="color:${col}">${m.diff.toFixed(2)}°</span></div>`:''}
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailFusion}</span><span class="dp-qs-v">${fusionRel}</span></div>
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailModel}</span><span class="dp-qs-v">${m.confidence ?? '—'}/100</span></div>
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailInteriorCount}</span><span class="dp-qs-v">${interiorCount}</span></div>
+    <div class="dp-qs-row"><span class="dp-qs-k">${t.detailConverted}</span><span class="dp-qs-v">${conv}</span></div>
+    ${m.diff!==null?`<div class="dp-qs-row"><span class="dp-qs-k">${t.detailAssessment}</span><span class="dp-qs-v" style="color:${col}">${m.diff<=5?t.assessPerfect:m.diff<=tol?t.assessAcceptable:t.assessFix}</span></div>`:''}
+    ${buildDate?`<div class="dp-qs-row"><span class="dp-qs-k">${t.detailBuildDate}</span><span class="dp-qs-v">${escHtml(buildDate)}</span></div>`:''}
   `;
   renderMosqueIdentity(m, tags, token);
 
@@ -8846,13 +9129,14 @@ async function loadWikipedia(m, tags) {
 
     body.textContent = clean;
     link.href = `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(title)}`;
-    link.textContent = `Wikipedia'da oku (${lang}) →`;
+    link.textContent = t.wikiRead(lang);
     sec.style.display = '';
   } catch { sec.style.display = 'none'; }
 }
 
 // ── Compass canvas
 function drawDetailCompass(m) {
+  const isEn = currentLang === 'en';
   const canvas = document.getElementById('dp-compass');
   const ctx = canvas.getContext('2d');
   const cx = 60, cy = 60, r = 52;
@@ -8863,7 +9147,7 @@ function drawDetailCompass(m) {
   ctx.strokeStyle = '#6a9ec9'; ctx.lineWidth = 1.5; ctx.stroke();
 
   // Cardinal labels
-  const cardinals = [['K',0],['D',90],['G',180],['B',270]];
+  const cardinals = isEn ? [['N',0],['E',90],['S',180],['W',270]] : [['K',0],['D',90],['G',180],['B',270]];
   ctx.font = '8px Manrope,monospace'; ctx.fillStyle = 'rgba(255,255,255,.50)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   cardinals.forEach(([lbl, deg]) => {
     const rad = (deg - 90) * Math.PI / 180;
@@ -8911,11 +9195,11 @@ function drawDetailCompass(m) {
   // Legend
   ctx.font = '7px Manrope,monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillStyle = '#c9a84c'; ctx.fillRect(4,108,12,2);
-  ctx.fillStyle = '#c9a84c'; ctx.fillText('Kıble', 19, 109);
+  ctx.fillStyle = '#c9a84c'; ctx.fillText(isEn ? 'Qibla' : 'Kıble', 19, 109);
   if (m.axis !== null) {
     const col = m.status==='correct'?'#4ade80':m.status==='wrong'?'#f87171':'#fbbf24';
     ctx.fillStyle = col; ctx.fillRect(60,108,12,2);
-    ctx.fillStyle = col; ctx.fillText('Bina', 75, 109);
+    ctx.fillStyle = col; ctx.fillText(isEn ? 'Axis' : 'Bina', 75, 109);
   }
 }
 
@@ -8941,7 +9225,7 @@ function renderTagsTable(tags) {
   const el = document.getElementById('dp-tags');
   const title = document.getElementById('dp-tags-title');
   const allKeys = Object.keys(tags);
-  if (!allKeys.length) { el.innerHTML='<div style="color:rgba(255,255,255,.50);font-size:11px">Etiket bulunamadı</div>'; return; }
+  if (!allKeys.length) { el.innerHTML=`<div style="color:rgba(255,255,255,.50);font-size:11px">${uiCopy().tagsNotFound}</div>`; return; }
 
   // Sort: priority first, then alphabetical
   const sorted = [...allKeys].sort((a,b) => {
@@ -8952,7 +9236,7 @@ function renderTagsTable(tags) {
     return a.localeCompare(b);
   });
 
-  title.textContent = `OSM Etiketleri (${allKeys.length})`;
+  title.textContent = uiCopy().tagsTitle(allKeys.length);
 
   el.innerHTML = sorted.map(k => {
     let v = escHtml(tags[k]);
@@ -8990,15 +9274,16 @@ async function renderInteriorSection(m, tags) {
   urlInput.value = '';
   noteInput.value = '';
 
-  gallery.innerHTML = '<div class="dp-int-meta">İç mekan görselleri aranıyor...</div>';
+  const t = uiCopy();
+  gallery.innerHTML = `<div class="dp-int-meta">${t.interiorSearching}</div>`;
   meta.textContent = '';
   const photos = await resolveInteriorPhotos(m);
   if (!photos.length) {
-    gallery.innerHTML = '<div class="dp-int-meta">Otomatik iç mekan görseli bulunamadı. URL ile manuel kanıt ekleyebilirsiniz.</div>';
+    gallery.innerHTML = `<div class="dp-int-meta">${t.interiorNotFound}</div>`;
   } else {
     gallery.innerHTML = photos.map((p,i) => `
       <div class="dp-int-thumb" onclick="window.open('${escHtml(p.url)}','_blank')">
-        <img src="${escHtml(p.url)}" alt="${escHtml((m?.name || 'Cami') + ' iç mekan fotoğrafı ' + (i+1))}"/>
+        <img src="${escHtml(p.url)}" alt="${escHtml(t.interiorGalleryAlt(m?.name, i))}"/>
         <span>${p.source==='commons-category'?'Commons':'Arama'}</span>
       </div>
     `).join('');
@@ -9007,23 +9292,19 @@ async function renderInteriorSection(m, tags) {
 
   const list = getInteriorEvidenceList(m);
   const manualRec = getManualAxisRecord(m);
-  meta.textContent = list.length
-    ? (currentLang === 'en'
-        ? `Saved interior evidence: ${list.length} · Last update: ${new Date(list[list.length-1].ts).toLocaleString('en-US')}`
-        : `Kaydedilmiş iç mekan kanıtı: ${list.length} · Son güncelleme: ${new Date(list[list.length-1].ts).toLocaleString('tr-TR')}`)
-    : (currentLang === 'en' ? 'No interior direction evidence has been recorded yet.' : 'Henüz iç mekan yön kanıtı kaydedilmedi.');
+  meta.textContent = list.length ? t.interiorSaved(list.length, list[list.length-1].ts) : t.interiorNone;
 
   evList.innerHTML = list.length
     ? list.map((ev, idx) => `
       <div class="dp-int-ev-row">
         <div class="dp-int-ev-main">
-          ${Number(ev.axis).toFixed(1)}° · ${currentLang === 'en' ? 'Confidence' : 'Güven'} ${(Number(ev.confidence||0)*100|0)}%
-          <div class="dp-int-ev-sub">${escHtml(ev.note || ev.sourceUrl || (currentLang === 'en' ? 'manual entry' : 'manuel giriş'))}</div>
+          ${Number(ev.axis).toFixed(1)}° · ${t.confidence} ${(Number(ev.confidence||0)*100|0)}%
+          <div class="dp-int-ev-sub">${escHtml(ev.note || ev.sourceUrl || t.manualEntry)}</div>
         </div>
-        <button class="dp-int-ev-del" onclick="removeInteriorEvidence(${idx})">${currentLang === 'en' ? 'Delete' : 'Sil'}</button>
+        <button class="dp-int-ev-del" onclick="removeInteriorEvidence(${idx})">${t.delete}</button>
       </div>
     `).join('')
-    : `<div class="dp-int-meta">${currentLang === 'en' ? 'Evidence list is empty.' : 'Kanıt listesi boş.'}</div>`;
+    : `<div class="dp-int-meta">${t.evidenceEmpty}</div>`;
 
   if (manualRec?.axis != null) {
     const mod = manualRec.moderation || {};
@@ -9031,10 +9312,10 @@ async function renderInteriorSection(m, tags) {
     row.className = 'dp-int-ev-row';
     row.innerHTML = `
       <div class="dp-int-ev-main">
-        ${currentLang === 'en' ? 'Manual axis' : 'Manuel aks'}: ${Number(manualRec.axis).toFixed(1)}° · AI: ${(mod.status || 'none').toUpperCase()}
-        <div class="dp-int-ev-sub">${currentLang === 'en' ? 'Score' : 'Skor'}: ${mod.score!=null ? (mod.score*100|0)+'%' : '—'} · ${new Date(manualRec.ts || Date.now()).toLocaleString(currentLang === 'en' ? 'en-US' : 'tr-TR')}</div>
+        ${t.manualAxis}: ${Number(manualRec.axis).toFixed(1)}° · AI: ${(mod.status || 'none').toUpperCase()}
+        <div class="dp-int-ev-sub">${t.score}: ${mod.score!=null ? (mod.score*100|0)+'%' : '—'} · ${new Date(manualRec.ts || Date.now()).toLocaleString(currentLang === 'en' ? 'en-US' : 'tr-TR')}</div>
       </div>
-      <button class="dp-int-ev-del" onclick="deleteManualAxis()">${currentLang === 'en' ? 'Delete' : 'Sil'}</button>
+      <button class="dp-int-ev-del" onclick="deleteManualAxis()">${t.delete}</button>
     `;
     evList.appendChild(row);
   }
@@ -9046,7 +9327,7 @@ async function renderInteriorSection(m, tags) {
         : `Kayıtlı: ${Number(manualRec.axis).toFixed(1)}° · AI ${String(mod.status || 'none').toUpperCase()}`
     );
   } else {
-    setManualStatus(currentLang === 'en' ? 'Ready' : 'Hazır');
+    setManualStatus(t.ready);
   }
 }
 
@@ -9072,7 +9353,7 @@ function saveInteriorEvidence() {
   applyAxisFusion(m);
   renderAll();
   populateDetailPanel(m);
-  toast('İç mekan kanıtı kaydedildi, analiz güncellendi', 2600);
+  toast(uiCopy().interiorSavedToast, 2600);
 }
 
 function removeInteriorEvidence(idx) {
@@ -9087,7 +9368,7 @@ function removeInteriorEvidence(idx) {
   applyAxisFusion(m);
   renderAll();
   populateDetailPanel(m);
-  toast('İç mekan kanıtı kaldırıldı', 2200);
+  toast(uiCopy().interiorRemovedToast, 2200);
 }
 
 function deleteManualAxis() {
@@ -9104,24 +9385,25 @@ function deleteManualAxis() {
 function renderExplainability(m) {
   const el = document.getElementById('dp-explain');
   if (!el) return;
+  const t = uiCopy();
   const badges = (m.qualityBadges || []).map(b => `<span class="badge">${escHtml(b)}</span>`).join(' ');
   const interiorAxis = getInteriorAxis(m);
   const manualRec = getManualAxisRecord(m);
   const items = [
-    ['Nihai yöntem', m.method || '—'],
-    ['Füzyon güveni', m.fusion?.reliability!=null ? `${Math.round(m.fusion.reliability*100)}%` : '—'],
-    ['Geometri karmaşıklığı', m.geomComplexity!=null ? `${Math.round(m.geomComplexity*100)}%` : '—'],
-    ['Kanıt sayısı', String(m.fusion?.candidates ?? 0)],
-    ['Ham eksen', m.baseAxis!=null ? `${m.baseAxis.toFixed(2)}°` : '—'],
-    ['İç eksen', interiorAxis!=null ? `${interiorAxis.toFixed(2)}°` : '—'],
-    ['Dönüşüm ipucu', m.convertedFrom?.converted ? (m.convertedFrom.previous || 'var') : 'yok'],
-    ['AI manuel moderasyon', manualRec?.moderation?.status || 'none']
+    [t.explainMethod, m.method || '—'],
+    [t.explainFusion, m.fusion?.reliability!=null ? `${Math.round(m.fusion.reliability*100)}%` : '—'],
+    [t.explainGeom, m.geomComplexity!=null ? `${Math.round(m.geomComplexity*100)}%` : '—'],
+    [t.explainEvidence, String(m.fusion?.candidates ?? 0)],
+    [t.explainRawAxis, m.baseAxis!=null ? `${m.baseAxis.toFixed(2)}°` : '—'],
+    [t.explainInteriorAxis, interiorAxis!=null ? `${interiorAxis.toFixed(2)}°` : '—'],
+    [t.explainConversionHint, m.convertedFrom?.converted ? (m.convertedFrom.previous || 'var') : 'yok'],
+    [t.explainAiModeration, manualRec?.moderation?.status || 'none']
   ];
   el.innerHTML = `
-    <div class="lab-row"><span class="lab-k">Kalite Rozetleri</span><span class="lab-v">${badges || '—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.explainBadges}</span><span class="lab-v">${badges || '—'}</span></div>
     ${items.map(([k,v]) => `<div class="lab-row"><span class="lab-k">${escHtml(k)}</span><span class="lab-v">${escHtml(v)}</span></div>`).join('')}
-    ${m.convertedFrom?.evidence ? `<div class="lab-row"><span class="lab-k">Dönüşüm kanıtı</span><span class="lab-v">${escHtml(m.convertedFrom.evidence)}</span></div>` : ''}
-    ${manualRec?.moderation?.reasons?.length ? `<div class="lab-row"><span class="lab-k">AI notları</span><span class="lab-v">${escHtml(manualRec.moderation.reasons.join(', '))}</span></div>` : ''}
+    ${m.convertedFrom?.evidence ? `<div class="lab-row"><span class="lab-k">${t.explainConversionProof}</span><span class="lab-v">${escHtml(m.convertedFrom.evidence)}</span></div>` : ''}
+    ${manualRec?.moderation?.reasons?.length ? `<div class="lab-row"><span class="lab-k">${t.explainAiNotes}</span><span class="lab-v">${escHtml(manualRec.moderation.reasons.join(', '))}</span></div>` : ''}
   `;
 }
 
@@ -9144,13 +9426,13 @@ function renderActions(m, tags) {
   }
 
   el.innerHTML = `
-    <button class="dp-action-btn" onclick="focusMosqueOnMap()"> Haritada Göster</button>
-    <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)"> İsmi Bul</button>
+    <button class="dp-action-btn" onclick="focusMosqueOnMap()"> ${uiCopy().showOnMap}</button>
+    <button class="dp-action-btn" onclick="enrichSelectedMosqueName(true)"> ${uiCopy().findName}</button>
     <button class="dp-action-btn" onclick="open3D()"> 3D Analiz</button>
-    <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener"> OSM'de Gör</a>
-    <a class="dp-action-btn" href="${editUrl}" target="_blank" rel="noopener"> OSM'de Düzenle</a>
+    <a class="dp-action-btn" href="${osmUrl}" target="_blank" rel="noopener"> ${uiCopy().viewOnOsm}</a>
+    <a class="dp-action-btn" href="${editUrl}" target="_blank" rel="noopener"> ${uiCopy().editOnOsm}</a>
     <a class="dp-action-btn" href="${gmUrl}" target="_blank" rel="noopener"> Google Maps</a>
-    <button class="dp-action-btn" onclick="navigator.clipboard?.writeText('${coordStr}').then(()=>toast('Koordinat kopyalandı'))"> Koordinat Kopyala</button>
+    <button class="dp-action-btn" onclick="navigator.clipboard?.writeText('${coordStr}').then(()=>toast('${uiCopy().coordsCopied}'))"> ${uiCopy().copyCoords}</button>
     ${wikiAction}
   `;
 }
@@ -9170,7 +9452,8 @@ async function enrichSelectedMosqueName(force = false) {
   const m = window._lastClickedMosque;
   if (!m) return;
   const old = m.name;
-  toast('İsim kaynakları karşılaştırılıyor...', 1800);
+  const t = uiCopy();
+  toast(t.resolvingName, 1800);
   try {
     const resolved = await enrichMosqueName(m, { force });
     if (resolved && resolved !== old) {
@@ -9180,14 +9463,14 @@ async function enrichSelectedMosqueName(force = false) {
         const visible = [...mosqueDB.values()].filter(x => bounds.contains([x.lat, x.lng]));
         updateList(visible);
       }
-      toast(`İsim güncellendi: ${resolved}`, 2800);
+      toast(t.nameUpdated(resolved), 2800);
     } else if (resolved) {
-      toast(`İsim doğrulandı: ${resolved}`, 2400);
+      toast(t.nameVerified(resolved), 2400);
     } else {
-      toast('Ek kaynaklarda kesin isim bulunamadı', 2600);
+      toast(t.nameNotFound, 2600);
     }
   } catch (e) {
-    toast('İsim çözümleme başarısız: ' + (e?.message || 'bilinmeyen hata'), 3200);
+    toast(t.nameResolveFailed(e?.message || 'bilinmeyen hata'), 3200);
   }
 }
 
@@ -9278,12 +9561,12 @@ async function requestCompassPermission() {
   try {
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       const p = await DeviceOrientationEvent.requestPermission();
-      if (p !== 'granted') { toast('Sensör izni verilmedi', 2200); return false; }
+      if (p !== 'granted') { toast(uiCopy().sensorDenied, 2200); return false; }
     }
     startCompass();
     return true;
   } catch {
-    toast('Sensör izni alınamadı', 2200);
+    toast(uiCopy().sensorFailed, 2200);
     return false;
   }
 }
@@ -9362,12 +9645,13 @@ function drawCompass() {
   const diff = (heading != null && qibla != null)
     ? Math.min(Math.abs(((qibla-heading)+360)%360), Math.abs(((heading-qibla)+360)%360)).toFixed(1)+'°'
     : '—';
+  const t = uiCopy();
   rows.innerHTML = `
-    <div class="lab-row"><span class="lab-k">Cihaz yönü</span><span class="lab-v">${heading!=null?heading.toFixed(1)+'°':'—'}</span></div>
-    <div class="lab-row"><span class="lab-k">Kıble yönü</span><span class="lab-v">${qibla!=null?qibla.toFixed(1)+'°':'—'}</span></div>
-    <div class="lab-row"><span class="lab-k">Anlık fark</span><span class="lab-v">${diff}</span></div>
-    <div class="lab-row"><span class="lab-k">Harita senkronu</span><span class="lab-v">${uiState.mapSyncWithCompass ? 'Açık' : 'Kapalı'}</span></div>
-    <div class="lab-row"><span class="lab-k">Konum</span><span class="lab-v">${compassState.loc ? `${compassState.loc.lat.toFixed(4)}, ${compassState.loc.lng.toFixed(4)}` : '—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.compassDevice}</span><span class="lab-v">${heading!=null?heading.toFixed(1)+'°':'—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.compassQibla}</span><span class="lab-v">${qibla!=null?qibla.toFixed(1)+'°':'—'}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.compassDiff}</span><span class="lab-v">${diff}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.compassSync}</span><span class="lab-v">${uiState.mapSyncWithCompass ? t.on : t.off}</span></div>
+    <div class="lab-row"><span class="lab-k">${t.compassLoc}</span><span class="lab-v">${compassState.loc ? `${compassState.loc.lat.toFixed(4)}, ${compassState.loc.lng.toFixed(4)}` : '—'}</span></div>
   `;
 }
 
@@ -9550,7 +9834,7 @@ function lbDelete(city) {
 }
 
 function lbClearAll() {
-  if (!confirm('Tüm sıralama verileri silinecek. Emin misiniz?')) return;
+  if (!confirm(currentLang === 'en' ? 'All ranking data will be deleted. Are you sure?' : 'Tüm sıralama verileri silinecek. Emin misiniz?')) return;
   lbData = [];
   lbSave();
   renderLeaderboard();
@@ -9612,6 +9896,7 @@ function lbSetSort(s) {
 }
 
 function lbSetDataset(mode, silent = false) {
+  const t = uiCopy();
   lbDataset = mode === 'admin' ? 'admin' : 'qibla';
   safeStorageSet(LB_MODE_KEY, lbDataset);
   if (lbDataset === 'admin' && (lbSort === 'pct' || lbSort === 'avg')) lbSort = 'count';
@@ -9622,10 +9907,10 @@ function lbSetDataset(mode, silent = false) {
   const addBtn = document.getElementById('lb-add-btn');
   if (input) {
     input.placeholder = lbDataset === 'admin'
-      ? 'İl/Eyalet yaz... (örn: Konya Province, Türkiye)'
-      : 'Şehir ekle... (örn: Konya, Cairo, Lahore)';
+      ? t.leaderboardProvincePlaceholder
+      : t.leaderboardCityPlaceholder;
   }
-  if (addBtn) addBtn.textContent = lbDataset === 'admin' ? '+ Sayımı Çek' : '+ Analiz Et';
+  if (addBtn) addBtn.textContent = lbDataset === 'admin' ? t.leaderboardFetchCount : t.leaderboardAnalyze;
   if (!silent) renderLeaderboard();
 }
 
@@ -9683,6 +9968,7 @@ out count;`;
 }
 
 async function lbCountAdminArea(queryText) {
+  const t = uiCopy();
   const btn = document.getElementById('lb-add-btn');
   btn.disabled = true;
   const pw = document.getElementById('lb-progress-wrap');
@@ -9690,14 +9976,14 @@ async function lbCountAdminArea(queryText) {
   const pl = document.getElementById('lb-progress-label');
   pw.style.display = 'flex';
   pb.style.width = '8%';
-  pl.textContent = `"${queryText}" sınırı aranıyor...`;
+  pl.textContent = t.leaderboardSearchingBoundary(queryText);
   try {
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryText)}&format=jsonv2&limit=8&addressdetails=1`;
     const hits = await nominatimFetchJson(url, {'Accept-Language':'tr,en'});
     const best = lbSelectAdminResult(hits || []);
-    if (!best) throw new Error('İl/eyalet bulunamadı');
+    if (!best) throw new Error(t.leaderboardBoundaryMissing);
     pb.style.width = '40%';
-    pl.textContent = 'Sınır bulundu, sayı çekiliyor...';
+    pl.textContent = t.leaderboardBoundaryFound;
 
     const osmType = trLower(best.osm_type || '');
     const osmId = Number(best.osm_id);
@@ -9710,7 +9996,7 @@ async function lbCountAdminArea(queryText) {
       const w = Number(best.boundingbox[2]), e = Number(best.boundingbox[3]);
       total = await fetchMosqueCountByBbox(s, w, n, e);
     } else {
-      throw new Error('Alan sınırı okunamadı');
+      throw new Error(t.leaderboardBoundaryUnreadable);
     }
 
     pb.style.width = '90%';
@@ -9735,14 +10021,14 @@ async function lbCountAdminArea(queryText) {
     };
     lbUpsert(entry);
     pb.style.width = '100%';
-    pl.textContent = ` ${name}: ${total.toLocaleString()} kayıt`;
+    pl.textContent = ` ${t.leaderboardCountResult(name, total)}`;
     await new Promise(res => setTimeout(res, 550));
     pw.style.display = 'none';
     renderLeaderboard();
-    toast(` ${name} sayımı tamamlandı: ${total.toLocaleString()}`, 3600);
+    toast(` ${t.leaderboardCountDone(name, total)}`, 3600);
   } catch (err) {
     pw.style.display = 'none';
-    toast(' İl sayımı hatası: ' + (err?.message || 'bilinmeyen hata'), 5200);
+    toast(` ${t.leaderboardCountError(err?.message || 'bilinmeyen hata')}`, 5200);
   }
   btn.disabled = false;
 }
@@ -9776,6 +10062,7 @@ function lbFiltered() {
 
 // ── Render
 function renderLeaderboard() {
+  const t = uiCopy();
   const filtered = lbFiltered();
   lbSetDataset(lbDataset, true);
 
@@ -9786,19 +10073,19 @@ function renderLeaderboard() {
   const hCount = document.getElementById('lb-h-count');
   const hAvg = document.getElementById('lb-h-avg');
   if (lbDataset === 'admin') {
-    if (hCity) hCity.textContent = 'İl/Bölge';
-    if (hBar) hBar.textContent = 'Yoğunluk';
+    if (hCity) hCity.textContent = t.lbRegionCol;
+    if (hBar) hBar.textContent = t.lbDensity;
     if (hPct) hPct.textContent = '—';
-    if (hNote) hNote.textContent = 'Tür';
-    if (hCount) hCount.textContent = 'Cami+Mescit';
-    if (hAvg) hAvg.textContent = 'Kaynak';
+    if (hNote) hNote.textContent = t.lbType;
+    if (hCount) hCount.textContent = t.lbMosquePrayer;
+    if (hAvg) hAvg.textContent = t.lbSource;
   } else {
-    if (hCity) hCity.textContent = 'Şehir';
-    if (hBar) hBar.textContent = 'Doğruluk';
+    if (hCity) hCity.textContent = t.lbCity;
+    if (hBar) hBar.textContent = t.lbAccuracy;
     if (hPct) hPct.textContent = '%';
-    if (hNote) hNote.textContent = 'Not';
-    if (hCount) hCount.textContent = 'Cami';
-    if (hAvg) hAvg.textContent = 'Ort.Sap.';
+    if (hNote) hNote.textContent = t.lbNote;
+    if (hCount) hCount.textContent = t.lbMosque;
+    if (hAvg) hAvg.textContent = t.lbAvgShort;
   }
 
   // Summary strip
@@ -9810,10 +10097,10 @@ function renderLeaderboard() {
     const top = adminRows.slice().sort((a,b)=>(b.count||0)-(a.count||0))[0];
     const avgCount = total ? Math.round(totalMosques / total) : null;
     summary.innerHTML = `
-      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">İl/Bölge</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">Toplam Cami+Mescit</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val">${top ? escHtml(top.city) : '—'}</div><div class="lb-sum-lbl">En Yüksek Bölge</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val">${avgCount!==null?avgCount.toLocaleString():'—'}</div><div class="lb-sum-lbl">Ort. Bölge Sayısı</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">${t.lbTotalRegions}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">${t.lbTotalMosquesPrayer}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${top ? escHtml(top.city) : '—'}</div><div class="lb-sum-lbl">${t.lbTopRegion}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${avgCount!==null?avgCount.toLocaleString():'—'}</div><div class="lb-sum-lbl">${t.lbAvgRegionCount}</div></div>
     `;
   } else {
     const qRows = lbData.filter(e => e.mode !== 'admin-count');
@@ -9822,28 +10109,24 @@ function renderLeaderboard() {
     const totalMosques = qRows.reduce((s, e) => s + (e.count||0), 0);
     const avgPct = analysed ? Math.round(qRows.filter(e=>e.pct!==null).reduce((s,e)=>s+e.pct,0)/analysed) : null;
     summary.innerHTML = `
-      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">Şehir</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val">${analysed}</div><div class="lb-sum-lbl">Analiz Edildi</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">Toplam Cami</div></div>
-      <div class="lb-sum-item"><div class="lb-sum-val" style="color:${pctColor(avgPct)}">${avgPct!==null?avgPct+'%':'—'}</div><div class="lb-sum-lbl">Ort. Doğruluk</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${total}</div><div class="lb-sum-lbl">${t.lbCity}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${analysed}</div><div class="lb-sum-lbl">${t.lbAnalysed}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val">${totalMosques.toLocaleString()}</div><div class="lb-sum-lbl">${t.lbTotalMosques}</div></div>
+      <div class="lb-sum-item"><div class="lb-sum-val" style="color:${pctColor(avgPct)}">${avgPct!==null?avgPct+'%':'—'}</div><div class="lb-sum-lbl">${t.lbAvgAccuracy}</div></div>
     `;
   }
 
   // Updated timestamp
   const latestDate = lbData.map(e=>e.analysedAt).filter(Boolean).sort().reverse()[0];
-  document.getElementById('lb-updated').textContent = latestDate
-    ? 'Son güncelleme: ' + new Date(latestDate).toLocaleDateString('tr-TR')
-    : '';
+  document.getElementById('lb-updated').textContent = latestDate ? t.lbUpdated(latestDate) : '';
 
   // Rows
   const container = document.getElementById('lb-rows');
   if (!filtered.length) {
     container.innerHTML = `<div class="lb-empty">
       <div class="lb-empty-icon"></div>
-      <div>${lbData.length===0
-        ? 'Henüz şehir yok — yukarıdan bir şehir ekleyin!'
-        : 'Bu bölgede şehir bulunamadı'}</div>
-      ${lbData.length===0?`<div style="color:rgba(255,255,255,.50);font-size:11px;margin-top:8px">Örnek: İstanbul, Cairo, Karachi, Jakarta</div>`:''}
+      <div>${lbData.length===0 ? t.lbEmptyCity : t.lbEmptyRegion}</div>
+      ${lbData.length===0?`<div style="color:rgba(255,255,255,.50);font-size:11px;margin-top:8px">${t.lbExample}</div>`:''}
     </div>`;
     return;
   }
@@ -9934,19 +10217,20 @@ async function lbAnalyseCity(city) {
   const pw = document.getElementById('lb-progress-wrap');
   const pb = document.getElementById('lb-progress-bar');
   const pl = document.getElementById('lb-progress-label');
+  const t = uiCopy();
   pw.style.display = 'flex';
   pb.style.width = '5%';
-  pl.textContent = `"${city}" analiz ediliyor...`;
+  pl.textContent = currentLang === 'en' ? `Analyzing "${city}"...` : `"${city}" analiz ediliyor...`;
 
   try {
-    pb.style.width = '15%'; pl.textContent = 'Koordinatlar alınıyor...';
+    pb.style.width = '15%'; pl.textContent = t.locatingCoords;
     const loc = await geocode(city);
 
-    pb.style.width = '35%'; pl.textContent = 'Camiler yükleniyor...';
+    pb.style.width = '35%'; pl.textContent = t.loadingMosques;
     const r = 0.072; // ~8km radius
     const elements = await fetchBbox(loc.lat-r, loc.lng-r, loc.lat+r, loc.lng+r);
 
-    pb.style.width = '75%'; pl.textContent = `${elements.length} cami işleniyor...`;
+    pb.style.width = '75%'; pl.textContent = t.processingMosques(elements.length);
     await new Promise(res => setTimeout(res, 20));
 
     // Analyse into temp map
@@ -9998,11 +10282,11 @@ async function lbAnalyseCity(city) {
     };
 
     lbUpsert(entry);
-    pb.style.width = '100%'; pl.textContent = ` ${city} eklendi`;
+    pb.style.width = '100%'; pl.textContent = currentLang === 'en' ? `${city} added` : ` ${city} eklendi`;
     await new Promise(res => setTimeout(res, 600));
     pw.style.display = 'none';
     renderLeaderboard();
-    toast(` ${city} sıralamaya eklendi — ${st.pct!==null?st.pct+'% doğru':'veri yetersiz'}`, 4000);
+    toast(` ${t.addedToRanking(city, st.pct!==null ? (currentLang === 'en' ? st.pct + '% aligned' : st.pct + '% doğru') : t.dataInsufficient)}`, 4000);
 
   } catch(err) {
     pw.style.display = 'none';
