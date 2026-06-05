@@ -7,6 +7,7 @@ const KAABA = { lat: 21.4225, lng: 39.8262 };
 // ── Tile cache: stores loaded bbox cells to avoid duplicate queries
 // Key: "lat_lng_zoom" grid cell (0.05° grid), Value: true
 const tileCache = new Set();
+const tileModeCache = new Map();
 // All processed mosque data (keyed by OSM id)
 const mosqueDB = new Map();
 
@@ -21,8 +22,11 @@ let markerClusterLayer = null;
 let placeBoundaryLayer = null;
 let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
-let vpNeedsReload = false;
 let isVpLoading = false;
+let activeViewportController = null;
+let activeViewportLoadId = 0;
+let vpPartialRenderTimer = 0;
+let vpLastPartialRenderAt = 0;
 let searchAreaAnchor = null;
 let searchAreaArmed = false;
 let lastSidebarVisiblePx = 0;
@@ -297,6 +301,18 @@ function waitWithAbort(ms, signal) {
     };
     signal?.addEventListener('abort', onAbort, { once:true });
   });
+}
+
+function createLinkedAbortController(parentSignal) {
+  const ctrl = new AbortController();
+  if (!parentSignal) return ctrl;
+  if (parentSignal.aborted) {
+    ctrl.abort();
+    return ctrl;
+  }
+  const onAbort = () => ctrl.abort();
+  parentSignal.addEventListener('abort', onAbort, { once:true });
+  return ctrl;
 }
 
 function isOverlayVisible() {
@@ -901,6 +917,20 @@ function setLayerButtonActive(type) {
 // Divide world into 0.08° grid cells. Track which cells are loaded.
 const GRID = 0.08;
 
+function queryModeRank(mode = 'lite') {
+  return mode === 'full' ? 2 : 1;
+}
+
+function hasCachedCell(cellKey, requiredMode = 'lite') {
+  return queryModeRank(tileModeCache.get(cellKey) || '') >= queryModeRank(requiredMode);
+}
+
+function markCellCached(cellKey, mode = 'lite') {
+  if (!cellKey) return;
+  tileCache.add(cellKey);
+  if (!hasCachedCell(cellKey, mode)) tileModeCache.set(cellKey, mode);
+}
+
 function boundsToGridCells(bounds) {
   const cells = [];
   const s = Math.floor(bounds.getSouth()/GRID)*GRID;
@@ -913,8 +943,8 @@ function boundsToGridCells(bounds) {
   return cells;
 }
 
-function getUncachedCells(bounds) {
-  return boundsToGridCells(bounds).filter(c => !tileCache.has(c.key));
+function getUncachedCells(bounds, requiredMode = 'lite') {
+  return boundsToGridCells(bounds).filter(c => !hasCachedCell(c.key, requiredMode));
 }
 
 function hideSearchAreaButton() {
@@ -956,6 +986,7 @@ async function refreshSearchArea() {
   const cells = boundsToGridCells(bounds);
   for (const c of cells) {
     tileCache.delete(c.key);
+    tileModeCache.delete(c.key);
   }
   updateCacheUI();
   searchAreaAnchor = map.getCenter();
@@ -972,6 +1003,9 @@ function scheduleViewportLoad(delayMs = 420, opts = {}) {
     setVpStatus('idle');
     return;
   }
+  if (activeViewportController) {
+    try { activeViewportController.abort(); } catch {}
+  }
   vpDebounceTimer = setTimeout(() => {
     if (!map || map.getZoom() < 11) {
       setVpStatus('idle');
@@ -985,9 +1019,34 @@ function startViewportWatchdog() {
   clearInterval(vpWatchdogTimer);
   vpWatchdogTimer = setInterval(() => {
     if (!map || document.hidden || isVpLoading || map.getZoom() < 11) return;
-    const uncached = getUncachedCells(map.getBounds());
+    const requiredMode = map.getZoom() >= 14 ? 'full' : 'lite';
+    const uncached = getUncachedCells(map.getBounds(), requiredMode);
     if (uncached.length) scheduleViewportLoad(120);
   }, 2500);
+}
+
+function scheduleViewportPartialRender(loadId, force = false) {
+  if (!map || activeViewportLoadId !== loadId || !mosqueDB.size) return;
+  const run = () => {
+    vpPartialRenderTimer = 0;
+    if (!map || activeViewportLoadId !== loadId || !mosqueDB.size) return;
+    vpLastPartialRenderAt = Date.now();
+    renderAll();
+  };
+  if (force) {
+    if (vpPartialRenderTimer) {
+      clearTimeout(vpPartialRenderTimer);
+      vpPartialRenderTimer = 0;
+    }
+    run();
+    return;
+  }
+  if ((Date.now() - vpLastPartialRenderAt) > 220) {
+    run();
+    return;
+  }
+  if (vpPartialRenderTimer) return;
+  vpPartialRenderTimer = setTimeout(run, 140);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -995,19 +1054,16 @@ function startViewportWatchdog() {
 // ══════════════════════════════════════════════════════════════
 async function loadViewport(opts = {}) {
   const startedAt = Date.now();
-  const signal = opts.signal;
-  throwIfAborted(signal);
-  if (isVpLoading) {
-    vpNeedsReload = true;
-    return;
-  }
+  const parentSignal = opts.signal;
+  throwIfAborted(parentSignal);
   if (map.getZoom() < 11) {
     setVpStatus('idle');
     return;
   }
   const bounds = map.getBounds();
   const center = bounds.getCenter();
-  const newCells = getUncachedCells(bounds).sort((a, b) => {
+  const desiredMode = opts.queryMode || (map.getZoom() >= 14 ? 'full' : 'lite');
+  const newCells = getUncachedCells(bounds, desiredMode).sort((a, b) => {
     const da = Math.pow(a.lat - center.lat, 2) + Math.pow(a.lng - center.lng, 2);
     const db = Math.pow(b.lat - center.lat, 2) + Math.pow(b.lng - center.lng, 2);
     return da - db;
@@ -1018,6 +1074,15 @@ async function loadViewport(opts = {}) {
     setVpStatus('done');
     return;
   }
+
+  const ctrl = createLinkedAbortController(parentSignal);
+  const signal = ctrl.signal;
+  const loadId = ++activeViewportLoadId;
+  if (activeViewportController) {
+    try { activeViewportController.abort(); } catch {}
+  }
+  activeViewportController = ctrl;
+  throwIfAborted(signal);
 
   isVpLoading = true;
   setVpStatus('loading');
@@ -1030,6 +1095,7 @@ async function loadViewport(opts = {}) {
   try {
     // Fetch per-grid-cell so moving around always loads local area deterministically.
     let cursor = 0;
+    let completed = 0;
     const workers = Array.from({ length: Math.min(concurrency, batch.length) }, async () => {
       while (cursor < batch.length) {
         throwIfAborted(signal);
@@ -1041,32 +1107,36 @@ async function loadViewport(opts = {}) {
         const w = c.lng - half - pad;
         const e = c.lng + half + pad;
         try {
-          const zoom = map?.getZoom?.() || 13;
-          // Restore full geometry from zoom 12+ so axis arrows remain visible.
-          const queryMode = zoom <= 11 ? 'lite' : 'full';
+          const queryMode = desiredMode;
           let elements = await geoCacheGet(c.key, queryMode);
           if (!elements) {
             const fetchPolicy = {
-              ...(opts.fetchPolicy || { retries:1, timeoutMs:22000, backoffMs:700, minInterval:340 }),
+              ...(opts.fetchPolicy || { retries:0, timeoutMs:9000, backoffMs:550, minInterval:280, endpointLimit:2 }),
               signal,
               queryMode
             };
             elements = await fetchBbox(s, w, n, e, fetchPolicy);
             geoCacheSet(c.key, elements, queryMode);
           }
-          processElements(elements);
-          tileCache.add(c.key);
+          const added = processElements(elements);
+          markCellCached(c.key, queryMode);
+          completed++;
+          showMini(currentLang === 'en'
+            ? `Loading ${completed}/${batch.length} areas...`
+            : `${completed}/${batch.length} alan yükleniyor...`);
+          if (added > 0 || completed === 1) scheduleViewportPartialRender(loadId);
         } catch (err) {
           if (err?.name === 'AbortError') throw err;
           // Keep cell uncached so it can retry on next viewport load.
           console.warn('cell fetch failed', c.key, err?.message || err);
+          completed++;
         }
       }
     });
     await Promise.all(workers);
     throwIfAborted(signal);
     updateCacheUI();
-    renderAll();
+    scheduleViewportPartialRender(loadId, true);
     gaTrack('live_load_done', {
       loaded_cells: batch.length,
       queued_cells: newCells.length,
@@ -1077,22 +1147,20 @@ async function loadViewport(opts = {}) {
     setVpStatus('done');
     if (newCells.length > batch.length) {
       clearTimeout(vpDebounceTimer);
-      vpDebounceTimer = setTimeout(loadViewport, 120);
+      vpDebounceTimer = setTimeout(() => loadViewport(opts), 120);
     }
   } catch(err) {
-    setVpStatus('idle');
+    if (activeViewportLoadId === loadId) setVpStatus('idle');
     if (err?.name !== 'AbortError') {
       toast('Veri yüklenirken hata: '+err.message, 5000);
       console.error(err);
     }
-  }
-
-  hideMini();
-  isVpLoading = false;
-  if (vpNeedsReload) {
-    vpNeedsReload = false;
-    clearTimeout(vpDebounceTimer);
-    vpDebounceTimer = setTimeout(loadViewport, 120);
+  } finally {
+    if (activeViewportController === ctrl) activeViewportController = null;
+    if (activeViewportLoadId === loadId) {
+      hideMini();
+      isVpLoading = false;
+    }
   }
 }
 
@@ -1146,7 +1214,8 @@ ${outLine}`;
 async function fetchOverpassQuery(query, policy = {}) {
   throwIfAborted(policy.signal);
   let lastErr = null;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
+  const endpointLimit = Number.isFinite(policy.endpointLimit) ? Math.max(1, policy.endpointLimit | 0) : OVERPASS_ENDPOINTS.length;
+  for (const endpoint of OVERPASS_ENDPOINTS.slice(0, endpointLimit)) {
     try {
       throwIfAborted(policy.signal);
       const r = await limitedFetch(endpoint, {
@@ -6249,6 +6318,7 @@ async function doSearch(){
     if (direct) {
       setOv(true, currentLang === 'en' ? `Searching "${v}"...` : `"${v}" aranıyor...`, currentLang === 'en' ? 'Direct record lookup' : 'Doğrudan kayıt sorgusu');
       tileCache.clear(); updateCacheUI();
+      tileModeCache.clear();
       mosqueDB.clear();
       renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
       const items = direct.type === 'osm'
@@ -6297,6 +6367,7 @@ async function doSearch(){
     hideSearchAreaButton();
     // Clear cache for fresh city load
     tileCache.clear(); updateCacheUI();
+    tileModeCache.clear();
     mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
     if(heatLayer){ try{map.removeLayer(heatLayer);}catch{} heatLayer=null; }
@@ -6306,7 +6377,8 @@ async function doSearch(){
       signal: searchSignal,
       batchSize: 12,
       concurrency: 3,
-      fetchPolicy: { retries:1, timeoutMs:18000, backoffMs:650, minInterval:320, signal: searchSignal }
+      queryMode: 'lite',
+      fetchPolicy: { retries:0, timeoutMs:9000, backoffMs:550, minInterval:280, endpointLimit:2, signal: searchSignal }
     });
     throwIfAborted(searchSignal);
 
@@ -6435,7 +6507,7 @@ async function useMyLocation(opts = {}){
       lng: Number(pos.coords.longitude.toFixed(4))
     });
     map.setView([pos.coords.latitude,pos.coords.longitude],zoom);
-    tileCache.clear(); mosqueDB.clear();
+    tileCache.clear(); tileModeCache.clear(); mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} }); renderLayers=[];
     updateCacheUI();
     await loadViewport();
@@ -6470,6 +6542,7 @@ async function resetToHome() {
     if (mq) mq.value = '';
     currentCity = '';
     tileCache.clear();
+    tileModeCache.clear();
     mosqueDB.clear();
     renderLayers.forEach(l=>{ try{map.removeLayer(l);}catch{} });
     renderLayers = [];
@@ -6634,6 +6707,7 @@ async function refreshCurrentViewport() {
   const ind = document.getElementById('sb-pull-indicator');
   if (ind) { ind.textContent = currentLang === 'en' ? 'Refreshing...' : 'Yenileniyor...'; ind.classList.add('show','visible'); }
   tileCache.clear();
+  tileModeCache.clear();
   updateCacheUI();
   await loadViewport();
   recompute();
