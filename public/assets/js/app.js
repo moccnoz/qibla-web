@@ -22,6 +22,8 @@ let markerClusterLayer = null;
 let placeBoundaryLayer = null;
 let vpDebounceTimer = null;
 let vpWatchdogTimer = null;
+let vpRetryAfter = 0;
+let vpStatus = 'idle';
 let isVpLoading = false;
 let activeViewportController = null;
 let activeViewportLoadId = 0;
@@ -600,7 +602,7 @@ async function geoCacheGet(cellKey, mode = 'full') {
   if (!cellKey) return null;
   await initGeoCacheDb();
   if (!geoCacheDb) return null;
-  const cacheKey = `${cellKey}:${mode}`;
+  const cacheKey = `${cellKey}:${mode === 'lite' ? 'lite-v2' : mode}`;
   return new Promise((resolve) => {
     try {
       const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readonly');
@@ -623,7 +625,7 @@ async function geoCacheSet(cellKey, elements, mode = 'full') {
   if (!cellKey || !Array.isArray(elements)) return;
   await initGeoCacheDb();
   if (!geoCacheDb) return;
-  const cacheKey = `${cellKey}:${mode}`;
+  const cacheKey = `${cellKey}:${mode === 'lite' ? 'lite-v2' : mode}`;
   try {
     const tx = geoCacheDb.transaction(GEO_CACHE_STORE, 'readwrite');
     tx.objectStore(GEO_CACHE_STORE).put({ k:cacheKey, ts:Date.now(), elements });
@@ -937,7 +939,8 @@ function queryModeRank(mode = 'lite') {
 }
 
 function hasCachedCell(cellKey, requiredMode = 'lite') {
-  return queryModeRank(tileModeCache.get(cellKey) || '') >= queryModeRank(requiredMode);
+  const cachedMode = tileModeCache.get(cellKey);
+  return cachedMode !== undefined && queryModeRank(cachedMode) >= queryModeRank(requiredMode);
 }
 
 function markCellCached(cellKey, mode = 'lite') {
@@ -1006,8 +1009,9 @@ async function refreshSearchArea() {
   updateCacheUI();
   searchAreaAnchor = map.getCenter();
   try {
-    await loadViewport();
-    toast(currentLang === 'en' ? 'This area was refreshed' : 'Bu alan güncellendi', 1400);
+    if (await loadViewport()) {
+      toast(currentLang === 'en' ? 'This area was refreshed' : 'Bu alan güncellendi', 1400);
+    }
   } catch {}
   hideSearchAreaButton();
 }
@@ -1033,8 +1037,8 @@ function scheduleViewportLoad(delayMs = 420, opts = {}) {
 function startViewportWatchdog() {
   clearInterval(vpWatchdogTimer);
   vpWatchdogTimer = setInterval(() => {
-    if (!map || document.hidden || isVpLoading || map.getZoom() < 11) return;
-    const requiredMode = map.getZoom() >= 14 ? 'full' : 'lite';
+    if (!map || document.hidden || isVpLoading || Date.now() < vpRetryAfter || map.getZoom() < 11) return;
+    const requiredMode = map.getZoom() >= 13 ? 'full' : 'lite';
     const uncached = getUncachedCells(map.getBounds(), requiredMode);
     if (uncached.length) scheduleViewportLoad(120);
   }, 2500);
@@ -1077,7 +1081,7 @@ async function loadViewport(opts = {}) {
   }
   const bounds = map.getBounds();
   const center = bounds.getCenter();
-  const desiredMode = opts.queryMode || (map.getZoom() >= 14 ? 'full' : 'lite');
+  const desiredMode = opts.queryMode || (map.getZoom() >= 13 ? 'full' : 'lite');
   const newCells = getUncachedCells(bounds, desiredMode).sort((a, b) => {
     const da = Math.pow(a.lat - center.lat, 2) + Math.pow(a.lng - center.lng, 2);
     const db = Math.pow(b.lat - center.lat, 2) + Math.pow(b.lng - center.lng, 2);
@@ -1085,9 +1089,9 @@ async function loadViewport(opts = {}) {
   });
   if (!newCells.length) {
     // No new fetch needed, but viewport may have changed.
-    if (mosqueDB.size) renderAll();
+    renderAll();
     setVpStatus('done');
-    return;
+    return true;
   }
 
   const ctrl = createLinkedAbortController(parentSignal);
@@ -1111,6 +1115,7 @@ async function loadViewport(opts = {}) {
     // Fetch per-grid-cell so moving around always loads local area deterministically.
     let cursor = 0;
     let completed = 0;
+    let loadedCells = 0;
     const workers = Array.from({ length: Math.min(concurrency, batch.length) }, async () => {
       while (cursor < batch.length) {
         throwIfAborted(signal);
@@ -1126,15 +1131,17 @@ async function loadViewport(opts = {}) {
           let elements = await geoCacheGet(c.key, queryMode);
           if (!elements) {
             const fetchPolicy = {
-              ...(opts.fetchPolicy || { retries:0, timeoutMs:9000, backoffMs:550, minInterval:280, endpointLimit:2 }),
+              ...(opts.fetchPolicy || { retries:0, timeoutMs:45000, backoffMs:550, minInterval:500, endpointLimit:2 }),
               signal,
               queryMode
             };
             elements = await fetchBbox(s, w, n, e, fetchPolicy);
             geoCacheSet(c.key, elements, queryMode);
           }
+          throwIfAborted(signal);
           const added = processElements(elements);
           markCellCached(c.key, queryMode);
+          loadedCells++;
           completed++;
           showMini(currentLang === 'en'
             ? `Loading ${completed}/${batch.length} areas...`
@@ -1151,21 +1158,30 @@ async function loadViewport(opts = {}) {
     await Promise.all(workers);
     throwIfAborted(signal);
     updateCacheUI();
-    scheduleViewportPartialRender(loadId, true);
+    if (mosqueDB.size) scheduleViewportPartialRender(loadId, true);
+    else renderAll();
     gaTrack('live_load_done', {
-      loaded_cells: batch.length,
+      loaded_cells: loadedCells,
       queued_cells: newCells.length,
       cache_tiles: tileCache.size,
       visible_count: getVisibleMosques(0.1).length,
       duration_ms: Date.now() - startedAt
     });
-    setVpStatus('done');
+    if (loadedCells < batch.length) {
+      vpRetryAfter = Date.now() + 30000;
+      setVpStatus('error');
+      return false;
+    }
+    vpRetryAfter = 0;
     if (newCells.length > batch.length) {
       clearTimeout(vpDebounceTimer);
       vpDebounceTimer = setTimeout(() => loadViewport(opts), 120);
+      return false;
     }
+    setVpStatus('done');
+    return true;
   } catch(err) {
-    if (activeViewportLoadId === loadId) setVpStatus('idle');
+    if (activeViewportLoadId === loadId) setVpStatus(err?.name === 'AbortError' ? 'idle' : 'error');
     if (err?.name !== 'AbortError') {
       toast('Veri yüklenirken hata: '+err.message, 5000);
       console.error(err);
@@ -1194,13 +1210,12 @@ function showSkeletonList() {
 // ══════════════════════════════════════════════════════════════
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-  'https://lz4.overpass-api.de/api/interpreter'
+  'https://overpass.private.coffee/api/interpreter'
 ];
 
 function buildMosqueQuery(s,w,n,e, mode = 'full') {
   const outLine = mode === 'lite'
-    ? 'out center tags qt 3000;'
+    ? 'out body center qt 3000;'
     : 'out body geom qt 3000;';
   return `[out:json][timeout:60];
 (
@@ -1247,10 +1262,13 @@ async function fetchOverpassQuery(query, policy = {}) {
       });
       if(!r.ok) throw new Error(`HTTP ${r.status} @ ${endpoint}`);
       const d = await r.json();
-      return d.elements || [];
+      if (d.remark || !Array.isArray(d.elements)) {
+        throw new Error(d.remark || 'Invalid Overpass response');
+      }
+      return d.elements;
     } catch (e) {
-      if (e?.name === 'AbortError') throw e;
-      lastErr = e;
+      throwIfAborted(policy.signal);
+      lastErr = e?.name === 'AbortError' ? new Error('Overpass request timed out') : e;
     }
   }
   throw new Error(lastErr?.message || 'Overpass yanıt vermedi');
@@ -3156,7 +3174,7 @@ function applyI18nStaticUi() {
   setText('#search-area-btn', t.searchArea);
   setText('#ov-cancel', t.cancel);
   setText('#ov-text', t.loading);
-  setText('#vp-label', t.liveReady);
+  setVpStatus(vpStatus);
   setTextAt('.nav-group-title', 0, t.headerMap);
   setTextAt('.nav-group-title', 1, t.headerAnalysis);
   setTextAt('.nav-group-title', 2, t.headerActions);
@@ -6222,14 +6240,22 @@ function normalize(s) {
 }
 
 // ── Status indicators
-function setVpStatus(s){
-  const dot=document.getElementById('vp-dot'),lbl=document.getElementById('vp-label');
-  const box=document.getElementById('live-vp-badge') || document.querySelector('.vp-status');
-  dot.className='vp-dot'+(s==='loading'?' loading':s==='done'?' done':'');
-  if (box) box.className=`live-vp-badge ${s==='loading'?'loading':s==='done'?'done':'idle'}`;
-  lbl.textContent = currentLang === 'en'
-    ? (s==='loading'?'Live loading':s==='done'?'Live updated':'Live ready')
-    : (s==='loading'?'Canlı yükleniyor':s==='done'?'Canlı güncel':'Canlı hazır');
+function setVpStatus(status) {
+  vpStatus = status;
+  const dot = document.getElementById('vp-dot');
+  const label = document.getElementById('vp-label');
+  const badge = document.getElementById('live-vp-badge') || document.querySelector('.vp-status');
+  const messages = {
+    idle: ['Canlı hazır', 'Live ready'],
+    loading: ['Canlı yükleniyor', 'Live loading'],
+    done: ['Canlı güncel', 'Live updated'],
+    error: ['Veri alınamadı', 'Could not load data']
+  };
+  for (const state of Object.keys(messages)) {
+    dot?.classList.toggle(state, state === status);
+    badge?.classList.toggle(state, state === status);
+  }
+  if (label) label.textContent = messages[status][currentLang === 'en' ? 1 : 0];
 }
 function updateCacheUI(){
   const count = tileCache.size;
@@ -6393,7 +6419,7 @@ async function doSearch(){
       batchSize: 12,
       concurrency: 3,
       queryMode: 'lite',
-      fetchPolicy: { retries:0, timeoutMs:9000, backoffMs:550, minInterval:280, endpointLimit:2, signal: searchSignal }
+      fetchPolicy: { retries:0, timeoutMs:45000, backoffMs:550, minInterval:500, endpointLimit:2, signal: searchSignal }
     });
     throwIfAborted(searchSignal);
 
@@ -6724,7 +6750,7 @@ async function refreshCurrentViewport() {
   tileCache.clear();
   tileModeCache.clear();
   updateCacheUI();
-  await loadViewport();
+  const refreshed = await loadViewport();
   recompute();
   if (ind) {
     setTimeout(() => {
@@ -6734,7 +6760,7 @@ async function refreshCurrentViewport() {
     }, 380);
   }
   uiState.pullRefreshing = false;
-  toast(currentLang === 'en' ? 'Data refreshed' : 'Veriler güncellendi', 1600);
+  if (refreshed) toast(currentLang === 'en' ? 'Data refreshed' : 'Veriler güncellendi', 1600);
 }
 
 function initSidebarPullToRefresh() {
