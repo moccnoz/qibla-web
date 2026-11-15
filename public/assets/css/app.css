@@ -551,6 +551,9 @@ header .btn::before, header .btn-sm::before{content:none !important;}
 /* ── MAIN */
 .main{display:flex;flex:1;overflow:hidden;}
 #map{flex:1;position:relative;--mobile-sheet-offset:90px;}
+#map .leaflet-control-attribution a {
+  color: #17456d;
+}
 #map .qible-dark-tiles {
   filter: invert(1) hue-rotate(180deg) saturate(0.55) brightness(0.88);
 }
