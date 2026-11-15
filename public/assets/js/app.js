@@ -541,10 +541,17 @@ function setDistrictSelection(name, geo) {
   updateDistrictUi();
 }
 
+const OSM_TILES = {
+  url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  opts: {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+    maxZoom: 19
+  }
+};
 const TILES = {
-  dark:      { url:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',         opts:{ attribution:'©OSM ©CartoDB', subdomains:'abcd', maxZoom:19 } },
-  satellite: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opts:{ attribution:'©Esri ©OSM', maxZoom:19 } },
-  osm:       { url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',                   opts:{ attribution:'©OSM', subdomains:'abc', maxZoom:19 } }
+  dark: OSM_TILES,
+  osm: OSM_TILES,
+  satellite: { url:'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', opts:{ attribution:'©Esri ©OSM', maxZoom:19 } }
 };
 let currentLayer = 'dark';
 
@@ -661,7 +668,7 @@ async function bootstrap() {
 
 function initMap() {
   map = L.map('map', { center:[41.015,28.979], zoom:13, zoomControl:false });
-  tileLayer = L.tileLayer(TILES.dark.url, TILES.dark.opts).addTo(map);
+  updateBaseLayer(currentLayer);
   L.control.zoom({ position:'bottomleft' }).addTo(map);
 
   // Kaaba marker (permanent)
@@ -892,12 +899,20 @@ async function onDistrictMapClick(e) {
   hideMini();
 }
 
+function updateBaseLayer(type) {
+  const source = TILES[type];
+  if (!tileLayer || source !== TILES[currentLayer]) {
+    if (tileLayer) map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(source.url, source.opts).addTo(map);
+    tileLayer.bringToBack();
+  }
+  tileLayer.getContainer().classList.toggle('qible-dark-tiles', type === 'dark');
+  currentLayer = type;
+}
+
 function switchLayer(type) {
-  if (!map||type===currentLayer) return;
-  currentLayer=type;
-  if(tileLayer) map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(TILES[type].url,TILES[type].opts).addTo(map);
-  tileLayer.bringToBack();
+  if (!map || type === currentLayer) return;
+  updateBaseLayer(type);
   setLayerButtonActive(type);
 }
 
