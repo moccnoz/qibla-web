@@ -10,6 +10,9 @@ const tileCache = new Set();
 const tileModeCache = new Map();
 // All processed mosque data (keyed by OSM id)
 const mosqueDB = new Map();
+const ISTANBUL_SNAPSHOT_URL = '/assets/data/istanbul-mosques-20261116.json';
+let istanbulSnapshot;
+let istanbulSnapshotDate;
 
 let tol = 15;
 let map = null;
@@ -774,6 +777,7 @@ function initMap() {
   searchAreaAnchor = map.getCenter();
   hideSearchAreaButton();
   if (map.getZoom() >= 11) {
+    showIstanbulSnapshot();
     scheduleViewportLoad(260);
   }
   startViewportWatchdog();
@@ -934,6 +938,32 @@ function setLayerButtonActive(type) {
 // Divide world into 0.08° grid cells. Track which cells are loaded.
 const GRID = 0.08;
 
+async function showIstanbulSnapshot() {
+  try {
+    istanbulSnapshot ??= fetch(ISTANBUL_SNAPSHOT_URL).then(response => {
+      if (!response.ok) throw new Error(`Istanbul snapshot HTTP ${response.status}`);
+      return response.json();
+    }).catch(err => {
+      istanbulSnapshot = undefined;
+      throw err;
+    });
+    const data = await istanbulSnapshot;
+    if (currentCity || activeSearchController || !map.getBounds().intersects(data.bounds)) return;
+    istanbulSnapshotDate = new Date(data.osm3s.timestamp_osm_base);
+    if (processElements(data.elements, { snapshot: true })) renderAll();
+  } catch (error) {
+    console.warn('Istanbul snapshot unavailable', error);
+  }
+}
+
+function gridCellKey(lat, lng) {
+  return `${lat.toFixed(3)}_${lng.toFixed(3)}`;
+}
+
+function gridCellKeyAt(lat, lng) {
+  return gridCellKey(Math.floor(lat / GRID) * GRID, Math.floor(lng / GRID) * GRID);
+}
+
 function queryModeRank(mode = 'lite') {
   return mode === 'full' ? 2 : 1;
 }
@@ -957,7 +987,7 @@ function boundsToGridCells(bounds) {
   const e = Math.ceil(bounds.getEast()/GRID)*GRID;
   for (let la=s; la<n; la+=GRID)
     for (let ln=w; ln<e; ln+=GRID)
-      cells.push({ key:`${la.toFixed(3)}_${ln.toFixed(3)}`, lat:la+GRID/2, lng:ln+GRID/2 });
+      cells.push({ key:gridCellKey(la, ln), lat:la+GRID/2, lng:ln+GRID/2 });
   return cells;
 }
 
@@ -1109,7 +1139,7 @@ async function loadViewport(opts = {}) {
   const concurrency = Number.isFinite(opts.concurrency) ? Math.max(1, opts.concurrency | 0) : 2;
   const batch = newCells.slice(0, batchSize);
   showMini(currentLang === 'en' ? `Loading ${batch.length}/${newCells.length} areas...` : `${batch.length}/${newCells.length} alan yükleniyor...`);
-  showSkeletonList();
+  if (!getVisibleMosques().length) showSkeletonList();
 
   try {
     // Fetch per-grid-cell so moving around always loads local area deterministically.
@@ -1139,14 +1169,24 @@ async function loadViewport(opts = {}) {
             geoCacheSet(c.key, elements, queryMode);
           }
           throwIfAborted(signal);
-          const added = processElements(elements);
+          const added = processElements(elements, { fullGeometry: queryMode === 'full' });
+          let removedSnapshot = false;
+          if (queryMode === 'full') {
+            for (const [key, mosque] of mosqueDB) {
+              if (mosque.snapshot && gridCellKeyAt(mosque.lat, mosque.lng) === c.key) {
+                mosqueDB.delete(key);
+                removedSnapshot = true;
+              }
+            }
+          }
           markCellCached(c.key, queryMode);
+          updateCacheUI();
           loadedCells++;
           completed++;
           showMini(currentLang === 'en'
             ? `Loading ${completed}/${batch.length} areas...`
             : `${completed}/${batch.length} alan yükleniyor...`);
-          if (added > 0 || completed === 1) scheduleViewportPartialRender(loadId);
+          if (added > 0 || removedSnapshot || completed === 1) scheduleViewportPartialRender(loadId);
         } catch (err) {
           if (err?.name === 'AbortError') throw err;
           // Keep cell uncached so it can retry on next viewport load.
@@ -1169,7 +1209,7 @@ async function loadViewport(opts = {}) {
     });
     if (loadedCells < batch.length) {
       vpRetryAfter = Date.now() + 30000;
-      setVpStatus('error');
+      setVpStatus(getVisibleMosques().length ? 'partial' : 'error');
       return false;
     }
     vpRetryAfter = 0;
@@ -1455,7 +1495,7 @@ async function fetchWikidataQidsByQuery(query = '', max = 3) {
 // ══════════════════════════════════════════════════════════════
 //  DATA PROCESSING
 // ══════════════════════════════════════════════════════════════
-function processElements(elements) {
+function processElements(elements, { snapshot = false, fullGeometry = false } = {}) {
   let added = 0;
   for (const el of elements) {
 
@@ -1477,6 +1517,12 @@ function processElements(elements) {
       lat0 = el.center.lat; lng0 = el.center.lon;
     } else continue;
 
+    if (!Number.isFinite(lat0) || !Number.isFinite(lng0)) continue;
+    if (snapshot && hasCachedCell(gridCellKeyAt(lat0, lng0), 'full')) continue;
+    const dbKey = `${el.type}:${el.id}`;
+    const existing = mosqueDB.get(dbKey);
+    if (snapshot && existing) continue;
+
     const qibla = qiblaAngle(lat0,lng0);
     let axis=null, method='none';
 
@@ -1492,6 +1538,7 @@ function processElements(elements) {
     const rec = {
       id:el.id,
       osmType: el.type,
+      snapshot,
       name:fallbackName,
       nameAr: el.tags?.['name:ar']||null,
       nameTr: el.tags?.['name:tr']||null,
@@ -1503,13 +1550,11 @@ function processElements(elements) {
       tags: el.tags||{},
       geomComplexity: computeGeometryComplexity(polyCoords)
     };
-    const dbKey = `${rec.osmType || 'way'}:${rec.id}`;
     if (remoteMeta) {
       rec.searchMeta = { ...remoteMeta };
     }
     buildSearchIndexForMosque(rec);
     applyAxisFusion(rec);
-    const existing = mosqueDB.get(dbKey);
     if (existing) {
       if (remoteMeta && !existing.searchMeta) existing.searchMeta = { ...remoteMeta };
       const recScore =
@@ -1522,12 +1567,13 @@ function processElements(elements) {
         (Array.isArray(existing.polyCoords) && existing.polyCoords.length >= 4 ? 30 : 0) +
         (existing.osmType === 'way' || existing.osmType === 'relation' ? 12 : 0) +
         (existing.baseMethod === 'edge-analysis' ? 8 : 0);
-      if (recScore <= existingScore) continue;
+      if (!(existing.snapshot && fullGeometry) && recScore <= existingScore) continue;
+      if (existing.snapshot) added++;
     } else {
       added++;
     }
     mosqueDB.set(dbKey, rec);
-    if (rec && (isPlaceholderMosqueName(rec.name) || isGenericMosqueName(rec.name))) enqueueMosqueNameEnrichment(rec);
+    if (!snapshot && (isPlaceholderMosqueName(rec.name) || isGenericMosqueName(rec.name))) enqueueMosqueNameEnrichment(rec);
   }
   return added;
 }
@@ -1560,6 +1606,7 @@ function renderAll() {
   }
 
   const visible = getVisibleMosques(0.1);
+  updateCacheUI(visible);
   const denseMode = visible.length > 700;
   const canCluster = typeof L !== 'undefined' && typeof L.markerClusterGroup === 'function';
   const useCluster = canCluster && visible.length > 140 && map.getZoom() <= 15;
@@ -1592,7 +1639,7 @@ function renderAll() {
     }
 
     // Kıble direction line (dashed gold)
-    if (!simplifiedMode) {
+    if (!denseMode) {
       const qEnd=destination(m.lat,m.lng,m.qibla,200);
       renderLayers.push(L.polyline([[m.lat,m.lng],[qEnd.lat,qEnd.lng]],{color:'#c9a84c',weight:1.5,opacity:.7,dashArray:'6 5'}).addTo(map));
     }
@@ -6249,6 +6296,7 @@ function setVpStatus(status) {
     idle: ['Canlı hazır', 'Live ready'],
     loading: ['Canlı yükleniyor', 'Live loading'],
     done: ['Canlı güncel', 'Live updated'],
+    partial: ['Bazı bölgeler yüklenemedi', 'Some areas could not load'],
     error: ['Veri alınamadı', 'Could not load data']
   };
   for (const state of Object.keys(messages)) {
@@ -6257,12 +6305,20 @@ function setVpStatus(status) {
   }
   if (label) label.textContent = messages[status][currentLang === 'en' ? 1 : 0];
 }
-function updateCacheUI(){
+function updateCacheUI(visible = getVisibleMosques()){
   const count = tileCache.size;
   const cacheEl = document.getElementById('cache-count');
   if (cacheEl) cacheEl.textContent = count;
   const metaEl = document.getElementById('vp-meta');
-  if (metaEl) metaEl.textContent = `Cache: ${count} tile`;
+  if (!metaEl) return;
+  if (istanbulSnapshotDate && visible.some(m => m.snapshot)) {
+    const date = new Intl.DateTimeFormat(currentLang === 'en' ? 'en-GB' : 'tr-TR', {
+      day:'numeric', month:'short', timeZone:'Europe/Istanbul'
+    }).format(istanbulSnapshotDate);
+    metaEl.textContent = currentLang === 'en' ? `OSM snapshot · ${date}` : `OSM kaydı · ${date}`;
+  } else {
+    metaEl.textContent = `Cache: ${count} tile`;
+  }
 }
 function showMini(t){ document.getElementById('mini-text').textContent=i18nTranslateText(t); document.getElementById('mini-loader').classList.add('show'); }
 function hideMini(){ document.getElementById('mini-loader').classList.remove('show'); }
@@ -6591,9 +6647,10 @@ async function resetToHome() {
     updateCacheUI();
     _hashUpdating = true;
     history.replaceState(null, '', location.pathname);
-    map.setView([41.015, 28.979], 13, { animate:true });
+    map.setView([41.015, 28.979], 13, { animate:false });
     _hashUpdating = false;
     clearTimeout(vpDebounceTimer);
+    showIstanbulSnapshot();
     scheduleViewportLoad(280);
     toast(currentLang === 'en' ? 'Home view reset' : 'Ana sayfa sıfırlandı', 1800);
   } catch {}
